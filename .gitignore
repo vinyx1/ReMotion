@@ -34,4 +34,4 @@ coverage/
 htmlcov/
 
 # vsetup local auto-commit settings
-.vsetup
+.vsetup/
