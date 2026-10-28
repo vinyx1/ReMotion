@@ -47,6 +47,9 @@ Treat these as defaults; confirm with the user before building on them.
 - **Python backend:** PySerial, NumPy, SciPy; a complementary filter for trunk tilt; CSV for session storage.
 - **Sampling** at 100 Hz, each sample timestamped on the microcontroller.
 - **Trunk sensor on the sternum** with a snug chest strap.
+- **Arm's-length rule (setup procedure, not sensed):** before each tester's session, measure their arm length with a tape measure (shoulder to fingertip, seated, arm extended) and place the target inside it, so a clean reach needs essentially no trunk motion. Research (Foreman & Engsberg 2020, n=5, see `docs/research/stroke-compensations.md`) found healthy trunk flexion of about 0.4° at arm's length versus about 18.7° at +20 cm. Record the target distance per tester with the session data. The IMUs cannot measure distance, so they can't enforce this.
+- **Per-person baseline threshold:** instead of a fixed ~10°, take the mean peak tilt of a few clean calibration reps and flag a rep that exceeds it by a margin; tune the margin from recorded data. The fixed 10° stays as the fallback default. The literature has no validated degree cutoff, so 10° is a tuning default only.
+- **If clean and leaned reps overlap** in peak tilt, add wrist-IMU features already available (reach duration, peak speed) before considering anything else. No new hardware.
 - **Testers are team members** simulating compensation; no patients (ethics). State this plainly in the report.
 - **Team split:** hardware/firmware · signal processing · dashboard/storage · mounting/testing. Firmware ships a recorded CSV early so signal processing isn't blocked on hardware.
 
