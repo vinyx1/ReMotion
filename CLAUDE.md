@@ -24,7 +24,7 @@ Wearable proof of concept for a 4-person ECE 198 team. Two IMUs (wrist + trunk) 
 
 **Timeline (4 weeks):** (1) wiring, firmware streaming timestamped CSV at 100 Hz, calibration button; a sample CSV goes to signal processing by day 2–3. (2) rep segmentation and threshold rule on recorded data. (3) buzzer/LED feedback, Streamlit report, then the multi-target extension. (4) filmed validation, threshold tuning, demo polish, report.
 
-**Demo target (~90 s):** a judge straps on the device, presses calibrate, sits upright for 3 s, does about 5 reaches, hears the beep when leaning, then sees the graphs. Rehearse it, with a pre-recorded session as a fallback if the wiring fails.
+**Demo target (a few minutes, no hard limit):** a judge straps on the device, the team measures their arm and places the target, they press calibrate, sit upright for 3 s, do about 5 reaches, hear the beep when leaning, then see the graphs. Rehearse it, with a pre-recorded session as a fallback if the wiring fails.
 
 ## Fixed hardware
 
@@ -50,7 +50,10 @@ Treat these as defaults; confirm with the user before building on them.
 - **Arm's-length rule (setup procedure, not sensed):** before each tester's session, measure their arm length with a tape measure (shoulder to fingertip, seated, arm extended) and place the target inside it, so a clean reach needs essentially no trunk motion. Research (Foreman & Engsberg 2020, n=5, see `docs/research/stroke-compensations.md`) found healthy trunk flexion of about 0.4° at arm's length versus about 18.7° at +20 cm. Record the target distance per tester with the session data. The IMUs cannot measure distance, so they can't enforce this.
 - **Per-person baseline threshold:** instead of a fixed ~10°, take the mean peak tilt of a few clean calibration reps and flag a rep that exceeds it by a margin; tune the margin from recorded data. The fixed 10° stays as the fallback default. The literature has no validated degree cutoff, so 10° is a tuning default only.
 - **If clean and leaned reps overlap** in peak tilt, add wrist-IMU features already available (reach duration, peak speed) before considering anything else. No new hardware.
-- **Testers are team members** simulating compensation; no patients (ethics). State this plainly in the report.
+- **Testers are team members, possibly some friends,** simulating compensation; no patients (ethics). State this plainly in the report. Check whether the course requires consent or approval for testers outside the team.
+- **Client:** Waterloo CCARE. Ask them what real stroke compensation looks like (and ideally for example videos), so scripted leaned reps resemble the real thing.
+- **Video-to-data sync:** at the start of each recording, press the calibration button with the device's LED in camera frame; the firmware logs a marker at the same moment. Testers also follow a fixed rep script (e.g. 5 clean, then 5 leaned) and say each rep number aloud, as a cross-check if a rep is missed or double-counted.
+- **Labeling protocol:** the team labels the side-view video themselves. The labeler is a teammate who did not perform that session where possible, labels from the video (not the script, since a "clean" rep can lean by accident), and does not see the system's output while labeling. Label by clearly visible lean, not a measured angle.
 - **Team split:** hardware/firmware · signal processing · dashboard/storage · mounting/testing. Firmware ships a recorded CSV early so signal processing isn't blocked on hardware.
 
 ## Known limits

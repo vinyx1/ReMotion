@@ -9,18 +9,19 @@ Check these off and write the answer next to each. Once they are answered, they 
 
 ## Blocks validation
 
-- [ ] **Video-to-data sync.** How will the side-view video line up with the recorded data? Options: the LED lights when calibration starts and is visible in frame; a hand clap with a logged marker. Decide before the first recording, since fixing it afterward is painful. Answer: ____
-- [ ] **Labeling protocol.** Who labels each rep clean or leaned from the video? They should not see the system's output while labeling. Should two people label so agreement can be checked? Answer: ____
-- [ ] **Testers and rep count.** Which teammates are subjects, and how many reps each? The 90% over about 60 reps placeholder assumes at least 3 testers. Answer: ____
+- [x] **Video-to-data sync.** Decided: press the calibration button with the LED in camera frame (firmware logs a marker), plus a fixed rep script with rep numbers said aloud as a cross-check. Recorded in `CLAUDE.md`.
+- [x] **Labeling protocol.** Decided: the team labels the video themselves, ideally a teammate who didn't perform that session, from the video and not the script, without seeing the system's output. Recorded in `CLAUDE.md`.
+- [ ] **Ask the client (Waterloo CCARE)** what real stroke compensation looks like, ideally with example videos, so scripted leaned reps resemble it. Answer: ____
+- [ ] **Testers and rep count.** Which teammates and friends are subjects, and how many reps each? The 90% over about 60 reps placeholder assumes at least 3 testers. Answer: ____
 - [ ] **Success threshold.** Settle the agreement target after the first recordings, together as a team. Placeholder: about 90% over about 60 reps. Answer: ____
 
 ## Blocks the demo
 
-- [ ] **Arm's-length rule vs. the 90 s demo.** Measuring a judge's arm and placing the target takes time. Options: a target on a sliding rail with a ruler; a quick tape-measure step; a fixed target for typical arm lengths (weakest). Answer: ____
+- [ ] **Arm's-length rule in the demo.** The demo has no hard time limit, so a tape-measure step is fine. Decide how the target is moved to the right distance: a target on a sliding rail with a ruler, or a marked board you reposition. Answer: ____
 
 ## Blocks the report and schedule
 
-- [ ] **Course requirements.** The real deadline, the required deliverables (report, demo date), and any approval or consent rule when people outside the team try the device. Answer: ____
+- [ ] **Course requirements.** The real deadline, the required deliverables (report, demo date), and any consent or approval rule for testers outside the team (friends) and for judges trying the device. Answer: ____
 - [ ] **Team roles.** Who owns firmware, signal processing, dashboard and storage, and mounting and testing? Answer: ____
 - [ ] **GitHub access.** All four teammates added as collaborators. Answer: ____
 
