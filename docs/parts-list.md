@@ -1,6 +1,6 @@
 # Bill of materials
 
-Board: **Arduino UNO R4 Minima** (5 V logic). Prices are rough CAD estimates. Sayal stock and part numbers were not checked; ask at the counter for the spec if an exact item isn't on the shelf.
+Board: **Arduino UNO R4 Minima** (5 V logic). Prices are rough CAD estimates. Store stock and part numbers were not checked; if an exact item isn't available, match the spec.
 
 ## Teammate
 
@@ -12,45 +12,63 @@ Board: **Arduino UNO R4 Minima** (5 V logic). Prices are rough CAD estimates. Sa
 | Push buttons | Bought |
 | **1× spare MPU-6050**, same listing as the first two | To buy (≈ $6), so the spare is the same board |
 
-## You (Sayal run)
+## Phase 1: prototyping (weeks 1–3)
+
+Everything on a breadboard. The only soldering is header pins onto the IMUs and the level shifter.
 
 | # | Item | Spec | Why it works | Qty | ≈ CAD |
 |---|---|---|---|---|---|
 | 1 | Microcontroller | Arduino UNO R4 Minima (genuine, ABX00080) | Official board; 5 V, 8 mA per pin, USB-C | 1 | $30 |
 | 2 | USB cable | USB-C to your laptop's port (USB-A or USB-C), **data** cable, about 2 m | The R4 Minima uses USB-C. Charge-only cables won't upload code | 1 | $10 |
-| 3 | Level shifter | 4-channel bidirectional, **BSS138** type (e.g. Adafruit 757 or SparkFun BOB-12009, or an equivalent generic) | This MOSFET design is the standard I2C 5 V ↔ 3.3 V shifter; uses 2 of its 4 channels | 1 | $4 |
-| 4 | Breadboard | Solderless, full size (830 tie points) | Fits the UNO's jumpers and the shifter | 1 | $10 |
-| 5 | Jumper wires, male-male | Pack of about 40 | UNO headers are female, breadboard is female | 1 | $5 |
+| 3 | Level shifter | 4-channel bidirectional, **BSS138** type (e.g. Adafruit 757, SparkFun BOB-12009, or a generic equivalent) | The standard I2C 5 V ↔ 3.3 V shifter; uses 2 of its 4 channels | 1 | $4 |
+| 4 | Breadboard | Solderless, full size (830 tie points) | — | 1 | $10 |
+| 5 | Jumper wires, male-male | Pack of about 40 | Arduino and breadboard both have female sockets | 1 | $5 |
 | 6 | Jumper wires, male-female | Pack of about 40 | Plug onto the MPU-6050 and shifter pins | 1 | $5 |
 | 7 | LEDs | 5 mm, red and green | — | 5 each | $2 |
 | 8 | Resistors | 1 kΩ, 1/4 W | LEDs at about 3 mA and transistor base at about 4 mA, both under the 8 mA pin limit | 15 | $1 |
 | 9 | Buzzer | **Active** piezo buzzer, 5 V | Runs from the Arduino's 5 V pin; beeps when switched on, no tone code | 2 | $4 |
 | 10 | Transistor | NPN, 2N3904 or 2N2222 | Switches the buzzer so its current doesn't come from a pin | 2 | $1 |
-| 11 | Wrist cable | 4-conductor stranded, 22–26 AWG, 1 m (cut to about 70–80 cm when fitting) | Short enough for I2C at 100 kHz | 1 | $5 |
-| 12 | Perfboard | About 5 × 7 cm | Final build | 2 | $4 |
-| 13 | Male header pins | 40-pin breakaway | — | 2 | $3 |
-| 14 | Female header strip | 40-pin breakaway | IMU, shifter and wrist cable plug in and out | 1 | $2 |
-| 15 | Heat shrink | Small assortment | — | 1 | $6 |
-| 16 | Hookup wire | 22 AWG solid, 2–3 colours | Perfboard wiring | 1 small roll each | $6 |
-| 17 | Zip ties | Small pack | Strain relief | 1 | $3 |
-| 18 | Velcro cable ties | Small pack | Route the wrist cable along the forearm | 1 | $5 |
+| 11 | Male header pins | 40-pin breakaway | Soldered onto the IMUs and shifter if they ship with loose pins | 2 | $3 |
 
-Your total: about $105. Teammate's remaining: about $6.
+Phase 1 total: about $75, plus the teammate's spare MPU-6050.
 
-## Optional (either person)
+During testing the wrist IMU connects with chained male-female jumpers. If it drops out, buy and make the real wrist cable (Phase 2, row 3) early.
+
+## Phase 2: final build (weeks 3–4)
+
+The working breadboard circuit is copied onto a soldered board and put in the chest box, so it survives being worn.
+
+| # | Item | Spec | Why | Qty | ≈ CAD |
+|---|---|---|---|---|---|
+| 1 | Perfboard | About 5 × 7 cm. A solderable breadboard (e.g. Adafruit Perma-Proto, half size) is easier: same layout as the breadboard, copied hole for hole | Permanent circuit board for the chest box | 2 | $4–8 |
+| 2 | Female header strip | 40-pin breakaway | IMU, shifter and wrist cable plug in and out | 1 | $2 |
+| 3 | Wrist cable | 4-conductor stranded, 22–26 AWG, 1 m (cut to about 70–80 cm when fitting) | Short enough for I2C at 100 kHz | 1 | $5 |
+| 4 | Heat shrink | Small assortment | Insulates the wrist cable joints | 1 | $6 |
+| 5 | Hookup wire | 22 AWG solid, 2–3 colours | Connections on the board | 1 small roll each | $6 |
+| 6 | Zip ties | Small pack | Strain relief at each connector | 1 | $3 |
+| 7 | Velcro cable ties | Small pack | Route the wrist cable along the forearm | 1 | $5 |
+| 8 | Chest box | 3D-printed at a campus makerspace, sized to the finished board | Protects the electronics on the chest strap | 1 | $5–10 |
+
+Phase 2 total: about $35–45.
+
+### Optional
 
 | Item | Why |
 |---|---|
 | 4-pin connector pair (JST-XH or similar) | Makes the wrist cable detachable, so a judge can put the device on faster. |
 | Adhesive Velcro dots or double-sided foam tape | Holds the wrist sensor case firmly on the strap. |
-| Solder, flux, solder wick | Only if your lab or makerspace doesn't supply them. |
+| Solder (rosin-core, ~0.8 mm), solder wick, flush cutters | Only if your lab or makerspace doesn't supply them. |
 
 ## Not bought
 
-- **3D-printed chest box:** print at a campus makerspace once the perfboard layout is known.
-- **Soldering iron, multimeter:** course lab or makerspace.
+- **Soldering iron, multimeter, heat gun:** course lab or makerspace.
 - **Pull-up resistors:** each GY-521 has them on its 3.3 V side, the BSS138 board has them on both sides, and buttons use `INPUT_PULLUP`.
 - **Power bank or regulator:** the laptop powers everything over USB.
+
+## Soldering
+
+- **Phase 1:** header pins on each MPU-6050 (8 joints each) and the level shifter (about 12). Push the pins into the breadboard to hold them straight while soldering.
+- **Phase 2:** the full circuit onto the perfboard (40–80 joints), both ends of the wrist cable with heat shrink (8), and button leads if the buttons sit outside the box. Photograph the working breadboard first, and check each connection with the multimeter's continuity beep.
 
 ## Wiring rules
 
@@ -68,5 +86,5 @@ Your total: about $105. Teammate's remaining: about $6.
 2. Wire one IMU through the shifter, run an I2C scanner, expect 0x68.
 3. Read WHO_AM_I (register 0x75). Genuine = 0x68; clone chips report other IDs and some libraries refuse them.
 4. Add the second IMU (AD0 to 3.3 V), expect 0x68 and 0x69.
-5. Repeat step 4 with the wrist IMU on the full-length cable.
+5. Repeat step 4 with the wrist IMU at full distance (chained jumpers, later the real cable).
 6. Test the LED and buzzer circuits.
