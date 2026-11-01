@@ -19,6 +19,7 @@ Search each **Digi-Key part number** in the Digi-Key search bar, or open the lin
 | Green LED, 5 mm diffused | Kingbright WP7113GD | [754-1263-ND](https://www.digikey.ca/en/products/detail/kingbright/WP7113GD/1747662) | 5 | ~$1.75 |
 | 1 kΩ resistor, 1/4 W | Stackpole CF14JT1K00 | [CF14JT1K00](https://www.digikey.ca/en/products/detail/stackpole-electronics-inc/CF14JT1K00/1741314) | 15 | ~$2.40 |
 | Active buzzer, 5 V (internally driven magnetic, 30 mA) | Same Sky CMI-1295-0585T | [102-CMI-1295-0585T-ND](https://www.digikey.ca/en/products/detail/cui-devices/CMI-1295-0585T/10326184) | 2 | $6.58 |
+| 10 kΩ resistor, 1/4 W (transistor base pull-down, stops a startup chirp) | Stackpole CF14JT10K0 | [CF14JT10K0](https://www.digikey.ca/en/products/detail/stackpole-electronics-inc/CF14JT10K0/1741265) | 5 | ~$0.50 |
 | NPN transistor | onsemi 2N3904BU | [2N3904FS-ND](https://www.digikey.ca/en/products/detail/onsemi/2N3904BU/1413) | 2 | $0.92 |
 | Diode | onsemi 1N4148 | [1N4148](https://www.digikey.ca/en/products/detail/onsemi/1N4148/458603) | 2 | $0.30 |
 | Male header, 36-pin breakaway, 10-pack | Adafruit 392 | [1528-392-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/392/21283800) | 1 | ~$7 |
@@ -28,7 +29,7 @@ Search each **Digi-Key part number** in the Digi-Key search bar, or open the lin
 | Item | Manufacturer part | Digi-Key part number | Qty | ≈ CAD |
 |---|---|---|---|---|
 | Perma-Proto half-size (solderable breadboard) | Adafruit 571 | [1528-1143-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/571/5353603) | 1 | $19.79 |
-| Female header, 36-pin, 5-pack | Adafruit 598 | [1528-598-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/598/8299908) | 1 | $4.42 |
+| Female header, 14-pin, 0.1" (Adafruit 598 is out of stock until Feb 2027) | Sullins PPTC141LFBN-RC | [S7012-ND](https://www.digikey.ca/en/products/detail/sullins-connector-solutions/PPTC141LFBN-RC/810152) | 3 | $3.87 |
 | Wrist cable, 4-wire silicone ribbon, 26 AWG, 1 m | Adafruit 3892 | [1528-2695-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/3892/9603618) | 1 | ~$3 |
 | Heat shrink assortment (~280 pieces) | Adafruit 4559 | [1528-4559-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/4559/12396896) | 1 | ~$14 |
 | Hookup wire, 22 AWG solid, 6 × 25 ft | Adafruit 1311 | [1528-1743-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/1311/6198255) | 1 | ~$22 |
