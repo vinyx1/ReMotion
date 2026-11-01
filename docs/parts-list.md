@@ -2,6 +2,45 @@
 
 Board: **Arduino UNO R4 Minima** (5 V logic). Prices are rough CAD estimates. Store stock and part numbers were not checked; if an exact item isn't available, match the spec.
 
+## Digi-Key cart (checked 2026-11-01)
+
+Search each **Digi-Key part number** in the Digi-Key search bar, or open the link. Prices are CAD for the quantity shown, from the product pages at the time of checking; confirm at checkout. Orders of $100 CAD or more ship free, usually next day.
+
+### Prototyping
+
+| Item | Manufacturer part | Digi-Key part number | Qty | ≈ CAD |
+|---|---|---|---|---|
+| Arduino UNO R4 Minima | Arduino ABX00080 | [ABX00080](https://www.digikey.ca/en/products/detail/arduino/ABX00080/20371542) | 1 | $29.70 |
+| Level shifter, BSS138 4-channel | Adafruit 757 | [757](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/757/4990756) | 1 | $5.87 |
+| Breadboard, full size 830 | Adafruit 239 | [1528-239-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/239/7244929) | 1 | ~$8 |
+| Jumpers male-male, 40 × 150 mm | Adafruit 758 | [1528-1154-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/758/5353614) | 1 | $5.87 |
+| Jumpers male-female, 40 × 150 mm | Adafruit 826 | [1528-826-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/826/5353622) | 1 | $5.87 |
+| Red LED, 5 mm diffused | Kingbright WP7113ID | [754-1264-ND](https://www.digikey.ca/en/products/detail/kingbright/WP7113ID/1747663) | 5 | ~$1.65 |
+| Green LED, 5 mm diffused | Kingbright WP7113GD | [754-1263-ND](https://www.digikey.ca/en/products/detail/kingbright/WP7113GD/1747662) | 5 | ~$1.75 |
+| 1 kΩ resistor, 1/4 W | Stackpole CF14JT1K00 | [CF14JT1K00](https://www.digikey.ca/en/products/detail/stackpole-electronics-inc/CF14JT1K00/1741314) | 15 | ~$2.40 |
+| Active buzzer, 5 V (internally driven magnetic, 30 mA) | Same Sky CMI-1295-0585T | [102-CMI-1295-0585T-ND](https://www.digikey.ca/en/products/detail/cui-devices/CMI-1295-0585T/10326184) | 2 | $6.58 |
+| NPN transistor | onsemi 2N3904BU | 2N3904FS-ND | 2 | $0.92 |
+| Diode | onsemi 1N4148 | [1N4148](https://www.digikey.ca/en/products/detail/onsemi/1N4148/458603) | 2 | $0.30 |
+| Male header, 36-pin breakaway, 10-pack | Adafruit 392 | [1528-392-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/392/21283800) | 1 | ~$7 |
+
+### Final build (same order, to pass $100)
+
+| Item | Manufacturer part | Digi-Key part number | Qty | ≈ CAD |
+|---|---|---|---|---|
+| Perma-Proto half-size (solderable breadboard) | Adafruit 571 | [1528-1143-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/571/5353603) | 1 | $19.79 |
+| Female header, 36-pin, 5-pack | Adafruit 598 | [1528-598-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/598/8299908) | 1 | $4.42 |
+| Wrist cable, 4-wire silicone ribbon, 26 AWG, 1 m | Adafruit 3892 | [1528-2695-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/3892/9603618) | 1 | ~$3 |
+| Heat shrink assortment (~280 pieces) | Adafruit 4559 | [1528-4559-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/4559/12396896) | 1 | ~$14 |
+| Hookup wire, 22 AWG solid, 6 × 25 ft | Adafruit 1311 | [1528-1743-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/1311/6198255) | 1 | ~$22 |
+
+Order total: about $140 CAD (prototyping ≈ $76, final build ≈ $63), so shipping is free.
+
+### Not from Digi-Key
+
+- **USB-C data cable:** Digi-Key's cables cost $33–70. Use an existing USB-C phone cable that carries data, or buy one locally (about $10). It must be a data cable.
+- **Zip ties and Velcro cable ties:** a dollar store or hardware store; Digi-Key only sells them in bulk.
+- **Spare MPU-6050:** teammate buys from Canada Robotix, matching the first two.
+
 ## Teammate
 
 | Item | Status |
@@ -29,6 +68,7 @@ Everything on a breadboard. The only soldering is header pins onto the IMUs and 
 | 9 | Buzzer | **Active** piezo buzzer, 5 V | Runs from the Arduino's 5 V pin; beeps when switched on, no tone code | 2 | $4 |
 | 10 | Transistor | NPN, 2N3904 or 2N2222 | Switches the buzzer so its current doesn't come from a pin | 2 | $1 |
 | 11 | Male header pins | 40-pin breakaway | Soldered onto the IMUs and shifter if they ship with loose pins | 2 | $3 |
+| 12 | Diode | 1N4148 | Across the buzzer (cathode to 5 V) to absorb the voltage spike from its magnetic coil when the transistor switches off | 2 | $0.30 |
 
 Phase 1 total: about $75, plus the teammate's spare MPU-6050.
 
@@ -77,7 +117,7 @@ Phase 2 total: about $35–45.
 - **Addresses:** AD0 to GND on the trunk IMU (0x68), AD0 to the Arduino's **3.3 V** pin on the wrist IMU (0x69). Never 5 V.
 - **I2C speed:** 100 kHz (the default). Drop to 50 kHz if the wrist sensor drops out.
 - **Wrist cable order:** keep SDA and SCL apart, e.g. SDA, GND, SCL, VCC.
-- **Buzzer:** buzzer + to 5 V, buzzer − to the transistor's collector, emitter to GND, GPIO to the base through 1 kΩ.
+- **Buzzer:** buzzer + to 5 V, buzzer − to the transistor's collector, emitter to GND, GPIO to the base through 1 kΩ. 1N4148 across the buzzer, cathode (striped end) to 5 V.
 - **LEDs:** GPIO → 1 kΩ → LED → GND.
 
 ## Bench test before building anything permanent
