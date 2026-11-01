@@ -4,7 +4,8 @@ Check these off and write the answer next to each. Once they are answered, they 
 
 ## Blocks firmware
 
-- [ ] **Buy the board.** Decided: Raspberry Pi Pico 2 WH. Bought? Answer: ____
+- [ ] **Buy the board.** Decided: Arduino UNO R4 Minima (plus a BSS138 level shifter). Bought? Answer: ____
+- [ ] **IMU regulator check.** Does each MPU-6050 breakout have an on-board regulator (small 3-pin chip, often marked 662K)? Yes → power from 5 V; no → power from 3.3 V. Answer: ____
 - [ ] **IMU chip check.** After soldering, run an I2C scanner and read WHO_AM_I on both MPU-6050s (genuine = 0x68). Answer: ____
 - [ ] **Buy the remaining parts.** See `docs/parts-list.md`. Answer: ____
 - [ ] **Soldering access.** Where will the team solder the MPU-6050 header pins (course lab or campus makerspace)? Answer: ____
