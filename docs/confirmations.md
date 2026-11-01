@@ -4,7 +4,8 @@ Check these off and write the answer next to each. Once they are answered, they 
 
 ## Blocks firmware
 
-- [ ] **Buy the board.** Recommended: Arduino UNO R4 Minima (alternative: Raspberry Pi Pico 2 H). Which one was bought? Answer: ____
+- [ ] **Buy the board.** Decided: Raspberry Pi Pico 2 WH. Bought? Answer: ____
+- [ ] **IMU chip check.** After soldering, run an I2C scanner and read WHO_AM_I on both MPU-6050s (genuine = 0x68). Answer: ____
 - [ ] **Buy the remaining parts.** See `docs/parts-list.md`. Answer: ____
 - [ ] **Soldering access.** Where will the team solder the MPU-6050 header pins (course lab or campus makerspace)? Answer: ____
 - [ ] **IMU breakout voltage.** The R4 uses 5 V logic and the MPU-6050 is a 3.3 V chip. Does the breakout have an on-board regulator (GY-521 style)? If not, power it from 3.3 V and don't put 5 V on the I2C lines. Answer: ____
