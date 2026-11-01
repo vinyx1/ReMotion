@@ -65,7 +65,7 @@ Everything on a breadboard. The only soldering is header pins onto the IMUs and 
 | 6 | Jumper wires, male-female | Pack of about 40 | Plug onto the MPU-6050 and shifter pins | 1 | $5 |
 | 7 | LEDs | 5 mm, red and green | — | 5 each | $2 |
 | 8 | Resistors | 1 kΩ, 1/4 W | LEDs at about 3 mA and transistor base at about 4 mA, both under the 8 mA pin limit | 15 | $1 |
-| 9 | Buzzer | **Active** piezo buzzer, 5 V | Runs from the Arduino's 5 V pin; beeps when switched on, no tone code | 2 | $4 |
+| 9 | Buzzer | **Active** (internally driven) buzzer, 5 V | Runs from the Arduino's 5 V pin; beeps when switched on, no tone code | 2 | $4 |
 | 10 | Transistor | NPN, 2N3904 or 2N2222 | Switches the buzzer so its current doesn't come from a pin | 2 | $1 |
 | 11 | Male header pins | 40-pin breakaway | Soldered onto the IMUs and shifter if they ship with loose pins | 2 | $3 |
 | 12 | Diode | 1N4148 | Across the buzzer (cathode to 5 V) to absorb the voltage spike from its magnetic coil when the transistor switches off | 2 | $0.30 |
