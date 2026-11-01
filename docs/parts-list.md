@@ -19,7 +19,7 @@ Search each **Digi-Key part number** in the Digi-Key search bar, or open the lin
 | Green LED, 5 mm diffused | Kingbright WP7113GD | [754-1263-ND](https://www.digikey.ca/en/products/detail/kingbright/WP7113GD/1747662) | 5 | ~$1.75 |
 | 1 kΩ resistor, 1/4 W | Stackpole CF14JT1K00 | [CF14JT1K00](https://www.digikey.ca/en/products/detail/stackpole-electronics-inc/CF14JT1K00/1741314) | 15 | ~$2.40 |
 | Active buzzer, 5 V (internally driven magnetic, 30 mA) | Same Sky CMI-1295-0585T | [102-CMI-1295-0585T-ND](https://www.digikey.ca/en/products/detail/cui-devices/CMI-1295-0585T/10326184) | 2 | $6.58 |
-| NPN transistor | onsemi 2N3904BU | 2N3904FS-ND | 2 | $0.92 |
+| NPN transistor | onsemi 2N3904BU | [2N3904FS-ND](https://www.digikey.ca/en/products/detail/onsemi/2N3904BU/1413) | 2 | $0.92 |
 | Diode | onsemi 1N4148 | [1N4148](https://www.digikey.ca/en/products/detail/onsemi/1N4148/458603) | 2 | $0.30 |
 | Male header, 36-pin breakaway, 10-pack | Adafruit 392 | [1528-392-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/392/21283800) | 1 | ~$7 |
 
