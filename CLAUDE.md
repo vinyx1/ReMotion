@@ -10,7 +10,7 @@ Wearable proof of concept for a 4-person ECE 198 team. Two IMUs (wrist + trunk) 
 - **Feedback:** a simple real-time cue (buzzer beep + red/green result LED on the table unit) when a rep crosses the threshold, plus post-session graphs in Streamlit + Plotly. No live-streaming dashboard — Streamlit reruns the whole script per update and handles 100 Hz plotting poorly.
 - **Wired:** both IMUs cabled to one microcontroller, USB serial to a laptop. Wireless is a future extension.
 - **Success:** run scripted reps — clean and deliberately leaned — filmed from the side as ground truth; the system must correctly label clean vs. bad reps.
-- **Hardware is fixed** (see below, from the team's KiCad schematic `ECE 198 Kicad Design (3).pdf`, "IMU Reach Tracker", Group 19). The course gives no hardware constraints; the build is about $150. Don't propose extra sensors unless they add something meaningful.
+- **Hardware is fixed** (see below, from the team's KiCad schematic `docs/imu-reach-tracker-schematic.pdf`, "IMU Reach Tracker", Group 19). The course gives no hardware constraints; the build is about $150. Don't propose extra sensors unless they add something meaningful.
 
 ## Scope
 
@@ -28,7 +28,7 @@ Wearable proof of concept for a 4-person ECE 198 team. Two IMUs (wrist + trunk) 
 
 ## Fixed hardware
 
-Source of truth for the circuit: the KiCad schematic in the repo root. Full specs, Digi-Key cart, wiring rules and bench test: `docs/parts-list.md`. Open checks: `docs/confirmations.md`.
+Source of truth for the circuit: the KiCad schematic export `docs/imu-reach-tracker-schematic.pdf`. Full specs, Digi-Key cart, wiring rules and bench test: `docs/parts-list.md`. Schematic review findings: `docs/issues.md`. Open checks: `docs/confirmations.md`.
 
 - **Sourcing:** the team buys all its own parts and does not use the course kit. Already bought by a teammate: 2× MPU-6050, chest strap, wrist strap, buttons. The Digi-Key order covers the rest.
 - **Microcontroller:** Arduino UNO R4 Minima (ABX00080). 5 V logic, 8 mA max per I/O pin (official datasheet), 3.3 V pin fed from the chip's USB regulator (~50 mA per third-party sources, unconfirmed officially; only feeds AD0, the shifter's LV side and logic levels).

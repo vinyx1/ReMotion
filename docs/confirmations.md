@@ -12,7 +12,7 @@ Check these off and write the answer next to each. Once they are answered, they 
 
 ## Schematic checks (KiCad, before the final build)
 
-Traced from a high-resolution render of `ECE 198 Kicad Design (3).pdf` on 2026-11-05.
+Traced from a high-resolution render of `docs/imu-reach-tracker-schematic.pdf` on 2026-11-05.
 
 - [x] **Chest IMU (U1) AD0 goes to 3V3.** Verified.
 - [x] **Level shifter (U3): HV to 5V, LV to 3V3**, B1/B2 to Arduino SDA/SCL, A1/A2 to both IMUs. Verified.
