@@ -1,7 +1,7 @@
-"""Tests for tools/protocol.py and tools/fake_session.py. Run: python -m pytest"""
+"""Tests for software/tools/protocol.py and software/tools/fake_session.py. Run: python -m pytest"""
 
-from tools.fake_session import generate
-from tools.protocol import (
+from software.tools.fake_session import generate
+from software.tools.protocol import (
     Comment, DeviceError, Rep, Sample, SessionEnd,
     format_rep, format_sample, parse_line, threshold_command,
 )
