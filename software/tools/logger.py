@@ -8,7 +8,7 @@ logger.py  —  record a session from the Arduino (or replay a saved one) into C
 
 Press Ctrl+C to stop recording.
 
-Each run writes three files to data/raw/ (or --out), named by start time:
+Each run write  s three files to data/raw/ (or --out), named by start time:
     samples_<time>.csv   every D line          (for trunk-angle traces)
     reps_<time>.csv      every R line          (for the dashboard)
     raw_<time>.txt       every line, unchanged (nothing is ever lost)
