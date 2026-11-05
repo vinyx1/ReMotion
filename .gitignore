@@ -35,3 +35,29 @@ htmlcov/
 
 # vsetup local auto-commit settings
 .vsetup/
+
+# Exam Gudie
+exam-guide/
+
+# ---------------- Project-specific ----------------
+
+# Recorded sessions: raw logs stay local; commit small examples to data/sample/
+data/raw/
+data/*.csv
+
+# Arduino / PlatformIO build output
+firmware/**/build/
+.pio/
+
+# KiCad local files (git history is our backup)
+hardware/kicad/backups/
+hardware/kicad/.history/
+*-backups/
+*.kicad_prl
+fp-info-cache
+*.lck
+\#auto_saved_files\#
+_autosave-*
+
+# Streamlit
+.streamlit/secrets.toml
