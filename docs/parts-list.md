@@ -1,6 +1,6 @@
 # Bill of materials
 
-Matches the team's KiCad schematic (`ECE 198 Kicad Design (3).pdf`, "IMU Reach Tracker"). Board: **Arduino UNO R4 Minima** (5 V logic, 8 mA per pin). Prices are CAD from Digi-Key product pages and the team's cart (checked 2026-11-01 to 2026-11-05); confirm at checkout. Orders of $100 CAD or more ship free, usually next day.
+Matches the team's KiCad schematic (`docs/imu-reach-tracker-schematic.pdf`, "IMU Reach Tracker"). Board: **Arduino UNO R4 Minima** (5 V logic, 8 mA per pin). Prices are CAD from Digi-Key product pages and the team's cart (checked 2026-11-01 to 2026-11-05); confirm at checkout. Orders of $100 CAD or more ship free, usually next day.
 
 ## Teammate (bought)
 
