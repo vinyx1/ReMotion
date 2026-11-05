@@ -216,12 +216,15 @@ stroke-device/                        # repo root (GitHub: stroke-device)
   hardware/
     kicad/                            # KiCad project + ECE198 symbol library (make_lib.py)
     ECE 198 Parts List.pdf
-  tools/
-    logger.py                         # serial -> CSV, prints rep summaries live, Ctrl+C to stop
-    fake_session.py                   # generates realistic fake D/R/S data so the dashboard can be built without hardware
-  dashboard/
-    app.py                            # streamlit (see below)
-  analysis/                           # offline Python / notebooks (SPARC, validation, tuning)
+  software/                           # all laptop-side Python (one package; run from the repo root)
+    tools/
+      protocol.py                     # the ONE serial-format parser; everything else imports it
+      logger.py                       # serial -> CSV, prints rep summaries live, Ctrl+C to stop
+      fake_session.py                 # generates realistic fake D/R/S data so the dashboard can be built without hardware
+      tests/                          # pytest: python -m pytest
+    dashboard/
+      app.py                          # streamlit (see below)
+    analysis/                         # offline Python / notebooks (SPARC, validation, tuning)
   data/
     raw/                              # real logs, git-ignored
     sample/                           # small committed examples for the dashboard
@@ -230,12 +233,12 @@ stroke-device/                        # repo root (GitHub: stroke-device)
     PROTOCOL.md                       # serial format
     TESTING.md                        # validation plan (section 9)
   README.md                           # setup, library install, flash, run logger, run dashboard
-  requirements.txt                    # (to add with the Python tools)
+  requirements.txt                    # Python dependencies (pip install -r requirements.txt in a .venv)
 
-Python code goes in `tools/`, `dashboard/` or `analysis/`, never in `firmware/`. `exam-guide/` is personal and git-ignored.
+Python code goes in `software/`, never in `firmware/`. Run modules from the repo root, e.g. `python -m software.tools.logger`. `exam-guide/` is personal and git-ignored.
 ```
 
-Dashboard (`dashboard/app.py`) must: load all `reps_*.csv`; show per-session % compensated, peak lean per target, reach time trend, and a trunk-angle trace for a chosen rep (from the samples CSV).
+Dashboard (`software/dashboard/app.py`) must: load all `reps_*.csv`; show per-session % compensated, peak lean per target, reach time trend, and a trunk-angle trace for a chosen rep (from the samples CSV).
 
 ### Priorities (in order)
 1. `i2c_scanner`, `imu_test`, `io_test` — needed first to bring up hardware.

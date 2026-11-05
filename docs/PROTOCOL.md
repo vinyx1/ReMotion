@@ -2,7 +2,7 @@
 
 USB serial, **115200 baud**, one message per line (`\n`), fields separated by commas. Floats have 1 decimal place.
 
-Changing this format means updating `firmware/reach_tracker`, `tools/logger.py`, `tools/fake_session.py` and `dashboard/app.py` together.
+Changing this format means updating `firmware/reach_tracker`, `software/tools/protocol.py` (the shared parser), `software/tools/logger.py`, `software/tools/fake_session.py` and `software/dashboard/app.py` together.
 
 ## Device → laptop
 
