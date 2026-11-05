@@ -1,10 +1,10 @@
 """
 logger.py  —  record a session from the Arduino (or replay a saved one) into CSV files.
 
-    python -m tools.logger                          # find the Arduino automatically
-    python -m tools.logger --port /dev/cu.usbmodem1101
-    python -m tools.logger --threshold 12           # send T12 before recording
-    python -m tools.logger --replay data/sample/fake_session.txt
+    python -m software.tools.logger                          # find the Arduino automatically
+    python -m software.tools.logger --port /dev/cu.usbmodem1101
+    python -m software.tools.logger --threshold 12           # send T12 before recording
+    python -m software.tools.logger --replay data/sample/fake_session.txt
 
 Press Ctrl+C to stop recording.
 
@@ -24,7 +24,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from tools.protocol import (
+from software.tools.protocol import (
     Comment, DeviceError, Rep, Sample, SessionEnd,
     REP_COLUMNS, SAMPLE_COLUMNS, parse_line, threshold_command,
 )

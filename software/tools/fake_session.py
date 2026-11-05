@@ -6,20 +6,20 @@ Use it to build and test the logger and dashboard before the hardware works.
 It walks through the same states as reach_tracker.ino and applies the same
 lean rule, so the R lines agree with the D lines.
 
-    python -m tools.fake_session                       # print to the screen
-    python -m tools.fake_session --out data/sample/fake_session.txt
-    python -m tools.fake_session --reps 20 --lean 0.5 --seed 3
+    python -m software.tools.fake_session                       # print to the screen
+    python -m software.tools.fake_session --out data/sample/fake_session.txt
+    python -m software.tools.fake_session --reps 20 --lean 0.5 --seed 3
 
 Then feed the file through the logger exactly like a real session:
 
-    python -m tools.logger --replay data/sample/fake_session.txt
+    python -m software.tools.logger --replay data/sample/fake_session.txt
 """
 
 import argparse
 import math
 import random
 
-from tools.protocol import (
+from software.tools.protocol import (
     Rep, Sample, SessionEnd, TARGETS,
     format_rep, format_sample, format_session_end,
 )
