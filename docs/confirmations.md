@@ -12,13 +12,16 @@ Check these off and write the answer next to each. Once they are answered, they 
 
 ## Schematic checks (KiCad, before the final build)
 
-Couldn't be traced clearly in the PDF render.
+Traced from a high-resolution render of `ECE 198 Kicad Design (3).pdf` on 2026-11-05.
 
-- [ ] **Chest IMU (U1) AD0 goes to 3V3**, not 5V. Answer: ____
-- [ ] **Level shifter (U3): HV to 5V, LV to 3V3.** Answer: ____
-- [ ] **Buzzer diode (D1): cathode (striped end) to 5V.** Answer: ____
-- [ ] **Button-to-pin order** for SW1–SW5 on D2–D6. Answer: ____
+- [x] **Chest IMU (U1) AD0 goes to 3V3.** Verified.
+- [x] **Level shifter (U3): HV to 5V, LV to 3V3**, B1/B2 to Arduino SDA/SCL, A1/A2 to both IMUs. Verified.
+- [x] **Buzzer diode (D1): cathode to 5V / buzzer +.** Verified.
+- [x] **Button-to-pin order:** SW1 Home → D2, SW2 Green → D3, SW3 Blue → D4, SW4 Red → D5, SW5 calibrate → D6. Verified.
+- [ ] **Arcade button LEDs have no series resistor** (anode straight to 5V, cathode to the transistor). Fine only if the buttons' LEDs are 5 V with a built-in resistor; otherwise add ~150–220 Ω per LED. Answer: ____
 - [ ] **Add 10 kΩ base pull-downs** on Q1–Q5 to the schematic. Answer: ____
+- [ ] **Add connector symbols** for the table → chest cable, chest → wrist cable and the button leads, so the harness is documented for the final build. Answer: ____
+- [ ] **Reroute the buzzer − wire** so it doesn't cross the 5V line (electrically fine, since there's no junction dot, but easy to misread when hand-wiring). Answer: ____
 
 ## Blocks validation
 
