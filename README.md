@@ -1,4 +1,4 @@
-# IMU Reach Tracker
+# IMU Reach Tracker (Re:Motion)
 
 **ECE 198, University of Waterloo, Group 19**
 
