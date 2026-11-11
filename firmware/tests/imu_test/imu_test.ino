@@ -6,8 +6,22 @@
     and the wrist rotation speed (from the wrist IMU) 10 times per second.
 
     Output is in Arduino "Serial Plotter" format, e.g.
-        trunk_deg:12.3 wrist_dps:45.0 chest_ax:0.12 chest_ay:9.79 chest_az:0.30
+        trunk_deg:12.3 wrist_dps:45.0 wrist_gx:-3.1 wrist_gy:44.2 wrist_gz:8.0 chest_ax:0.12 chest_ay:9.79 chest_az:0.30
     so you can open Tools > Serial Plotter and see live graphs.
+
+  WHAT EACH VALUE MEANS
+    trunk_deg   How far the chest IMU has tilted away from "upright" (set at
+                calibration), in degrees, in any direction. This is the number
+                the main sketch uses to detect leaning.
+    wrist_dps   Total wrist rotation speed in deg/s, whichever way it turns:
+                sqrt(gx^2 + gy^2 + gz^2). The main sketch uses it to count
+                movement "bursts".
+    wrist_gx/gy/gz  The same rotation split into the IMU's three axes (deg/s,
+                sign = direction). Use these to see which way the wrist turns.
+    chest_ax/ay/az  Raw chest accelerometer, m/s^2. Held still, the axis
+                pointing up reads about +9.8.
+    wrist_ax/ay/az  Raw wrist accelerometer, only printed if SHOW_WRIST_ACCEL is
+                true (the Arduino IDE 2 plotter only shows the first 8 values).
 
   HOW TO USE
     1. Flash, open Serial Monitor / Plotter at 115200.
@@ -40,6 +54,7 @@ const uint32_t CALIB_MS         = 3000;     // calibration length
 const float    TRUNK_ALPHA      = 0.15;     // smoothing (0..1, bigger = less smoothing)
 const float    MIN_ACCEL_MS2    = 2.0;      // ignore samples with almost no gravity reading
 const float    RAD_TO_DEGREES   = 57.29578;
+const bool     SHOW_WRIST_ACCEL = false;    // true = also print wrist ax/ay/az (Serial Monitor)
 
 Adafruit_MPU6050 chest;
 Adafruit_MPU6050 wrist;
@@ -55,7 +70,9 @@ float baseX = 0, baseY = 0, baseZ = 1;   // unit vector "upright"
 // Live values
 float trunkDeg = 0;
 float wristDps = 0;
-float lastAx = 0, lastAy = 0, lastAz = 0;
+float lastAx = 0, lastAy = 0, lastAz = 0;        // chest accel, m/s^2
+float wristGx = 0, wristGy = 0, wristGz = 0;     // wrist gyro per axis, deg/s
+float wristAx = 0, wristAy = 0, wristAz = 0;     // wrist accel, m/s^2
 
 uint32_t lastSampleUs = 0;
 uint32_t lastPrintMs = 0;
@@ -119,6 +136,10 @@ void loop() {
   // Wrist speed = length of the gyro vector, in deg/s
   float gx = wg.gyro.x, gy = wg.gyro.y, gz = wg.gyro.z;
   wristDps = sqrt(gx * gx + gy * gy + gz * gz) * RAD_TO_DEGREES;
+  wristGx = gx * RAD_TO_DEGREES;
+  wristGy = gy * RAD_TO_DEGREES;
+  wristGz = gz * RAD_TO_DEGREES;
+  wristAx = wa.acceleration.x; wristAy = wa.acceleration.y; wristAz = wa.acceleration.z;
 
   // ---- Calibration: average the accel vector ----
   if (calibrating) {
@@ -155,8 +176,17 @@ void loop() {
     lastPrintMs = nowMs;
     Serial.print("trunk_deg:");   Serial.print(trunkDeg, 1);
     Serial.print(" wrist_dps:");  Serial.print(wristDps, 1);
+    Serial.print(" wrist_gx:");   Serial.print(wristGx, 1);
+    Serial.print(" wrist_gy:");   Serial.print(wristGy, 1);
+    Serial.print(" wrist_gz:");   Serial.print(wristGz, 1);
     Serial.print(" chest_ax:");   Serial.print(lastAx, 2);
     Serial.print(" chest_ay:");   Serial.print(lastAy, 2);
-    Serial.print(" chest_az:");   Serial.println(lastAz, 2);
+    Serial.print(" chest_az:");   Serial.print(lastAz, 2);
+    if (SHOW_WRIST_ACCEL) {
+      Serial.print(" wrist_ax:"); Serial.print(wristAx, 2);
+      Serial.print(" wrist_ay:"); Serial.print(wristAy, 2);
+      Serial.print(" wrist_az:"); Serial.print(wristAz, 2);
+    }
+    Serial.println();
   }
 }
