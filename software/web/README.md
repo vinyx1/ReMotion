@@ -1,0 +1,48 @@
+# Web dashboard
+
+The therapist dashboard: React + TypeScript + Tailwind v4, Recharts for charts,
+React Three Fiber for the 3D replay. Post-session only; it reads one JSON file.
+
+```
+logger CSVs (data/raw, data/sample)
+   │  python -m software.dashboard.export        ← run from the repo root
+   ▼
+software/web/public/sessions.json
+   │  npm run dev
+   ▼
+http://localhost:5173
+```
+
+## Run it
+
+```bash
+# from the repo root, with the Python venv active
+python -m software.dashboard.export            # add --no-sample to hide the example data
+
+cd software/web
+npm install                                    # once
+npm run dev
+```
+
+Run the export again after every new recording, then reload the page.
+
+## Where things are
+
+| File | What it does |
+|---|---|
+| `src/App.tsx` | Page: header, headline numbers, tabs |
+| `src/components/Replay.tsx` | Clean vs compensated replay on one shared clock |
+| `src/components/Figure3D.tsx` | The 3D seated figure (fixed camera) |
+| `src/lib/figure.ts` | Figure geometry; same model as `software/dashboard/animation.py` |
+| `src/components/Overview.tsx` | Peak lean per target, reach time trend |
+| `src/components/RepDetail.tsx` | Trunk and wrist traces for one rep |
+| `src/components/AllSessions.tsx` | Session table |
+| `src/index.css` | Design tokens (colours, fonts) |
+
+## Design rules
+
+- Blue = clean, orange = compensated. Nothing else uses those colours.
+  Every result also has an icon or a shape (circle / diamond), so colour is never the only signal.
+- Numbers are IBM Plex Mono with `tabular-nums`; text is IBM Plex Sans.
+- The data logic (finding reps in the samples) lives in Python (`software/dashboard/data.py`, tested).
+  The web app only displays `sessions.json`; don't re-implement it in TypeScript.

@@ -67,3 +67,17 @@ def test_unknown_rep_returns_none(session_folder):
     samples = load_samples(session_folder, reps["stamp"].iloc[0], 1)
     assert rep_trace(samples, 99) == (None, None)
     assert rep_trace(None, 1) == (None, None)
+
+
+def test_export_matches_the_rep_lines(session_folder):
+    from software.dashboard.export import export_sessions
+
+    data = export_sessions([str(session_folder)])
+    assert [len(s["reps"]) for s in data["sessions"]] == [8, 5]
+    for s in data["sessions"]:
+        assert s["thresholdDeg"] == 10.0
+        assert s["summary"]["compensated"] == sum(r["compensated"] for r in s["reps"])
+        for r in s["reps"]:
+            tr = r["trace"]
+            assert tr is not None and len(tr["t"]) == len(tr["trunkDeg"]) == len(tr["state"])
+            assert tr["reachEndS"] * 1000 == pytest.approx(r["reachMs"])
