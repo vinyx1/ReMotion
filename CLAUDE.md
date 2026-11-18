@@ -4,11 +4,11 @@
 
 # Claude-specific notes
 
-Everything about the project and how we work is in `AGENTS.md`, imported above, including the session routine (pull, read `docs/STATUS.md`, claim an issue, update before you stop). This file only covers what's specific to Claude.
+Everything about the project and how we work is in `AGENTS.md`, imported above, including the session routine (pull, read `docs/STATUS.md` and open issues, claim an issue, update before you stop) and how to report problems as GitHub issues. This file only covers what's specific to Claude.
 
 ## Skills
 
-11 skills live in `.claude/skills/`, installed with `npx skills` and pinned in `skills-lock.json` so every teammate's Claude gets the same set. Audited on install: none declare hooks; the only bundled scripts are a Tailwind docs sync and a Streamlit version check.
+10 skills live in `.claude/skills/`, installed with `npx skills` and pinned in `skills-lock.json` so every teammate's Claude gets the same set. Audited on install: none declare hooks; the only bundled script is a Tailwind docs sync.
 
 **Load the matching skill instead of improvising. That's the point of having them.**
 
@@ -21,10 +21,6 @@ Everything about the project and how we work is in `AGENTS.md`, imported above, 
 - **Motion** (3D replay, transitions): `emil-design-eng` to decide, then `animate` to build. Respect `prefers-reduced-motion`.
 - **Performance:** `vercel-react-best-practices`.
 - **Before the demo, or before saying a UI task is done:** run `better-interface` (it pulls in `better-ui`, `-typography`, `-colors` and `-accessibility`) and fix the top issues. `better-accessibility` alone for a WCAG pass.
-
-### Streamlit fallback (`software/dashboard/app.py`)
-
-`developing-with-streamlit`.
 
 ### Not for firmware or Python tools
 

@@ -1,8 +1,9 @@
 """
 data.py  —  load the logger's CSV files for the dashboard.
 
-No Streamlit in here, only pandas, so these functions can be tested with
-pytest and reused by the analysis notebooks.
+Only pandas, so these functions can be tested with pytest and reused by
+the analysis notebooks. export.py uses them to build sessions.json for the
+web dashboard.
 
 The logger writes two CSVs per run, named by start time:
     reps_<time>.csv      one row per finished rep

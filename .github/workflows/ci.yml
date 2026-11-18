@@ -1,0 +1,57 @@
+# Runs on every push and pull request. If a check goes red, something that
+# another part of the project depends on is broken: fix it before merging.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    name: Python tests (protocol, logger, dashboard data)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q
+      # The web dashboard reads this file, so the export must keep working.
+      - run: python -m software.dashboard.export
+
+  web:
+    name: Dashboard (lint + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: software/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: software/web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+
+  firmware:
+    name: Firmware compiles (UNO R4 Minima)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/compile-sketches@v1
+        with:
+          fqbn: arduino:renesas_uno:minima
+          platforms: |
+            - name: arduino:renesas_uno
+          libraries: |
+            - name: Adafruit MPU6050
+          sketch-paths: |
+            - firmware/reach_tracker
+            - firmware/tests/i2c_scanner
+            - firmware/tests/io_test
+            - firmware/tests/imu_test

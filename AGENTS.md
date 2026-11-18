@@ -12,10 +12,28 @@ Four people work on this repo in parallel, often through AI agents that can't se
 
 ### Every session
 
-1. **Sync and look.** `git pull --rebase`, read [`docs/STATUS.md`](docs/STATUS.md), and check open issues (`gh issue list`, or the Issues tab on GitHub).
+1. **Sync and read before you read code.** `git pull --rebase`, then read [`docs/STATUS.md`](docs/STATUS.md) and the open issues (`gh issue list`, or the Issues tab on GitHub). Issues are where known problems live: if you're about to work in an area, read its open issues first so you don't rediscover or re-break something already reported.
 2. **Claim before you write code.** Assign yourself an issue (`gh issue edit <n> --add-assignee @me`), or create one and assign it. That *is* the claim; no permission needed. Small stuff is exempt: reading, typos, anything under ~10 minutes.
-3. **Stay in your area** (table below). Need a change in someone else's area? Open an issue or note it in `docs/STATUS.md` and tag them, rather than reaching in.
+3. **Stay in your area** (table below). Found a problem in someone else's area? Report it (see below) rather than reaching in.
 4. **Before you stop:** close the issue with a comment saying what landed, or unassign and say where you left it. Put anything you *learned* (a wrong number, a wiring surprise, a threshold that didn't work) in `docs/STATUS.md`.
+
+### Found a problem? Report it as a GitHub issue
+
+Bugs, contradictions between docs, wrong numbers, a contract that doesn't match its other side: anything that isn't yours to fix right now goes in a GitHub issue. Agents do this without being asked. **Don't fix it in someone else's area, and don't just mention it in chat** (chat disappears; issues don't).
+
+```bash
+gh issue create --label found-by-agent --label <area> \
+  --title "<what is wrong, in one line>" \
+  --body "<where (file:line), what you saw, why it matters, suggested fix>"
+```
+
+- `<area>` is one of `firmware`, `hardware`, `signal-processing`, `dashboard`, `testing`, `docs`. Use `found-by-agent` when an agent found it (a human can leave it off).
+- Add `--assignee <owner>` from the table below if the area has one; otherwise leave it unassigned.
+- If the problem is in **your** area and small, just fix it. If it's a hardware decision, always report it; never change it yourself (see ground rules).
+- Search first (`gh issue list --search "<words>"`) so you don't file a duplicate.
+- No `gh`? Use the Issues tab on GitHub, or as a last resort add a line under "Blocked / needs someone else" in `docs/STATUS.md`.
+
+**Issues vs STATUS:** issues are things to *do* (fix, check, decide). `docs/STATUS.md` is what we *learned* and *decided*.
 
 ### Who owns what
 
@@ -41,6 +59,7 @@ These are the joins between people's work. Changing one side silently breaks som
 - **Don't build a second one.** Before adding a script, page or module, search for it (`git branch -r`, then grep). If what exists is wrong, fix or replace it deliberately and say so; don't leave both standing.
 - **New dependency → same commit:** Python goes in `requirements.txt`, npm in `software/web/package.json` (commit the lock file too).
 - **Don't push broken firmware to `main`.** Compile first (see ground rules). For anything bigger than a small fix, use a branch and a pull request.
+- **CI must stay green.** `.github/workflows/ci.yml` runs the Python tests, the dashboard lint and build, and compiles every firmware sketch on each push. Red check on your push? Fix it before anything else; it usually means a contract broke. Run the same checks locally: `python -m pytest`, `npm run lint && npm run build` in `software/web/`, `arduino-cli compile` for firmware.
 - **Small, frequent commits with real messages.** Pull before you push.
 - **Decisions get written down.** If you drop a track, change a threshold, or pick between two approaches, add a line to the Decisions section of `docs/STATUS.md`.
 
@@ -54,7 +73,7 @@ These are the joins between people's work. Changing one side silently breaks som
 - Code must be readable for 1st-year engineering students: clear constants at the top, comments explaining each state.
 - If `arduino-cli` is available, compile every sketch for `arduino:renesas_uno:minima` and fix all errors.
 - Reference material: `hardware/ECE 198 Parts List.pdf`.
-- Circuit source of truth: KiCad project `hardware/kicad/` and its export `docs/imu-reach-tracker-schematic.pdf` ("IMU Reach Tracker", Group 19). Full specs, Digi-Key cart, wiring rules and bench test: `docs/parts-list.md`. Schematic review findings: `docs/issues.md`. Open checks: `docs/confirmations.md`. Research notes: `docs/research/`.
+- Circuit source of truth: KiCad project `hardware/kicad/` and its export `docs/imu-reach-tracker-schematic.pdf` ("IMU Reach Tracker", Group 19). Full specs, Digi-Key cart, wiring rules and bench test: `docs/parts-list.md`. Schematic review findings: `docs/schematic-review.md`. Open checks: `docs/confirmations.md`. Research notes: `docs/research/`.
 - Scope it like a hackathon: one exercise (seated reach), done reliably, is the finish line. Rule-based detection, not ML. Don't propose extra sensors unless they add something meaningful (build is about $150).
 
 ## 1. What we are building
@@ -110,7 +129,7 @@ We do NOT have the course sign-out parts (no OLED, no potentiometer, no kit push
 | Part | Qty | Role |
 |---|---|---|
 | Arduino UNO R4 Minima (Renesas RA4M1, 5V logic, USB-C) | 2 | One main board, one spare |
-| GY-521 (MPU-6050 accel + gyro, onboard 3.3V regulator) | 3 | Trunk (0x69), wrist (0x68), one spare |
+| GY-521 (MPU-6050 accel + gyro, onboard regulator: 3.3–5 V in, confirmed) | 3 | Trunk (0x69), wrist (0x68), one spare |
 | Adafruit 757 BSS138 4-ch I2C-safe bidirectional level shifter | 2 | 5V Arduino ↔ 3.3V IMUs |
 | 30 mm arcade buttons with built-in 5V LED (white, green, blue, red, yellow) | 5 | HOME, 3 targets, START |
 | CUI CMI-1295-0585T 5V magnetic buzzer, 12 mm | 2 | Lean alarm (driven via transistor) |
@@ -244,8 +263,8 @@ Commands accepted from the laptop:
 | Libraries | `Wire`, `Adafruit MPU6050` (+ Adafruit Unified Sensor, BusIO) |
 | Build/flash | Arduino IDE or `arduino-cli` (FQBN `arduino:renesas_uno:minima`) |
 | Logger | Python 3 + `pyserial` → `samples_<timestamp>.csv`, `reps_<timestamp>.csv` |
-| Analysis | `pandas`, `matplotlib` or `plotly` |
-| Dashboard | React + TypeScript + Tailwind v4 (Vite), Recharts, React Three Fiber, in `software/web/`. Reads `sessions.json` from `python -m software.dashboard.export`. The older Streamlit version (`software/dashboard/app.py`) still works as a fallback |
+| Analysis (planned) | `pandas`, plus `matplotlib` or `plotly` (add it to `requirements.txt` with the first analysis script) |
+| Dashboard | React + TypeScript + Tailwind v4 (Vite), Recharts, React Three Fiber, in `software/web/`. Reads `sessions.json` from `python -m software.dashboard.export`. No Streamlit: the dashboard is React only |
 
 ## 8. Deliverables / repo structure
 
@@ -253,9 +272,10 @@ Commands accepted from the laptop:
 ReMotion/                             # repo root (GitHub: vinyx1/ReMotion)
   firmware/
     reach_tracker/reach_tracker.ino   # main sketch (sections 4-6)
-    i2c_scanner/i2c_scanner.ino       # should report 0x68 and 0x69
-    io_test/io_test.ino               # cycles each button LED, beeps, prints button states
-    imu_test/imu_test.ino             # prints live trunk angle + wrist dps for bench testing
+    tests/                            # bring-up sketches, run these first
+      i2c_scanner/i2c_scanner.ino     # should report 0x68 and 0x69
+      io_test/io_test.ino             # cycles each button LED, beeps, prints button states
+      imu_test/imu_test.ino           # prints live trunk angle + wrist dps for bench testing
   hardware/
     kicad/                            # KiCad project + ECE198 symbol library (make_lib.py)
     ECE 198 Parts List.pdf
@@ -265,19 +285,24 @@ ReMotion/                             # repo root (GitHub: vinyx1/ReMotion)
       logger.py                       # serial -> CSV, prints rep summaries live, Ctrl+C to stop
       fake_session.py                 # generates realistic fake D/R/S data so the dashboard can be built without hardware
       tests/                          # pytest: python -m pytest
-    dashboard/
+    dashboard/                        # Python data layer for the web dashboard (no UI here)
       data.py                         # load CSVs, find reps in the samples (tested)
       export.py                       # CSVs -> software/web/public/sessions.json
-      app.py                          # Streamlit fallback dashboard
+      tests/                          # pytest
     web/                              # the dashboard: React app (see software/web/README.md)
-    analysis/                         # offline Python / notebooks (SPARC, validation, tuning)
+    analysis/                         # (planned) offline Python / notebooks (SPARC, validation, tuning)
   data/
     raw/                              # real logs, git-ignored
     sample/                           # small committed examples for the dashboard
   docs/
-    WIRING.md                         # pin map + both IMU box pinouts
+    STATUS.md                         # findings, decisions, cross-area requests (read every session)
     PROTOCOL.md                       # serial format
-    TESTING.md                        # validation plan (section 9)
+    parts-list.md                     # full specs, Digi-Key cart, wiring rules, bench test
+    confirmations.md                  # open questions with answer blanks
+    schematic-review.md               # findings from the 2026-11-05 schematic trace
+    research/                         # literature notes
+    TESTING.md                        # (to write) validation plan (section 9)
+    WIRING.md                         # (to write) pin map + both IMU box pinouts
   README.md                           # setup, library install, flash, run logger, run dashboard
   requirements.txt                    # Python dependencies (pip install -r requirements.txt in a .venv)
 
@@ -316,4 +341,4 @@ Protocol details:
 - Donning the chest harness and wrist brace one-handed is hard for some patients; a real product needs easier straps.
 - Thresholds need clinical tuning; ours is a configurable default.
 - IMUs don't give absolute position; integrating acceleration for displacement drifts, so we measure angles, not distances. Two IMUs cannot reconstruct full arm or shoulder posture. They also can't enforce target distance (that's the arm's-length setup rule).
-- Out of scope (stretch goals at most): yaw/trunk rotation, wireless, ML, live-streaming dashboard (Streamlit handles 100 Hz plotting poorly; dashboard is post-session), real patient data.
+- Out of scope (stretch goals at most): yaw/trunk rotation, wireless, ML, live-streaming dashboard (the dashboard is post-session, built from the logged CSVs), real patient data.
