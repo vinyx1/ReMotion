@@ -1,6 +1,6 @@
 /*
   Geometry of the seated figure in the 3D replay (metres).
-  Same model as software/dashboard/animation.py:
+  What is measured and what is drawn:
 
     REAL   trunk tilt = the logged trunk angle (drawn as a forward lean)
     REAL   timing of cue, leaving HOME and target press

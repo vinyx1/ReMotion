@@ -1,12 +1,13 @@
 # Open confirmations before the formal plan
 
-Check these off and write the answer next to each. Once they are answered, they move into `CLAUDE.md`.
+Check these off and write the answer next to each. Once they are answered, they move into `AGENTS.md`.
 
 ## Blocks firmware
 
+- [ ] **Button count (ask Yousuf).** The schematic has 5 arcade buttons: HOME, GREEN, BLUE, RED, and an unlit yellow START on D6. The team says there are only 4. Was the yellow START dropped (then what starts and ends a session?), or is one of the four now START (then which target goes?). Until this is answered, the docs and firmware keep the 5-button schematic. Answer: ____
 - [ ] **Buy the parts.** Digi-Key order and spare MPU-6050, see `docs/parts-list.md`. Answer: ____
 - [ ] **Soldering access.** Where will the team solder the header pins (course lab or campus makerspace)? Answer: ____
-- [ ] **IMU regulator check.** Does each GY-521 have an on-board regulator (small 3-pin chip, often marked 662K)? Yes → VCC from 5V; no → VCC from 3V3. Answer: ____
+- [x] **IMU regulator check.** Does each GY-521 have an on-board regulator (small 3-pin chip, often marked 662K)? Yes → VCC from 5V; no → VCC from 3V3. Answer: yes, the GY-521 boards take 3.3–5 V in through their regulator, so VCC stays on 5V as in the schematic.
 - [ ] **IMU chip check.** After soldering, run an I2C scanner and read WHO_AM_I on both MPU-6050s (genuine = 0x68). Answer: ____
 - [ ] **Arcade buttons.** Are the teammate's "buttons" the 5× 30 mm arcade buttons in the schematic (4 with LEDs)? What voltage are the LEDs rated for (5 V or 12 V), and do they have a built-in resistor? Bare LEDs need ~150–220 Ω each; 12 V LEDs will be dim at 5 V. Answer: ____
 
@@ -17,7 +18,7 @@ Traced from a high-resolution render of `docs/imu-reach-tracker-schematic.pdf` o
 - [x] **Chest IMU (U1) AD0 goes to 3V3.** Verified.
 - [x] **Level shifter (U3): HV to 5V, LV to 3V3**, B1/B2 to Arduino SDA/SCL, A1/A2 to both IMUs. Verified.
 - [x] **Buzzer diode (D1): cathode to 5V / buzzer +.** Verified.
-- [x] **Button-to-pin order:** SW1 Home → D2, SW2 Green → D3, SW3 Blue → D4, SW4 Red → D5, SW5 calibrate → D6. Verified.
+- [x] **Button-to-pin order:** SW1 Home → D2, SW2 Green → D3, SW3 Blue → D4, SW4 Red → D5, SW5 START (yellow, LED not wired) → D6. Verified.
 - [ ] **Arcade button LEDs have no series resistor** (anode straight to 5V, cathode to the transistor). Fine only if the buttons' LEDs are 5 V with a built-in resistor; otherwise add ~150–220 Ω per LED. Answer: ____
 - [ ] **Add 10 kΩ base pull-downs** on Q1–Q5 to the schematic. Answer: ____
 - [ ] **Add connector symbols** for the table → chest cable, chest → wrist cable and the button leads, so the harness is documented for the final build. Answer: ____
@@ -25,8 +26,8 @@ Traced from a high-resolution render of `docs/imu-reach-tracker-schematic.pdf` o
 
 ## Blocks validation
 
-- [x] **Video-to-data sync.** Decided: press the calibrate button with a result LED in camera frame (firmware logs a marker), plus a fixed rep script with rep numbers said aloud as a cross-check. Recorded in `CLAUDE.md`.
-- [x] **Labeling protocol.** Decided: the team labels the video themselves, ideally a teammate who didn't perform that session, from the video and not the script, without seeing the system's output. Recorded in `CLAUDE.md`.
+- [x] **Video-to-data sync.** Decided: press START with a result LED in camera frame (firmware logs a marker), plus a fixed rep script with rep numbers said aloud as a cross-check. Recorded in `AGENTS.md`.
+- [x] **Labeling protocol.** Decided: the team labels the video themselves, ideally a teammate who didn't perform that session, from the video and not the script, without seeing the system's output. Recorded in `AGENTS.md`.
 - [ ] **Full-length I2C test.** With the Arduino on the table, the bus runs about 2 m (table → chest → wrist). Test it early at full length; drop to 50 kHz if a sensor drops out. Answer: ____
 - [ ] **Ask the client (Waterloo CCARE)** what real stroke compensation looks like, ideally with example videos, so scripted leaned reps resemble it. Answer: ____
 - [ ] **Testers and rep count.** Which teammates and friends are subjects, and how many reps each? The 90% over about 60 reps placeholder assumes at least 3 testers. Answer: ____
@@ -40,8 +41,8 @@ Traced from a high-resolution render of `docs/imu-reach-tracker-schematic.pdf` o
 ## Blocks the report and schedule
 
 - [ ] **Course requirements.** The real deadline, the required deliverables (report, demo date), and any consent or approval rule for testers outside the team (friends) and for judges trying the device. Answer: ____
-- [ ] **Team roles.** Who owns firmware, signal processing, dashboard and storage, and mounting and testing? Answer: ____
-- [ ] **GitHub access.** All four teammates added as collaborators. Answer: ____
+- [ ] **Team roles.** Who owns firmware, signal processing, dashboard and storage, and mounting and testing? Answer: partly settled, see the owner table in `AGENTS.md` section 0. Signal processing and mounting/testing still open.
+- [x] **GitHub access.** All four teammates added as collaborators. Answer: yes (vinyx1, Yousuf-Hamoda, prestonbaichoo3, Ali-Hadi123), repo `vinyx1/ReMotion`.
 
 ## Can wait
 

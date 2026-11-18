@@ -92,12 +92,12 @@ Running total: about $108, so shipping is free.
 | D12 | Green result LED (clean rep) via 1 kΩ |
 | D13 | Red result LED (compensated rep) via 1 kΩ; also lights the on-board LED |
 | A4 / A5 (SDA / SCL) | Level shifter B1 / B2 |
-| 5V | Shifter HV, buzzer +, button LED anodes, IMU VCC (if the GY-521 has a regulator) |
+| 5V | Shifter HV, buzzer +, button LED anodes, IMU VCC (the GY-521 regulator takes 3.3–5 V) |
 | 3V3 | Shifter LV, chest IMU AD0 |
 
 ## Wiring rules
 
-- **IMU power:** if the GY-521 has an on-board regulator (small 3-pin chip, often marked 662K), power it from 5V. If not, from 3V3.
+- **IMU power:** from 5V. Confirmed: our GY-521 boards have the on-board regulator (3.3–5 V input).
 - **Level shifter:** HV to 5V, LV to 3V3, GND to GND. B side (HV) to the Arduino, A side (LV) to the IMUs.
 - **Addresses:** chest IMU AD0 to **3V3** → 0x69. Wrist IMU AD0 unconnected → 0x68. Never put 5V on AD0.
 - **I2C speed:** 100 kHz (the default). Total run is about 2 m, so drop to 50 kHz if a sensor drops out.

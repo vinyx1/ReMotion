@@ -33,7 +33,7 @@ Run the export again after every new recording, then reload the page.
 | `src/App.tsx` | Page: header, headline numbers, tabs |
 | `src/components/Replay.tsx` | Clean vs compensated replay on one shared clock |
 | `src/components/Figure3D.tsx` | The 3D seated figure (fixed camera) |
-| `src/lib/figure.ts` | Figure geometry; same model as `software/dashboard/animation.py` |
+| `src/lib/figure.ts` | Figure geometry: real trunk tilt and timing, illustrative arm |
 | `src/components/Overview.tsx` | Peak lean per target, reach time trend |
 | `src/components/RepDetail.tsx` | Trunk and wrist traces for one rep |
 | `src/components/AllSessions.tsx` | Session table |
