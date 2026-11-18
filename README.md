@@ -56,9 +56,12 @@ Full-resolution PDF: [`docs/imu-reach-tracker-schematic.pdf`](docs/imu-reach-tra
 | `firmware/reach_tracker/` | The main Arduino program. **This is the one you upload to run the device.** |
 | `firmware/tests/` | Small test programs for checking the wiring, one part at a time |
 | `software/tools/` | Python: records data from the Arduino, and makes fake data for testing |
+| `software/dashboard/` | Python: turns recordings into one data file for the dashboard |
+| `software/web/` | The therapist dashboard (React), see [`software/web/README.md`](software/web/README.md) |
 | `hardware/` | KiCad schematic and parts list |
 | `data/sample/` | Example session recordings |
-| `docs/` | Serial protocol, parts list, research notes |
+| `docs/` | Serial protocol, parts list, research notes, team status |
+| `AGENTS.md` | How the team works and the full project spec. **Read this before changing anything** (AI agents read it too) |
 
 ## Running it
 
@@ -67,11 +70,19 @@ Full-resolution PDF: [`docs/imu-reach-tracker-schematic.pdf`](docs/imu-reach-tra
 2. Open `firmware/reach_tracker/reach_tracker.ino` and upload it to the board.
 3. Press the yellow START button to begin a session.
 
-**Laptop (optional, for recording)**
+**Laptop: record a session**
 ```bash
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python -m software.tools.logger
 ```
+
+**Laptop: view the dashboard**
+```bash
+python -m software.dashboard.export      # recordings -> software/web/public/sessions.json
+cd software/web && npm install && npm run dev
+```
+Then open http://localhost:5173. Run the export again after each new recording.
 
 ## Limitations
 

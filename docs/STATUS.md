@@ -10,7 +10,7 @@ Deadlines: fully working **Nov 20** · symposium demo **Wed Nov 25**.
 |---|---|
 | Hardware / firmware | Schematic done (`hardware/kicad/`), bring-up sketches in `firmware/tests/` |
 | Signal processing | Logger, protocol parser and fake-session generator in `software/tools/` |
-| Dashboard | React app in `software/web/` (overview, rep detail, 3D replay); Streamlit fallback in `software/dashboard/app.py` |
+| Dashboard | React app in `software/web/` (overview, rep detail, 3D replay), fed by `software/dashboard/export.py` |
 | Testing | Validation plan in `AGENTS.md` section 9; `docs/TESTING.md` not written yet |
 
 ## Findings
@@ -23,10 +23,11 @@ Things that turned out to be true (or false) and that others should know. Date a
 
 Choices between options, with the reason. Date and name each one.
 
-- _2026-11-18 (vinyx1):_ The dashboard is the React app in `software/web/`; Streamlit stays as a fallback only.
+- _2026-11-18 (vinyx1):_ Dropped Streamlit entirely. The dashboard is the React app in `software/web/`; `software/dashboard/` keeps only the tested Python data layer (`data.py`, `export.py`).
+- _2026-11-18 (vinyx1):_ Problems go in GitHub Issues (label `found-by-agent` when an agent found them); see `AGENTS.md` section 0.
 
 ## Blocked / needs someone else
 
-Requests for changes in another person's area. Tag the owner.
+Fallback only, for when you can't open a GitHub issue. Prefer issues (`AGENTS.md` section 0).
 
 - _none yet_

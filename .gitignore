@@ -59,8 +59,6 @@ fp-info-cache
 \#auto_saved_files\#
 _autosave-*
 
-# Streamlit
-.streamlit/secrets.toml
 
 # Web dashboard: build output and the generated data file
 # (regenerate with: python -m software.dashboard.export)

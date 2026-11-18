@@ -1,6 +1,6 @@
 # Open confirmations before the formal plan
 
-Check these off and write the answer next to each. Once they are answered, they move into `CLAUDE.md`.
+Check these off and write the answer next to each. Once they are answered, they move into `AGENTS.md`.
 
 ## Blocks firmware
 
@@ -25,8 +25,8 @@ Traced from a high-resolution render of `docs/imu-reach-tracker-schematic.pdf` o
 
 ## Blocks validation
 
-- [x] **Video-to-data sync.** Decided: press the calibrate button with a result LED in camera frame (firmware logs a marker), plus a fixed rep script with rep numbers said aloud as a cross-check. Recorded in `CLAUDE.md`.
-- [x] **Labeling protocol.** Decided: the team labels the video themselves, ideally a teammate who didn't perform that session, from the video and not the script, without seeing the system's output. Recorded in `CLAUDE.md`.
+- [x] **Video-to-data sync.** Decided: press the calibrate button with a result LED in camera frame (firmware logs a marker), plus a fixed rep script with rep numbers said aloud as a cross-check. Recorded in `AGENTS.md`.
+- [x] **Labeling protocol.** Decided: the team labels the video themselves, ideally a teammate who didn't perform that session, from the video and not the script, without seeing the system's output. Recorded in `AGENTS.md`.
 - [ ] **Full-length I2C test.** With the Arduino on the table, the bus runs about 2 m (table → chest → wrist). Test it early at full length; drop to 50 kHz if a sensor drops out. Answer: ____
 - [ ] **Ask the client (Waterloo CCARE)** what real stroke compensation looks like, ideally with example videos, so scripted leaned reps resemble it. Answer: ____
 - [ ] **Testers and rep count.** Which teammates and friends are subjects, and how many reps each? The 90% over about 60 reps placeholder assumes at least 3 testers. Answer: ____
@@ -40,8 +40,8 @@ Traced from a high-resolution render of `docs/imu-reach-tracker-schematic.pdf` o
 ## Blocks the report and schedule
 
 - [ ] **Course requirements.** The real deadline, the required deliverables (report, demo date), and any consent or approval rule for testers outside the team (friends) and for judges trying the device. Answer: ____
-- [ ] **Team roles.** Who owns firmware, signal processing, dashboard and storage, and mounting and testing? Answer: ____
-- [ ] **GitHub access.** All four teammates added as collaborators. Answer: ____
+- [ ] **Team roles.** Who owns firmware, signal processing, dashboard and storage, and mounting and testing? Answer: partly settled, see the owner table in `AGENTS.md` section 0. Signal processing and mounting/testing still open.
+- [x] **GitHub access.** All four teammates added as collaborators. Answer: yes (vinyx1, Yousuf-Hamoda, prestonbaichoo3, Ali-Hadi123), repo `vinyx1/ReMotion`.
 
 ## Can wait
 
