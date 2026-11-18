@@ -22,7 +22,7 @@ Four people work on this repo in parallel, often through AI agents that can't se
 | Area | Paths | Owner |
 |---|---|---|
 | Hardware / firmware | `hardware/`, `firmware/` | Yousuf-Hamoda |
-| Signal processing | `software/tools/`, `software/analysis/` | _unassigned_ |
+| Signal processing | `software/tools/`, `software/analysis/` | Yousuf-Hamoda or prestonbaichoo3 (to confirm) |
 | Dashboard / storage | `software/dashboard/`, `software/web/` | vinyx1 |
 | Mounting / testing | `docs/TESTING.md`, `data/sample/` | _unassigned_ |
 
