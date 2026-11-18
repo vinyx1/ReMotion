@@ -59,6 +59,7 @@ These are the joins between people's work. Changing one side silently breaks som
 - **Don't build a second one.** Before adding a script, page or module, search for it (`git branch -r`, then grep). If what exists is wrong, fix or replace it deliberately and say so; don't leave both standing.
 - **New dependency → same commit:** Python goes in `requirements.txt`, npm in `software/web/package.json` (commit the lock file too).
 - **Don't push broken firmware to `main`.** Compile first (see ground rules). For anything bigger than a small fix, use a branch and a pull request.
+- **CI must stay green.** `.github/workflows/ci.yml` runs the Python tests, the dashboard lint and build, and compiles every firmware sketch on each push. Red check on your push? Fix it before anything else; it usually means a contract broke. Run the same checks locally: `python -m pytest`, `npm run lint && npm run build` in `software/web/`, `arduino-cli compile` for firmware.
 - **Small, frequent commits with real messages.** Pull before you push.
 - **Decisions get written down.** If you drop a track, change a threshold, or pick between two approaches, add a line to the Decisions section of `docs/STATUS.md`.
 
@@ -128,7 +129,7 @@ We do NOT have the course sign-out parts (no OLED, no potentiometer, no kit push
 | Part | Qty | Role |
 |---|---|---|
 | Arduino UNO R4 Minima (Renesas RA4M1, 5V logic, USB-C) | 2 | One main board, one spare |
-| GY-521 (MPU-6050 accel + gyro, onboard 3.3V regulator) | 3 | Trunk (0x69), wrist (0x68), one spare |
+| GY-521 (MPU-6050 accel + gyro, onboard regulator: 3.3–5 V in, confirmed) | 3 | Trunk (0x69), wrist (0x68), one spare |
 | Adafruit 757 BSS138 4-ch I2C-safe bidirectional level shifter | 2 | 5V Arduino ↔ 3.3V IMUs |
 | 30 mm arcade buttons with built-in 5V LED (white, green, blue, red, yellow) | 5 | HOME, 3 targets, START |
 | CUI CMI-1295-0585T 5V magnetic buzzer, 12 mm | 2 | Lean alarm (driven via transistor) |
