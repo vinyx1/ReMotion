@@ -19,6 +19,8 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+from software.dashboard import palette
+
 # ---- Body and table sizes (metres, roughly an adult seated at a table) ----
 SEAT_HEIGHT = 0.45          # hip joint height
 TRUNK_LENGTH = 0.52         # hip -> shoulder line
@@ -35,16 +37,16 @@ HAND_LIFT = 0.08            # how high the hand arcs above the table mid-reach
 REACH_Y = -SHOULDER_HALF_WIDTH
 HOME_X = 0.27
 TARGET_X = {"GREEN": 0.37, "BLUE": 0.47, "RED": 0.57}
-TARGET_COLORS = {"GREEN": "#1baf7a", "BLUE": "#2a78d6", "RED": "#e34948"}
+TARGET_COLORS = palette.TARGET_COLORS
 
 # ---- Animation ----
 FRAME_EVERY_N_SAMPLES = 4   # 100 Hz samples -> 25 frames per second
 FRAME_MS = 40               # real time: 4 samples x 10 ms
 
-COLOR_BODY = "#52514e"
-COLOR_OK = "#2a78d6"        # trunk colour while under the threshold
-COLOR_LEAN = "#eb6834"      # trunk colour while over the threshold
-COLOR_MUTED = "#898781"
+COLOR_BODY = palette.INK_MUTED          # arm
+COLOR_OK = palette.CLEAN            # trunk colour while under the threshold
+COLOR_LEAN = palette.COMPENSATED    # trunk colour while over the threshold
+COLOR_MUTED = palette.NEUTRAL
 
 
 def smoothstep(f):
@@ -113,18 +115,18 @@ def static_scene(target):
     """Things that don't move: table top, chair, mat buttons."""
     x0, x1 = TABLE_NEAR_EDGE, TABLE_FAR_EDGE
     table = go.Mesh3d(x=[x0, x1, x1, x0], y=[-0.6, -0.6, 0.6, 0.6], z=[TABLE_HEIGHT] * 4,
-                      i=[0, 0], j=[1, 2], k=[2, 3], color="#c3c2b7", opacity=0.35,
+                      i=[0, 0], j=[1, 2], k=[2, 3], color=palette.SURFACE_MUTED, opacity=0.9,
                       hoverinfo="skip", showlegend=False)
     chair = go.Scatter3d(x=[-0.2, -0.2, 0.2, 0.2], y=[0, 0, 0, 0],
                          z=[SEAT_HEIGHT + 0.5, SEAT_HEIGHT - 0.03, SEAT_HEIGHT - 0.03, 0],
-                         mode="lines", line=dict(color="#c3c2b7", width=8),
+                         mode="lines", line=dict(color=palette.LINE, width=8),
                          hoverinfo="skip", showlegend=False)
     names = ["HOME"] + list(TARGET_X)
     xs = [HOME_X] + list(TARGET_X.values())
-    colors = ["#e1e0d9"] + [TARGET_COLORS[n] for n in TARGET_X]
+    colors = [TARGET_COLORS["HOME"]] + [TARGET_COLORS[n] for n in TARGET_X]
     sizes = [9] + [14 if n == target else 7 for n in TARGET_X]     # the cued target is bigger
     buttons = go.Scatter3d(x=xs, y=[REACH_Y] * 4, z=[TABLE_HEIGHT + 0.005] * 4, mode="markers",
-                           marker=dict(size=sizes, color=colors, line=dict(color="#52514e", width=1)),
+                           marker=dict(size=sizes, color=colors, line=dict(color=palette.INK_MUTED, width=1)),
                            text=names, hoverinfo="text", showlegend=False)
     return [table, chair, buttons]
 
@@ -168,8 +170,11 @@ def rep_animation(trace, reach_end_s, target, threshold, title):
             name=str(i),
             data=figure_traces(r.trunk_deg, r.t_s, reach_end_s, target, threshold) + [dot],
             traces=[3, 4, 5, 7],
-            layout=dict(title_text=f"{title}<br><sup>{r.t_s:+.2f} s · {phase} · "
-                                   f"trunk {r.trunk_deg:.1f}° (peak {peak_so_far:.1f}°)</sup>"),
+            layout=dict(title=dict(
+                text=f"{title}<br><sup>{r.t_s:+.2f} s · {phase} · "
+                     f"trunk {r.trunk_deg:.1f}° (peak {peak_so_far:.1f}°)</sup>",
+                x=0.02, y=0.985, yanchor="top",
+                font=dict(size=16, weight=600, color=palette.INK))),
         ))
     fig.frames = frames
 
@@ -177,7 +182,8 @@ def rep_animation(trace, reach_end_s, target, threshold, title):
     fig.update_layout(
         height=700,
         margin=dict(l=10, r=10, t=130, b=10),
-        title=dict(text=f"{title}<br><sup>press Play</sup>", x=0.02, y=0.985, yanchor="top"),
+        title=dict(text=f"{title}<br><sup>press Play</sup>", x=0.02, y=0.985, yanchor="top",
+                   font=dict(size=16, weight=600, color=palette.INK)),
         scene=dict(
             aspectmode="data",
             xaxis=dict(visible=False, range=[-0.35, 0.9]),
@@ -196,7 +202,8 @@ def rep_animation(trace, reach_end_s, target, threshold, title):
                                   args=[[f.name], dict(mode="immediate", frame=dict(duration=0, redraw=True))])
                              for f in frames])],
     )
-    fig.update_xaxes(title_text="Time since leaving HOME (s)", row=2, col=1)
+    fig.update_xaxes(title_text="Time since leaving HOME (s)", fixedrange=True, row=2, col=1)
+    fig.update_yaxes(fixedrange=True, row=2, col=1)          # no accidental zoom while presenting
     fig.update_yaxes(title_text="Trunk lean (°)", rangemode="tozero",
                      range=[0, max(trace["trunk_deg"].max(), threshold) * 1.15], row=2, col=1)
     return fig
