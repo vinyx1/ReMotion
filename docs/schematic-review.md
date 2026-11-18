@@ -14,7 +14,7 @@ Each button LED (SW1–SW4) has its anode straight on 5V and its cathode on the 
 | Bare LED | Too much current; LED burns out | Add ~150–220 Ω in series with each LED |
 | 12 V LED | Very dim at 5 V | Use 5 V buttons, or accept dim LEDs |
 
-**Action:** check the listing for the buttons the teammate bought before wiring them.
+**Action:** check the listing for the buttons the teammate bought before wiring them. Tracked in `docs/confirmations.md`.
 
 ## Cleanups (circuit works without them)
 

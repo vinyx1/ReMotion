@@ -57,14 +57,6 @@
       "computedHash": "1b0a17b7b2675ed2bf79ca7120fbc3c37b0f3955d1750293b215ebb6edb5bab3",
       "installMode": "copy"
     },
-    "developing-with-streamlit": {
-      "source": "streamlit/agent-skills",
-      "commit": "c69a265613f17cdd69d42e6f67b704214178fae5",
-      "sourceType": "github",
-      "skillPath": "developing-with-streamlit/SKILL.md",
-      "computedHash": "f3a8a72566b27db4972db92d23cb59a944c10c9c5769f6bfb35d295472cdf397",
-      "installMode": "copy"
-    },
     "emil-design-eng": {
       "source": "emilkowalski/skills",
       "commit": "64eb3deb9a5fbfa041faf783e0bc3fd635872e9c",
