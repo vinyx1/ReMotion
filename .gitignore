@@ -61,3 +61,8 @@ _autosave-*
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Web dashboard: build output and the generated data file
+# (regenerate with: python -m software.dashboard.export)
+software/web/dist/
+software/web/public/sessions.json

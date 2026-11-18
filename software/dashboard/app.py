@@ -23,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
 import plotly.graph_objects as go
 import streamlit as st
 
+from software.dashboard import palette
 from software.dashboard.animation import rep_animation
 from software.dashboard.data import (
     load_reps, load_samples, order_targets, rep_trace,
@@ -37,9 +38,9 @@ SAMPLE_DIR = REPO_ROOT / "data" / "sample"    # small committed examples
 
 # Chart colours. Blue/orange (not green/red) so the result is still readable
 # with colour-blindness, and so it isn't confused with the GREEN/BLUE/RED targets.
-COLOR_CLEAN = "#2a78d6"
-COLOR_COMPENSATED = "#eb6834"
-COLOR_MUTED = "#898781"                        # threshold line, connecting lines
+COLOR_CLEAN = palette.CLEAN
+COLOR_COMPENSATED = palette.COMPENSATED
+COLOR_MUTED = palette.INK_MUTED                # threshold line, connecting lines
 RESULT_COLORS = {"Clean": COLOR_CLEAN, "Compensated": COLOR_COMPENSATED}
 RESULT_SYMBOLS = {"Clean": "circle", "Compensated": "diamond"}   # shape as well as colour
 
@@ -80,6 +81,7 @@ def base_layout(fig, x_title, y_title):
         xaxis_title=x_title,
         yaxis_title=y_title,
         hoverlabel=dict(align="left"),
+        xaxis=dict(fixedrange=True), yaxis=dict(fixedrange=True),   # no accidental zoom
     )
     return fig
 
@@ -141,7 +143,7 @@ def reach_time_chart(reps):
     fig = go.Figure()
     fig.add_trace(go.Scatter(                                 # thin line joining the reps
         x=reps["rep"], y=reps["reach_ms"] / 1000, mode="lines",
-        line=dict(color=COLOR_MUTED, width=2), hoverinfo="skip", showlegend=False,
+        line=dict(color=palette.LINE, width=2), hoverinfo="skip", showlegend=False,
     ))
     for result, group in reps.groupby("result"):
         fig.add_trace(go.Scatter(
@@ -167,7 +169,7 @@ def trace_chart(trace, reach_end_s, threshold, column, y_title, color, show_thre
         hovertemplate="%{x:.2f} s<br>%{y:.1f}<extra></extra>",
     ))
     # Shade the reach itself (leaving HOME -> pressing the target)
-    fig.add_vrect(x0=0, x1=reach_end_s, fillcolor=COLOR_MUTED, opacity=0.12, line_width=0,
+    fig.add_vrect(x0=0, x1=reach_end_s, fillcolor=palette.NEUTRAL, opacity=0.15, line_width=0,
                   annotation_text="reach", annotation_position="top left",
                   annotation_font_color=COLOR_MUTED)
     if show_threshold:
@@ -184,41 +186,19 @@ def show_chart(fig):
     st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
 
 
-
 # =====================================================================
-#  PAGE
+#  PAGE  (look comes from .streamlit/config.toml; no custom CSS)
 # =====================================================================
-st.set_page_config(page_title="IMU Reach Tracker", page_icon="📈", layout="wide")
-
-# A little CSS: card look for the headline numbers, tighter header, quieter tabs
-st.markdown("""
-<style>
-  .block-container { padding-top: 2.2rem; max-width: 1500px; }
-  [data-testid="stMetric"] {
-    background: #ffffff; border: 1px solid rgba(11,11,11,0.08); border-radius: 12px;
-    padding: 14px 18px; box-shadow: 0 1px 2px rgba(11,11,11,0.04);
-  }
-  [data-testid="stMetricLabel"] p { color: #52514e; font-size: 0.85rem; }
-  .hero h1 { font-size: 2.3rem; margin: 0 0 0.2rem 0; padding: 0; }
-  .hero p  { color: #52514e; font-size: 1.05rem; margin: 0; max-width: 60rem; }
-  .badge { display: inline-block; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em;
-           padding: 3px 10px; border-radius: 999px; margin-bottom: 0.6rem; }
-  .badge.sim  { background: #fdeee6; color: #9a3c14; }
-  .badge.real { background: #e3eefb; color: #1c5cab; }
-  .stTabs [data-baseweb="tab"] { font-size: 1.0rem; padding: 10px 18px; }
-  .legend-note { color: #52514e; font-size: 0.9rem; }
-  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin:0 4px 0 10px; }
-</style>
-""", unsafe_allow_html=True)
+st.set_page_config(page_title="IMU Reach Tracker", page_icon=":material/accessibility_new:", layout="wide")
 
 # ---- Sidebar: which data, which session ----
 have_raw = any(RAW_DIR.glob("reps_*.csv"))
 with st.sidebar:
-    st.header("Data")
+    st.subheader("Data", icon=":material/database:")
     show_samples = st.toggle("Include example data", value=not have_raw,
                              help="The committed example sessions in data/sample. "
                                   "Turn off to see only real recordings from data/raw.")
-    if st.button("Reload files", width="stretch"):
+    if st.button("Reload files", icon=":material/refresh:", width="stretch"):
         st.cache_data.clear()
 
 folders = [str(RAW_DIR)] + ([str(SAMPLE_DIR)] if show_samples else [])
@@ -227,14 +207,14 @@ all_reps = cached_reps(tuple(folders), folder_signature(folders))
 if all_reps.empty:
     st.title("IMU Reach Tracker")
     st.info("No sessions found yet. Record one with `python -m software.tools.logger`, "
-            "or turn on the example data in the sidebar.")
+            "or turn on the example data in the sidebar.", icon=":material/info:")
     st.stop()
 
 summary = summarize_sessions(all_reps)
 labels = list(summary["session_label"])
 with st.sidebar:
     chosen_label = st.selectbox("Session", labels, index=len(labels) - 1)     # newest by default
-    st.caption(f"{len(labels)} session(s) loaded")
+    st.caption(f"{len(labels)} session{'s' if len(labels) != 1 else ''} loaded")
 
 reps = all_reps[all_reps["session_label"] == chosen_label].sort_values("rep")
 first = reps.iloc[0]
@@ -243,85 +223,89 @@ threshold = session_threshold(samples)
 simulated = str(first["folder"]) == str(SAMPLE_DIR)
 
 # ---- Header ----
-badge = ('<span class="badge sim">EXAMPLE DATA · SIMULATED</span>' if simulated
-         else '<span class="badge real">RECORDED SESSION</span>')
-st.markdown(f"""
-<div class="hero">
-  {badge}
-  <h1>IMU Reach Tracker</h1>
-  <p>Clinical scores check <b>whether</b> a reach was completed, not <b>how</b>. This device measures trunk lean
-  during each seated reach and flags reps where the trunk compensated for the arm.</p>
-</div>
-""", unsafe_allow_html=True)
-st.write("")
+if simulated:
+    st.badge("Example data, simulated", icon=":material/science:", color="orange")
+else:
+    st.badge("Recorded session", icon=":material/sensors:", color="blue")
+st.title("IMU Reach Tracker")
+st.markdown("Clinical scores check **whether** a reach was completed, not **how**. "
+            "This device measures trunk lean during each seated reach and flags reps "
+            "where the trunk compensated for the arm.")
+st.space("small")
 
 # ---- Headline numbers ----
 n_reps = len(reps)
 n_comp = int(reps["compensated"].sum())
 clean_peaks = reps.loc[~reps["compensated"], "peak_deg"]
 tiles = st.columns(5)
-tiles[0].metric("Reps", n_reps)
-tiles[1].metric("Compensated", f"{100 * n_comp / n_reps:.0f}%", help=f"{n_comp} of {n_reps} reps")
-tiles[2].metric(f"Highest lean (limit {threshold:g}°)", f"{reps['peak_deg'].max():.1f}°")
+tiles[0].metric("Reps", n_reps, border=True)
+tiles[1].metric("Compensated", f"{100 * n_comp / n_reps:.0f}%", border=True,
+                help=f"{n_comp} of {n_reps} reps")
+tiles[2].metric(f"Highest lean (limit {threshold:g}°)", f"{reps['peak_deg'].max():.1f}°", border=True)
 tiles[3].metric("Typical clean-rep lean", f"{clean_peaks.median():.1f}°" if len(clean_peaks) else "—",
-                help="Median peak lean of the clean reps")
-tiles[4].metric("Median reach time", f"{reps['reach_ms'].median() / 1000:.2f} s")
-st.write("")
+                border=True, help="Median peak lean of the clean reps")
+tiles[4].metric("Median reach time", f"{reps['reach_ms'].median() / 1000:.2f} s", border=True)
+st.space("small")
 
-legend = (f'<span class="legend-note"><span class="dot" style="background:{COLOR_CLEAN}"></span>clean rep'
-          f'<span class="dot" style="background:{COLOR_COMPENSATED}"></span>compensated rep'
-          f' &nbsp;·&nbsp; dashed line = lean threshold ({threshold:g}°)</span>')
+LEGEND = (f":blue[●] Clean rep &nbsp;&nbsp; :orange[◆] Compensated rep &nbsp;&nbsp; "
+          f":gray[- - -  lean threshold ({threshold:g}°)]")
 
-tab_replay, tab_session, tab_rep, tab_all = st.tabs(
-    ["▶  Replay", "Session overview", "Rep detail", "All sessions"])
+tab_replay, tab_session, tab_rep, tab_all = st.tabs([
+    ":material/play_circle: Replay",
+    ":material/insights: Session overview",
+    ":material/timeline: Rep detail",
+    ":material/table_chart: All sessions",
+])
 
 # ---- Tab 1: animated replay, clean vs compensated ----
 with tab_replay:
     clean_reps = reps[~reps["compensated"]]
     comp_reps = reps[reps["compensated"]]
     if clean_reps.empty or comp_reps.empty:
-        st.info("This session needs at least one clean and one compensated rep to compare.")
+        st.info("This session needs at least one clean and one compensated rep to compare.",
+                icon=":material/info:")
     else:
         def rep_name(n):
             r = reps[reps["rep"] == n].iloc[0]
             return f"Rep {r.rep} · {r.target} target · peak {r.peak_deg:.1f}°"
 
-        pick = st.columns(2)
         # Defaults: the cleanest clean rep and the biggest lean, for the clearest contrast
         clean_list = list(clean_reps.sort_values("peak_deg")["rep"])
         comp_list = list(comp_reps.sort_values("peak_deg", ascending=False)["rep"])
-        clean_rep = pick[0].selectbox("Clean rep", clean_list, format_func=rep_name)
-        comp_rep = pick[1].selectbox("Compensated rep", comp_list, format_func=rep_name)
 
-        panels = st.columns(2, border=True)
-        for panel, rep_n, title in ((panels[0], clean_rep, "Clean reach"),
-                                    (panels[1], comp_rep, "Compensated reach")):
-            rep_trace_df, rep_end_s = rep_trace(samples, int(rep_n)) if samples is not None else (None, None)
+        panels = st.columns(2)
+        for panel, rep_list, label, title in (
+                (panels[0], clean_list, "Clean rep", "Clean reach"),
+                (panels[1], comp_list, "Compensated rep", "Compensated reach")):
             with panel:
-                if rep_trace_df is None:
-                    st.warning(f"Rep {rep_n} not found in the samples.")
-                else:
-                    target = reps[reps["rep"] == rep_n].iloc[0]["target"]
-                    st.plotly_chart(rep_animation(rep_trace_df, rep_end_s, target, threshold, title),
-                                    width="stretch", config={"displayModeBar": False})
+                rep_n = st.selectbox(label, rep_list, format_func=rep_name)
+                with st.container(border=True):
+                    rep_trace_df, rep_end_s = (rep_trace(samples, int(rep_n)) if samples is not None
+                                               else (None, None))
+                    if rep_trace_df is None:
+                        st.warning(f"Rep {rep_n} not found in the samples.", icon=":material/warning:")
+                    else:
+                        target = reps[reps["rep"] == rep_n].iloc[0]["target"]
+                        st.plotly_chart(rep_animation(rep_trace_df, rep_end_s, target, threshold, title),
+                                        width="stretch", config={"displayModeBar": False})
         st.caption("The trunk tilts by the logged trunk angle and turns orange past the threshold. "
                    "The arm is illustrative: the IMUs don't give hand position, so the hand moves from "
                    "HOME to the target over the logged reach time. Drag a figure to rotate it.")
 
 # ---- Tab 2: one session at a glance ----
 with tab_session:
-    st.markdown(legend, unsafe_allow_html=True)
-    left, right = st.columns(2, border=True)
-    with left:
-        st.markdown("#### Peak lean per target")
-        st.caption("Each dot is one rep. Targets get further away from left to right.")
+    st.markdown(LEGEND)
+    left, right = st.columns(2)
+    with left.container(border=True):
+        st.subheader("Peak lean per target")
+        st.caption("Each mark is one rep. Targets get further away from left to right.")
         show_chart(peak_lean_chart(reps, threshold))
-    with right:
-        st.markdown("#### Reach time across the session")
+    with right.container(border=True):
+        st.subheader("Reach time across the session")
         st.caption("Slower reaches late in a session can point to fatigue.")
         show_chart(reach_time_chart(reps))
 
-    with st.expander("All reps in this session"):
+    with st.expander("All reps in this session", icon=":material/list:"):
         st.dataframe(
             reps[["rep", "target", "react_ms", "reach_ms", "peak_deg", "bursts", "result"]],
             hide_index=True,
@@ -336,7 +320,8 @@ with tab_session:
 # ---- Tab 3: one rep in detail ----
 with tab_rep:
     if samples is None:
-        st.warning(f"No samples file for this session (samples_{first['stamp']}.csv), so there is no trace.")
+        st.warning(f"No samples file for this session (samples_{first['stamp']}.csv), so there is no trace.",
+                   icon=":material/warning:")
     else:
         rep_numbers = list(reps["rep"])
         default_rep = int(reps.loc[reps["peak_deg"].idxmax(), "rep"])          # start on the biggest lean
@@ -348,16 +333,15 @@ with tab_rep:
         trace, reach_end_s = rep_trace(samples, chosen_rep)
         if trace is None:
             st.warning("Could not find this rep in the samples file. "
-                       "(Was sample streaming turned off with D0 during the session?)")
+                       "(Was sample streaming turned off with D0 during the session?)",
+                       icon=":material/warning:")
         else:
-            box = st.container(border=True)
-            with box:
-                st.markdown("#### Trunk lean")
+            with st.container(border=True):
+                st.subheader("Trunk lean")
                 show_chart(trace_chart(trace, reach_end_s, threshold, "trunk_deg", "Trunk lean (°)",
                                        COLOR_CLEAN, show_threshold=True))
-            box = st.container(border=True)
-            with box:
-                st.markdown("#### Wrist rotation speed")
+            with st.container(border=True):
+                st.subheader("Wrist rotation speed")
                 show_chart(trace_chart(trace, reach_end_s, threshold, "wrist_dps", "Wrist speed (deg/s)",
                                        COLOR_CLEAN, show_threshold=False))
             st.caption("Time 0 is the hand leaving HOME; the shaded band ends at the target press. "
@@ -367,7 +351,7 @@ with tab_rep:
 with tab_all:
     if len(summary) > 1:
         with st.container(border=True):
-            st.markdown("#### Compensated reps per session")
+            st.subheader("Compensated reps per session")
             show_chart(sessions_chart(summary))
     st.dataframe(
         summary[["session_label", "reps", "compensated", "pct_compensated", "median_reach_s", "max_peak_deg"]],

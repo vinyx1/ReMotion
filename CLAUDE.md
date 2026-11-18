@@ -202,7 +202,8 @@ Commands accepted from the laptop:
 | Libraries | `Wire`, `Adafruit MPU6050` (+ Adafruit Unified Sensor, BusIO) |
 | Build/flash | Arduino IDE or `arduino-cli` (FQBN `arduino:renesas_uno:minima`) |
 | Logger | Python 3 + `pyserial` → `samples_<timestamp>.csv`, `reps_<timestamp>.csv` |
-| Analysis / dashboard | `pandas`, `matplotlib` or `plotly`, `streamlit` |
+| Analysis | `pandas`, `matplotlib` or `plotly` |
+| Dashboard | React + TypeScript + Tailwind v4 (Vite), Recharts, React Three Fiber, in `software/web/`. Reads `sessions.json` from `python -m software.dashboard.export`. The older Streamlit version (`software/dashboard/app.py`) still works as a fallback |
 
 ## 8. Deliverables / repo structure
 
@@ -223,7 +224,10 @@ stroke-device/                        # repo root (GitHub: stroke-device)
       fake_session.py                 # generates realistic fake D/R/S data so the dashboard can be built without hardware
       tests/                          # pytest: python -m pytest
     dashboard/
-      app.py                          # streamlit (see below)
+      data.py                         # load CSVs, find reps in the samples (tested)
+      export.py                       # CSVs -> software/web/public/sessions.json
+      app.py                          # Streamlit fallback dashboard
+    web/                              # the dashboard: React app (see software/web/README.md)
     analysis/                         # offline Python / notebooks (SPARC, validation, tuning)
   data/
     raw/                              # real logs, git-ignored
@@ -238,7 +242,7 @@ stroke-device/                        # repo root (GitHub: stroke-device)
 Python code goes in `software/`, never in `firmware/`. Run modules from the repo root, e.g. `python -m software.tools.logger`. `exam-guide/` is personal and git-ignored.
 ```
 
-Dashboard (`software/dashboard/app.py`) must: load all `reps_*.csv`; show per-session % compensated, peak lean per target, reach time trend, and a trunk-angle trace for a chosen rep (from the samples CSV).
+Dashboard (`software/web/`) must: load all `reps_*.csv`; show per-session % compensated, peak lean per target, reach time trend, and a trunk-angle trace for a chosen rep (from the samples CSV).
 
 ### Priorities (in order)
 1. `i2c_scanner`, `imu_test`, `io_test` — needed first to bring up hardware.
