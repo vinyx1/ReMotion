@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/*
+  Design tokens. One brand colour (ink navy) for structure; blue and orange are
+  reserved for meaning: clean rep / compensated rep. Everything else is neutral.
+*/
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --color-paper: #f4f5f7;      /* page background */
+  --color-surface: #ffffff;    /* cards */
+  --color-ink: #0f1a2a;        /* main text */
+  --color-ink-2: #4a5568;      /* secondary text */
+  --color-ink-3: #8a94a6;      /* captions, axes */
+  --color-line: #e2e6ec;       /* borders */
+  --color-line-2: #eef1f4;     /* gridlines, subtle fills */
+  --color-brand: #13243d;      /* header, primary buttons */
+
+  --color-clean: #2a78d6;
+  --color-clean-soft: #e8f1fc;
+  --color-comp: #eb6834;
+  --color-comp-soft: #fdeee6;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-paper font-sans text-ink;
+  }
+}
