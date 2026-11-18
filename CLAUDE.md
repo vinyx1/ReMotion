@@ -8,12 +8,13 @@ Everything about the project and how we work is in `AGENTS.md`, imported above, 
 
 ## Skills
 
-10 skills live in `.claude/skills/`, installed with `npx skills` and pinned in `skills-lock.json` so every teammate's Claude gets the same set. Audited on install: none declare hooks; the only bundled script is a Tailwind docs sync.
+11 skills live in `.claude/skills/`, installed with `npx skills` and pinned in `skills-lock.json` so every teammate's Claude gets the same set. Audited on install: none declare hooks. Bundled scripts: a Tailwind docs sync, and impeccable's launcher, which downloads its engine binary on first use and verifies it against the checksums pinned in `.claude/skills/impeccable/scripts/engine-checksums.txt` (the binary itself is not committed).
 
 **Load the matching skill instead of improvising. That's the point of having them.**
 
 ### Dashboard (`software/web/`)
 
+- **Design direction, critique, new views:** `impeccable` (e.g. `/impeccable shape`, `/impeccable critique`, `/impeccable polish`). It writes its working files to `.impeccable/` (git-ignored); `PRODUCT.md` / `DESIGN.md`, if it creates them, are meant to be committed.
 - **Before writing UI:** `baseline-ui` (Tailwind MUST/NEVER rules) and `better-typography`. Every number on screen (lean angles, reach times, percentages) uses `tabular-nums`.
 - **Colour:** `better-colors`. Clean vs compensated must never be shown by colour alone; always pair it with a label or icon.
 - **Surfaces, radius, shadows:** `better-ui`.
