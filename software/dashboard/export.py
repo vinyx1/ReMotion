@@ -1,8 +1,8 @@
 """
 export.py  —  turn the logger's CSV files into one JSON file for the web dashboard.
 
-    python -m software.dashboard.export                 # data/raw + data/sample -> software/web/public/sessions.json
-    python -m software.dashboard.export --no-sample     # real recordings only
+    python -m software.dashboard.export                 # data/raw + data/sample + data/fake -> software/web/public/sessions.json
+    python -m software.dashboard.export --no-sample     # real recordings only (data/raw)
 
 The web app (software/web/) only reads this file. All the data logic stays in
 Python (data.py, which is tested), so the web app never has to understand the
@@ -23,6 +23,7 @@ from software.dashboard.data import (
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = REPO_ROOT / "data" / "raw"
 SAMPLE_DIR = REPO_ROOT / "data" / "sample"
+FAKE_DIR = REPO_ROOT / "data" / "fake"         # made by software.dashboard.fake_history
 DEFAULT_OUT = REPO_ROOT / "software" / "web" / "public" / "sessions.json"
 
 
@@ -65,7 +66,7 @@ def export_sessions(folders):
         sessions.append({
             "id": f"{first['stamp']}-{int(first['session'])}",
             "label": label,
-            "simulated": str(first["folder"]) == str(SAMPLE_DIR),
+            "simulated": str(first["folder"]) != str(RAW_DIR),   # only data/raw is real
             "thresholdDeg": threshold,
             "reps": rep_list,
             "summary": {
@@ -83,11 +84,11 @@ def export_sessions(folders):
 
 def main():
     parser = argparse.ArgumentParser(description="Export logged sessions to JSON for the web dashboard.")
-    parser.add_argument("--no-sample", action="store_true", help="leave out the example data in data/sample")
+    parser.add_argument("--no-sample", action="store_true", help="real recordings only: leave out data/sample and data/fake")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="output file")
     args = parser.parse_args()
 
-    folders = [str(RAW_DIR)] + ([] if args.no_sample else [str(SAMPLE_DIR)])
+    folders = [str(RAW_DIR)] + ([] if args.no_sample else [str(SAMPLE_DIR), str(FAKE_DIR)])
     data = export_sessions(folders)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(data, separators=(",", ":")))
