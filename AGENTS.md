@@ -250,7 +250,7 @@ Commands accepted from the laptop:
 ## 8. Deliverables / repo structure
 
 ```
-stroke-device/                        # repo root (GitHub: stroke-device)
+ReMotion/                             # repo root (GitHub: vinyx1/ReMotion)
   firmware/
     reach_tracker/reach_tracker.ino   # main sketch (sections 4-6)
     i2c_scanner/i2c_scanner.ino       # should report 0x68 and 0x69
