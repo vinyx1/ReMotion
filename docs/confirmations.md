@@ -4,6 +4,7 @@ Check these off and write the answer next to each. Once they are answered, they 
 
 ## Blocks firmware
 
+- [ ] **Button count (ask Yousuf).** The schematic has 5 arcade buttons: HOME, GREEN, BLUE, RED, and an unlit yellow START on D6. The team says there are only 4. Was the yellow START dropped (then what starts and ends a session?), or is one of the four now START (then which target goes?). Until this is answered, the docs and firmware keep the 5-button schematic. Answer: ____
 - [ ] **Buy the parts.** Digi-Key order and spare MPU-6050, see `docs/parts-list.md`. Answer: ____
 - [ ] **Soldering access.** Where will the team solder the header pins (course lab or campus makerspace)? Answer: ____
 - [x] **IMU regulator check.** Does each GY-521 have an on-board regulator (small 3-pin chip, often marked 662K)? Yes → VCC from 5V; no → VCC from 3V3. Answer: yes, the GY-521 boards take 3.3–5 V in through their regulator, so VCC stays on 5V as in the schematic.
