@@ -65,5 +65,9 @@ _autosave-*
 software/web/dist/
 software/web/public/sessions.json
 
-# Local tool caches
-.impeccable/
+# Impeccable: keep the per-machine files out; PRODUCT.md, DESIGN.md and
+# .impeccable/config.json etc. are meant to be committed (runtime folders
+# like mocks/ and questions/ ignore themselves)
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/hook-*
