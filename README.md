@@ -61,6 +61,7 @@ Full-resolution PDF: [`docs/imu-reach-tracker-schematic.pdf`](docs/imu-reach-tra
 | `hardware/` | KiCad schematic and parts list |
 | `data/sample/` | Example session recordings |
 | `docs/` | Serial protocol, parts list, research notes, team status |
+| `.github/workflows/ci.yml` | Checks every push: Python tests, dashboard build, firmware compiles |
 | `AGENTS.md` | How the team works and the full project spec. **Read this before changing anything** (AI agents read it too) |
 
 ## Running it
