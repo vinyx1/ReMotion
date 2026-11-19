@@ -17,7 +17,8 @@ http://localhost:5173
 
 ```bash
 # from the repo root, with the Python venv active
-python -m software.dashboard.export            # add --no-sample to hide the example data
+python -m software.dashboard.fake_history      # optional: 8 fake sessions over 3 weeks, in data/fake/
+python -m software.dashboard.export            # add --no-sample for real recordings only
 
 cd software/web
 npm install                                    # once

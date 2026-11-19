@@ -44,6 +44,8 @@ exam-guide/
 # Recorded sessions: raw logs stay local; commit small examples to data/sample/
 data/raw/
 data/*.csv
+# Fake history for building the dashboard (python -m software.dashboard.fake_history)
+data/fake/
 
 # Arduino / PlatformIO build output
 firmware/**/build/
