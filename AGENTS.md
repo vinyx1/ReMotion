@@ -290,7 +290,7 @@ ReMotion/                             # repo root (GitHub: vinyx1/ReMotion)
       export.py                       # CSVs -> software/web/public/sessions.json
       fake_history.py                 # a few weeks of fake sessions -> data/fake/ (for building the dashboard)
       tests/                          # pytest
-    web/                              # the dashboard: React app (see software/web/README.md)
+    web/                              # React app: landing page at /, dashboard at /dashboard (see software/web/README.md)
     analysis/                         # (planned) offline Python / notebooks (SPARC, validation, tuning)
   data/
     raw/                              # real logs, git-ignored

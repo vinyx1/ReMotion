@@ -38,7 +38,7 @@ It measures the quality of the reach, not just its completion, with two inexpens
 - Hardware: Arduino UNO R4 Minima, 2× MPU-6050 (GY-521), a level shifter, 5 arcade buttons (4 lit; START unlit), buzzer, result LEDs.
 - Software: firmware in C++; Python logger and data export; dashboard in React + TypeScript + Tailwind v4. Post-session only; no live streaming to the dashboard.
 - Out of scope: ML, wireless, trunk rotation, multiple exercises, real patient data.
-- **Undecided:** where a public-facing page would live (inside `software/web/` or separately).
+- The public landing page lives in the same React app as the dashboard: `/` is the landing page, `/dashboard` the dashboard.
 
 ## Brand Commitments
 

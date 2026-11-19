@@ -111,13 +111,13 @@ export default function App() {
     <div className="min-h-dvh">
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-3">
-          <div className="flex items-center gap-3">
+          <a href="/" className="flex items-center gap-3 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
             <Logo />
             <div>
               <p className="text-[15px] leading-tight font-semibold">IMU Reach Tracker</p>
               <p className="text-xs leading-tight text-ink-3">ECE 198 · Group 19</p>
             </div>
-          </div>
+          </a>
           <div className="flex items-center gap-3">
             {session.simulated ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-comp/30 bg-comp-soft px-2.5 py-1 text-xs font-medium text-[#a8431a]">
