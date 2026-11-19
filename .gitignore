@@ -73,3 +73,7 @@ software/web/public/sessions.json
 .impeccable/config.local.json
 .impeccable/hook.cache.json
 .impeccable/hook-*
+.impeccable/work/
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/questions/

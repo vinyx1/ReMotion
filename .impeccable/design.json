@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-18T20:30:00-05:00",
+  "title": "Design System: Re:Motion",
+  "extensions": {
+    "colorMeta": {
+      "plaster": { "role": "neutral", "displayName": "Plaster", "canonical": "oklch(95.2% 0.006 129)", "tonalRamp": ["oklch(15% 0.003 129)", "oklch(26% 0.004 129)", "oklch(37% 0.004 129)", "oklch(48% 0.005 129)", "oklch(59% 0.005 129)", "oklch(70% 0.005 129)", "oklch(82% 0.004 129)", "oklch(95% 0.003 129)"] },
+      "wall": { "role": "neutral", "displayName": "Eucalyptus Wall", "canonical": "oklch(85.7% 0.015 152)", "tonalRamp": ["oklch(15% 0.008 152)", "oklch(26% 0.010 152)", "oklch(37% 0.012 152)", "oklch(48% 0.014 152)", "oklch(59% 0.015 152)", "oklch(70% 0.012 152)", "oklch(82% 0.010 152)", "oklch(95% 0.008 152)"] },
+      "eucalyptus": { "role": "secondary", "displayName": "Eucalyptus", "canonical": "oklch(51.2% 0.045 163)", "tonalRamp": ["oklch(15% 0.022 163)", "oklch(26% 0.028 163)", "oklch(37% 0.035 163)", "oklch(48% 0.041 163)", "oklch(59% 0.043 163)", "oklch(70% 0.036 163)", "oklch(82% 0.030 163)", "oklch(95% 0.022 163)"] },
+      "forest": { "role": "primary", "displayName": "Deep Forest", "canonical": "oklch(28.2% 0.022 167)", "tonalRamp": ["oklch(15% 0.011 167)", "oklch(26% 0.014 167)", "oklch(37% 0.017 167)", "oklch(48% 0.020 167)", "oklch(59% 0.021 167)", "oklch(70% 0.018 167)", "oklch(82% 0.014 167)", "oklch(95% 0.011 167)"] },
+      "forest-deep": { "role": "primary", "displayName": "Forest Shadow", "canonical": "oklch(23.0% 0.020 167)", "tonalRamp": ["oklch(15% 0.010 167)", "oklch(26% 0.012 167)", "oklch(37% 0.015 167)", "oklch(48% 0.018 167)", "oklch(59% 0.019 167)", "oklch(70% 0.016 167)", "oklch(82% 0.013 167)", "oklch(95% 0.010 167)"] },
+      "forest-2": { "role": "neutral", "displayName": "Muted Ink", "canonical": "oklch(45.1% 0.024 164)", "tonalRamp": ["oklch(15% 0.012 164)", "oklch(26% 0.015 164)", "oklch(37% 0.018 164)", "oklch(48% 0.022 164)", "oklch(59% 0.022 164)", "oklch(70% 0.019 164)", "oklch(82% 0.016 164)", "oklch(95% 0.012 164)"] },
+      "terra": { "role": "tertiary", "displayName": "Terracotta (lean state)", "canonical": "oklch(55.8% 0.136 40)", "tonalRamp": ["oklch(15% 0.067 40)", "oklch(26% 0.086 40)", "oklch(37% 0.105 40)", "oklch(48% 0.124 40)", "oklch(59% 0.129 40)", "oklch(70% 0.110 40)", "oklch(82% 0.089 40)", "oklch(95% 0.067 40)"] },
+      "terra-deep": { "role": "tertiary", "displayName": "Terracotta Deep", "canonical": "oklch(49.6% 0.122 40)", "tonalRamp": ["oklch(15% 0.060 40)", "oklch(26% 0.077 40)", "oklch(37% 0.094 40)", "oklch(48% 0.111 40)", "oklch(59% 0.116 40)", "oklch(70% 0.099 40)", "oklch(82% 0.080 40)", "oklch(95% 0.060 40)"] },
+      "clay": { "role": "neutral", "displayName": "Clay", "canonical": "oklch(83.1% 0.019 75)", "tonalRamp": ["oklch(15% 0.009 75)", "oklch(26% 0.012 75)", "oklch(37% 0.015 75)", "oklch(48% 0.018 75)", "oklch(59% 0.018 75)", "oklch(70% 0.016 75)", "oklch(82% 0.013 75)", "oklch(95% 0.009 75)"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headline; the close headline is a sibling at clamp(2.6rem, 5.4vw, 5rem). Upright, weight 500." },
+      "headline": { "displayName": "Headline", "purpose": "Story step and section headings." },
+      "title": { "displayName": "Title", "purpose": "Study names in the evidence band." },
+      "body": { "displayName": "Body", "purpose": "Section copy, max 62ch; story steps 1.2rem at 34ch; lede clamp(1.15rem, 1.5vw, 1.35rem) at 40ch." },
+      "label": { "displayName": "Label", "purpose": "Readout label, spec terms, small headings in bands." },
+      "readout": { "displayName": "Readout", "purpose": "The live trunk angle. Tabular mono; degree sign 0.6em raised." },
+      "readout-small": { "displayName": "Readout Small", "purpose": "Limits, axis ticks, paper IDs (14-15px in SVG)." }
+    },
+    "shadows": [
+      { "name": "button-lift", "value": "0 1px 2px rgb(31 45 39 / 0.18), 0 6px 18px -8px rgb(31 45 39 / 0.45)", "purpose": "The primary action." },
+      { "name": "plate-hang", "value": "0 2px 4px rgb(31 45 39 / 0.08), 0 14px 32px -18px rgb(31 45 39 / 0.5)", "purpose": "The readout plate mounted on the wall." },
+      { "name": "lean-glow", "value": "radial-gradient(ellipse 46% 60% at 68% 42%, rgb(180 83 47 / 0.17), rgb(180 83 47 / 0) 70%)", "purpose": "Stage overlay while flagged; mobile uses ellipse 70% 40% at 55% 32%, alpha 0.26." }
+    ],
+    "motion": [
+      { "name": "room-warm", "value": "--room-wall / --room-floor 500ms ease-out", "purpose": "Room tint toward terracotta (wall 9%, floor 6%, oklab mix) while flagged; registered @property colours." },
+      { "name": "glow-fade", "value": "opacity 360ms ease-out", "purpose": "Lean glow in and out." },
+      { "name": "readout-state", "value": "color / border-color 220ms ease-out", "purpose": "Readout value and border turning terra." },
+      { "name": "button-press", "value": "background-color 160ms ease-out, transform 160ms ease-out", "purpose": "Hover darken and 1px active nudge." },
+      { "name": "nav-settle", "value": "padding 200ms ease-out", "purpose": "Nav turning solid after the stage." },
+      { "name": "trunk-spring", "value": "spring k=90, damping=18", "purpose": "3D trunk follows input like a body, not a slider." },
+      { "name": "reduced-motion", "value": "transition: none; scroll-behavior: auto", "purpose": "Under prefers-reduced-motion; the scene still responds to direct input." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "760px" },
+      { "name": "split", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Open the dashboard: the one primary action, in forest with a trailing arrow.",
+      "html": "<a class=\"ds-btn-primary\" href=\"#\">Open the dashboard <svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></a>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 10px; background: var(--color-forest, #1f2d27); color: var(--color-plaster, #eef0ec); font-family: var(--font-text, system-ui); font-weight: 700; font-size: 1.125rem; text-decoration: none; padding: 16px 26px; border-radius: 12px; box-shadow: 0 1px 2px rgb(31 45 39 / 0.18), 0 6px 18px -8px rgb(31 45 39 / 0.45); transition: background-color 160ms ease-out, transform 160ms ease-out; } .ds-btn-primary:hover { background: #14201b; } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 3px solid var(--color-eucalyptus, #4f6f5f); outline-offset: 3px; }"
+    },
+    {
+      "name": "Nav Button",
+      "kind": "button",
+      "refersTo": "nav-button",
+      "description": "Compact forest button in the nav.",
+      "html": "<a class=\"ds-nav-btn\" href=\"#\">Dashboard</a>",
+      "css": ".ds-nav-btn { display: inline-block; background: var(--color-forest, #1f2d27); color: var(--color-plaster, #eef0ec); font-family: var(--font-text, system-ui); font-weight: 600; padding: 9px 18px; border-radius: 10px; text-decoration: none; transition: background-color 160ms ease-out; } .ds-nav-btn:hover { background: #14201b; } .ds-nav-btn:focus-visible { outline: 3px solid var(--color-eucalyptus, #4f6f5f); outline-offset: 3px; }"
+    },
+    {
+      "name": "Navigation",
+      "kind": "nav",
+      "refersTo": "nav-button",
+      "description": "Wordmark left; text links and the Dashboard button right. Solid plaster with a wall hairline once past the stage.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-mark\" href=\"#\">Re:Motion</a><nav><a href=\"#\">How it works</a><a href=\"#\">Evidence</a><a class=\"ds-nav-btn\" href=\"#\">Dashboard</a></nav></header>",
+      "css": ".ds-nav { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 12px 32px; background: var(--color-plaster, #eef0ec); border-bottom: 1px solid var(--color-wall, #c9d3cb); color: var(--color-forest, #1f2d27); font-family: var(--font-text, system-ui); } .ds-mark { font-family: var(--font-display, Georgia, serif); font-size: 1.6rem; font-weight: 600; letter-spacing: -0.02em; text-decoration: none; color: inherit; } .ds-nav nav { display: flex; align-items: center; gap: 24px; } .ds-nav nav a { color: inherit; text-decoration: none; text-underline-offset: 0.22em; } .ds-nav nav a:not(.ds-nav-btn):hover { text-decoration: underline; } .ds-nav .ds-nav-btn { background: #1f2d27; color: #eef0ec; font-weight: 600; padding: 9px 18px; border-radius: 10px; } .ds-nav .ds-nav-btn:hover { background: #14201b; } .ds-nav a:focus-visible { outline: 3px solid #4f6f5f; outline-offset: 3px; border-radius: 6px; }"
+    },
+    {
+      "name": "Sound Toggle",
+      "kind": "chip",
+      "refersTo": "toggle-pill",
+      "description": "Opt-in buzzer sound; the state is always said in words.",
+      "html": "<button class=\"ds-toggle\" aria-pressed=\"false\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z\"/><line x1=\"22\" x2=\"16\" y1=\"9\" y2=\"15\"/><line x1=\"16\" x2=\"22\" y1=\"9\" y2=\"15\"/></svg>Buzzer sound off</button>",
+      "css": ".ds-toggle { display: inline-flex; align-items: center; gap: 8px; background: transparent; border: 1px solid rgb(31 45 39 / 0.35); border-radius: 999px; padding: 6px 14px; font-family: var(--font-text, system-ui); font-size: 0.9rem; color: var(--color-forest, #1f2d27); cursor: pointer; } .ds-toggle:hover { background: rgb(238 240 236 / 0.6); } .ds-toggle[aria-pressed=\"true\"] { background: #1f2d27; color: #eef0ec; border-color: #1f2d27; } .ds-toggle:focus-visible { outline: 3px solid #4f6f5f; outline-offset: 3px; }"
+    },
+    {
+      "name": "Readout Plate",
+      "kind": "custom",
+      "refersTo": "readout-plate",
+      "description": "The instrument on the wall: live trunk angle, limit, and an icon-plus-word state.",
+      "html": "<div class=\"ds-readout\" tabindex=\"0\" role=\"slider\" aria-label=\"Trunk lean\" aria-valuenow=\"3.2\" aria-valuetext=\"3.2 degrees, within the limit\"><span class=\"ds-readout-label\">Trunk lean</span><span class=\"ds-readout-limit\">limit 10°</span><span class=\"ds-readout-value\">3.2<span class=\"ds-unit\">°</span></span><span class=\"ds-readout-state\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg>Within the limit</span></div>",
+      "css": ".ds-readout { display: inline-grid; grid-template-columns: auto auto; column-gap: 20px; align-items: baseline; min-width: 15.5rem; background: var(--color-plaster, #eef0ec); color: var(--color-forest, #1f2d27); border: 1.5px solid var(--color-eucalyptus, #4f6f5f); border-radius: 14px; padding: 16px 20px 14px; box-shadow: 0 2px 4px rgb(31 45 39 / 0.08), 0 14px 32px -18px rgb(31 45 39 / 0.5); font-family: var(--font-text, system-ui); transition: border-color 220ms ease-out; } .ds-readout:focus-visible { outline: 3px solid #4f6f5f; outline-offset: 3px; } .ds-readout-label { font-weight: 700; font-size: 0.95rem; } .ds-readout-limit { justify-self: end; font-family: var(--font-readout, ui-monospace, monospace); font-size: 0.95rem; color: var(--color-forest-2, #4a5a52); } .ds-readout-value { grid-column: 1 / -1; font-family: var(--font-readout, ui-monospace, monospace); font-variant-numeric: tabular-nums; font-size: 4rem; line-height: 1; letter-spacing: -0.02em; margin: 6px 0 10px; transition: color 220ms ease-out; } .ds-unit { font-size: 0.6em; vertical-align: 0.55em; margin-left: 2px; } .ds-readout-state { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--color-eucalyptus, #4f6f5f); border-top: 1px solid var(--color-wall, #c9d3cb); padding-top: 10px; }"
+    },
+    {
+      "name": "Readout Plate (flagged)",
+      "kind": "custom",
+      "refersTo": "readout-plate-flagged",
+      "description": "Past the limit for 200 ms or more: terra value and border, terra-deep state line with a circled cross.",
+      "html": "<div class=\"ds-readout-f\" role=\"slider\" tabindex=\"0\" aria-label=\"Trunk lean\" aria-valuetext=\"14.1 degrees, past the 10 degree limit, compensated\"><span class=\"ds-rf-label\">Trunk lean</span><span class=\"ds-rf-limit\">limit 10°</span><span class=\"ds-rf-value\">14.1<span class=\"ds-rf-unit\">°</span></span><span class=\"ds-rf-state\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m15 9-6 6\"/><path d=\"m9 9 6 6\"/></svg>Compensated</span></div>",
+      "css": ".ds-readout-f { display: inline-grid; grid-template-columns: auto auto; column-gap: 20px; align-items: baseline; min-width: 15.5rem; background: var(--color-plaster, #eef0ec); color: var(--color-forest, #1f2d27); border: 1.5px solid var(--color-terra, #b4532f); border-radius: 14px; padding: 16px 20px 14px; box-shadow: 0 2px 4px rgb(31 45 39 / 0.08), 0 14px 32px -18px rgb(31 45 39 / 0.5); font-family: var(--font-text, system-ui); } .ds-readout-f:focus-visible { outline: 3px solid #4f6f5f; outline-offset: 3px; } .ds-rf-label { font-weight: 700; font-size: 0.95rem; } .ds-rf-limit { justify-self: end; font-family: var(--font-readout, ui-monospace, monospace); font-size: 0.95rem; color: #4a5a52; } .ds-rf-value { grid-column: 1 / -1; font-family: var(--font-readout, ui-monospace, monospace); font-variant-numeric: tabular-nums; font-size: 4rem; line-height: 1; letter-spacing: -0.02em; margin: 6px 0 10px; color: var(--color-terra, #b4532f); } .ds-rf-unit { font-size: 0.6em; vertical-align: 0.55em; margin-left: 2px; } .ds-rf-state { grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--color-terra-deep, #9a4526); border-top: 1px solid var(--color-wall, #c9d3cb); padding-top: 10px; }"
+    },
+    {
+      "name": "Lean Trace",
+      "kind": "custom",
+      "refersTo": "readout-plate",
+      "description": "One reach as a line: forest stroke, dashed limit, mono ticks, a single terra peak dot.",
+      "html": "<figure class=\"ds-trace\"><svg viewBox=\"0 0 500 200\" role=\"img\" aria-label=\"Trunk angle over one reach, peaking at 14.1 degrees past the 10 degree limit\"><line x1=\"20\" y1=\"170\" x2=\"480\" y2=\"170\" class=\"ds-t-axis\"/><line x1=\"20\" y1=\"80\" x2=\"480\" y2=\"80\" class=\"ds-t-limit\"/><text x=\"484\" y=\"84\" class=\"ds-t-tick\">10°</text><polyline class=\"ds-t-line\" points=\"20,168 120,164 200,140 260,96 319,43 380,90 440,150 480,166\"/><circle cx=\"319\" cy=\"43\" r=\"6\" class=\"ds-t-peak\"/><text x=\"333\" y=\"33\" class=\"ds-t-tick\">14.1°</text></svg><figcaption>One reach · Simulated data</figcaption></figure>",
+      "css": ".ds-trace { margin: 0; max-width: 30rem; color: var(--color-forest, #1f2d27); font-family: var(--font-text, system-ui); } .ds-trace svg { width: 100%; height: auto; overflow: visible; } .ds-t-axis { stroke: var(--color-forest-2, #4a5a52); stroke-width: 1.5; } .ds-t-limit { stroke: var(--color-forest, #1f2d27); stroke-width: 1.5; stroke-dasharray: 6 6; } .ds-t-line { fill: none; stroke: var(--color-forest, #1f2d27); stroke-width: 3.5; stroke-linejoin: round; } .ds-t-peak { fill: var(--color-terra, #b4532f); } .ds-t-tick { font-family: var(--font-readout, ui-monospace, monospace); font-size: 15px; fill: var(--color-forest, #1f2d27); } .ds-trace figcaption { font-size: 0.95rem; margin-top: 8px; }"
+    },
+    {
+      "name": "Placeholder Slot",
+      "kind": "card",
+      "refersTo": "placeholder-slot",
+      "description": "Where real media hasn't landed yet: dashed eucalyptus frame, says what will go there.",
+      "html": "<div class=\"ds-slot\">Photo of the soldered build, coming from the bench</div>",
+      "css": ".ds-slot { aspect-ratio: 4 / 3; max-width: 320px; display: grid; place-items: center; text-align: center; padding: 16px; border: 1.5px dashed var(--color-eucalyptus, #4f6f5f); border-radius: 12px; background: #e4e8e2; color: var(--color-forest-2, #4a5a52); font-family: var(--font-text, system-ui); font-size: 0.98rem; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Rehab Studio",
+    "overview": "Clinical but humane. The page is a daylit rehab room painted in CSS: a eucalyptus wall meets a plaster floor at a level horizon, and a clay-soft figure sits at the four-target mat in front of it, rendered in a transparent React Three Fiber canvas laid over that painted room. The instrument is the hero. A plaster readout plate on the wall shows the live trunk angle and the limit, and the measurement stays the sharpest thing on screen so the room never reads as a wellness app.\n\nColour is quiet and committed. Wall green and deep forest own whole regions: the sticky stage is wall, the evidence band is drenched in forest, the close sits on wall. Terracotta isn't part of the palette at rest. It is a state. When the trunk holds past the limit (10°, for at least 200 ms, the same rule as the firmware) the room's light warms, a warm glow rises from the figure, and the readout turns terracotta. When the lean ends, all of it goes away.\n\nType pairs an upright Literata for display with Atkinson Hyperlegible Next for reading, and its Mono for every measured number. Density is low: one idea per viewport in the story, generous section padding after it.",
+    "keyCharacteristics": [
+      "A painted room (wall over plaster floor, horizon at 78%) behind a transparent 3D canvas",
+      "Matte clay figure and ceramic mat, soft daylight, soft floor shadows",
+      "Terracotta appears only as the flagged-lean state, never as decoration",
+      "Every number is set in Atkinson Hyperlegible Mono with tabular figures",
+      "Clean vs compensated is always an icon plus a label, never colour alone",
+      "Forest-drenched and wall-drenched full-width passages rather than cards"
+    ],
+    "rules": [
+      { "name": "The Terracotta Is a State Rule", "body": "Terracotta appears only while something is past the limit, or as the mark of a rep that was. A surface at rest has no terracotta on it.", "section": "colors" },
+      { "name": "The Stage Ink Rule", "body": "Copy over the stage (wall or the painted room) is always forest. Muted ink appears only on plaster.", "section": "colors" },
+      { "name": "The Small Terracotta Rule", "body": "Terracotta text below large size uses terra-deep. Plain terra is for large readouts, glows and marks.", "section": "colors" },
+      { "name": "The Warm Room Rule", "body": "The flagged state tints the room itself, not just a badge. The wall mixes in 9% terra and the floor 6% (in oklab), through the registered `--room-wall` / `--room-floor` properties over 500ms ease-out. The 3D lights warm with it: sky, ground and key light lerp toward warm values.", "section": "colors" },
+      { "name": "The Measured Number Rule", "body": "Any number the device measures, or any limit it applies (angles, limits, percentages on axes, chart ticks), is set in Atkinson Hyperlegible Mono with tabular figures.", "section": "typography" },
+      { "name": "The Upright Display Rule", "body": "Literata headlines are always roman, never italic, at weight 500.", "section": "typography" },
+      { "name": "The Forest-Tinted Shadow Rule", "body": "Shadows are tinted with forest (rgb 31 45 39), never neutral black, and only the instrument and the primary action cast them.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep terracotta behind the flagged state: readout value and border in terra, the state line in terra-deep, the room tint at 9% (wall) and 6% (floor) terra, the glow at 0.17 alpha.",
+      "Do pair every clean or compensated signal with an icon and a word (CircleCheck \"Within the limit\", CircleX \"Compensated\").",
+      "Do set every measured number and limit in Atkinson Hyperlegible Mono with tabular figures.",
+      "Do keep copy over the stage in forest (#1f2d27). Use muted ink (#4a5a52) only on plaster.",
+      "Do tint shadows with forest, and keep them for the primary button and the readout plate.",
+      "Do label simulated data in the caption every time it appears.",
+      "Do keep reduced motion working: no smooth scroll, no transitions, and the scene still responds to direct input. Without WebGL, the 2D SVG figure follows the same lean rule."
+    ],
+    "donts": [
+      "Don't use terracotta as an accent, a link colour or a decoration on a surface at rest.",
+      "Don't set eucalyptus or terracotta as small text on the wall (3.6:1 and 3.2:1). On the wall, use them for strokes and large type only.",
+      "Don't set Literata headlines in italic or above weight 500. The wordmark is the one exception, at 600.",
+      "Don't put muted ink over the painted stage.",
+      "Don't wrap sections in shadowed cards. Use full-bleed bands and hairlines."
+    ]
+  }
+}

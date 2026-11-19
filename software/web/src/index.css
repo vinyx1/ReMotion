@@ -17,6 +17,18 @@
   --color-line-2: #eef1f4;     /* gridlines, subtle fills */
   --color-brand: #13243d;      /* header, primary buttons */
 
+  /* Landing page (Rehab Studio). Terracotta is a state, used only for a lean past the limit. */
+  --font-display: "Literata Variable", "Iowan Old Style", Georgia, serif;
+  --font-text: "Atkinson Hyperlegible Next Variable", "Avenir Next", system-ui, sans-serif;
+  --font-readout: "Atkinson Hyperlegible Mono Variable", ui-monospace, monospace;
+  --color-plaster: #eef0ec;
+  --color-wall: #c9d3cb;
+  --color-eucalyptus: #4f6f5f;
+  --color-forest: #1f2d27;
+  --color-forest-2: #4a5a52;
+  --color-terra: #b4532f;
+  --color-terra-deep: #9a4526;
+
   --color-clean: #2a78d6;
   --color-clean-soft: #e8f1fc;
   --color-comp: #eb6834;
