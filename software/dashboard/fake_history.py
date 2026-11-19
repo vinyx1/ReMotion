@@ -34,13 +34,14 @@ DAYS_BETWEEN = [2, 2, 3]                       # Mon, Wed, Fri, Mon, ...
 START_LEAN = 0.6                               # fraction of reps that lean in session 1
 END_LEAN = 0.1                                 # ... and in the last session
 REPS_RANGE = (10, 14)
+MIN_LEAN = 0.1     # never a perfect 0% session: fake data shouldn't look like a finished outcome
 
 
 def lean_fraction(i, n, rng):
     """Steady improvement from START_LEAN to END_LEAN, with day-to-day wobble."""
     progress = i / max(1, n - 1)
     base = START_LEAN + (END_LEAN - START_LEAN) * progress
-    return min(0.9, max(0.0, base + rng.uniform(-0.08, 0.08)))
+    return min(0.9, max(MIN_LEAN, base + rng.uniform(-0.08, 0.08)))
 
 
 def make_history(sessions=8, seed=1, out_dir=FAKE_DIR):
