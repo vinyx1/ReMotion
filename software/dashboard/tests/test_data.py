@@ -81,3 +81,20 @@ def test_export_matches_the_rep_lines(session_folder):
             tr = r["trace"]
             assert tr is not None and len(tr["t"]) == len(tr["trunkDeg"]) == len(tr["state"])
             assert tr["reachEndS"] * 1000 == pytest.approx(r["reachMs"])
+
+
+def test_fake_history_is_simulated_and_improves(tmp_path, monkeypatch, capsys):
+    from software.dashboard import export
+    from software.dashboard.fake_history import make_history
+
+    make_history(sessions=6, seed=2, out_dir=tmp_path)
+    monkeypatch.setattr(export, "RAW_DIR", tmp_path.parent / "no-real-data-here")
+    data = export.export_sessions([str(tmp_path)])
+
+    sessions = data["sessions"]
+    assert len(sessions) == 6
+    assert all(s["simulated"] for s in sessions)
+    ids = [s["id"] for s in sessions]
+    assert ids == sorted(ids)                                   # oldest first
+    first, last = sessions[0]["summary"], sessions[-1]["summary"]
+    assert first["pctCompensated"] > last["pctCompensated"]

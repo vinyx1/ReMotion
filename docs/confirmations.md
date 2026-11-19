@@ -4,12 +4,12 @@ Check these off and write the answer next to each. Once they are answered, they 
 
 ## Blocks firmware
 
-- [ ] **Button count (ask Yousuf).** The schematic has 5 arcade buttons: HOME, GREEN, BLUE, RED, and an unlit yellow START on D6. The team says there are only 4. Was the yellow START dropped (then what starts and ends a session?), or is one of the four now START (then which target goes?). Until this is answered, the docs and firmware keep the 5-button schematic. Answer: ____
+- [x] **Button count.** Answer: 5 buttons, as in the schematic. HOME, GREEN, BLUE and RED are lit; the yellow START (D6) has no LED wired.
 - [ ] **Buy the parts.** Digi-Key order and spare MPU-6050, see `docs/parts-list.md`. Answer: ____
 - [ ] **Soldering access.** Where will the team solder the header pins (course lab or campus makerspace)? Answer: ____
 - [x] **IMU regulator check.** Does each GY-521 have an on-board regulator (small 3-pin chip, often marked 662K)? Yes → VCC from 5V; no → VCC from 3V3. Answer: yes, the GY-521 boards take 3.3–5 V in through their regulator, so VCC stays on 5V as in the schematic.
 - [ ] **IMU chip check.** After soldering, run an I2C scanner and read WHO_AM_I on both MPU-6050s (genuine = 0x68). Answer: ____
-- [ ] **Arcade buttons.** Are the teammate's "buttons" the 5× 30 mm arcade buttons in the schematic (4 with LEDs)? What voltage are the LEDs rated for (5 V or 12 V), and do they have a built-in resistor? Bare LEDs need ~150–220 Ω each; 12 V LEDs will be dim at 5 V. Answer: ____
+- [x] **Arcade buttons.** Are the teammate's "buttons" the 5× 30 mm arcade buttons in the schematic (4 with LEDs)? What voltage are the LEDs rated for (5 V or 12 V), and do they have a built-in resistor? Bare LEDs need ~150–220 Ω each; 12 V LEDs will be dim at 5 V. Answer: yes, 5 buttons, 4 with LEDs (START unlit). LED voltage/resistor still to check, see the schematic check below.
 
 ## Schematic checks (KiCad, before the final build)
 
