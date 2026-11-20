@@ -9,7 +9,7 @@ Check these off and write the answer next to each. Once they are answered, they 
 - [ ] **Soldering access.** Where will the team solder the header pins (course lab or campus makerspace)? Answer: ____
 - [x] **IMU regulator check.** Does each GY-521 have an on-board regulator (small 3-pin chip, often marked 662K)? Yes → VCC from 5V; no → VCC from 3V3. Answer: yes, the GY-521 boards take 3.3–5 V in through their regulator, so VCC stays on 5V as in the schematic.
 - [ ] **IMU chip check.** After soldering, run an I2C scanner and read WHO_AM_I on both MPU-6050s (genuine = 0x68). Answer: ____
-- [ ] **Arcade buttons.** Are the teammate's "buttons" the 5× 30 mm arcade buttons in the schematic (4 with LEDs)? What voltage are the LEDs rated for (5 V or 12 V), and do they have a built-in resistor? Bare LEDs need ~150–220 Ω each; 12 V LEDs will be dim at 5 V. Answer: ____
+- [x] **Arcade buttons.** Are the teammate's "buttons" the 5× 30 mm arcade buttons in the schematic (4 with LEDs)? What voltage are the LEDs rated for (5 V or 12 V), and do they have a built-in resistor? Bare LEDs need ~150–220 Ω each; 12 V LEDs will be dim at 5 V. Answer: yes, 5 buttons, 4 with LEDs (START unlit). LED voltage/resistor still to check, see the schematic check below.
 
 ## Schematic checks (KiCad, before the final build)
 
