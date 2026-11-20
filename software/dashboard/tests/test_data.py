@@ -83,6 +83,43 @@ def test_export_matches_the_rep_lines(session_folder):
             assert tr["reachEndS"] * 1000 == pytest.approx(r["reachMs"])
 
 
+def test_fake_history_is_simulated_and_improves(tmp_path, monkeypatch, capsys):
+    from software.dashboard import export
+    from software.dashboard.fake_history import make_history
+
+    make_history(sessions=6, seed=2, out_dir=tmp_path)
+    monkeypatch.setattr(export, "RAW_DIR", tmp_path.parent / "no-real-data-here")
+    data = export.export_sessions([str(tmp_path)])
+
+    sessions = data["sessions"]
+    assert len(sessions) == 6
+    assert all(s["simulated"] for s in sessions)
+    ids = [s["id"] for s in sessions]
+    assert ids == sorted(ids)                                   # oldest first
+    first, last = sessions[0]["summary"], sessions[-1]["summary"]
+    assert first["pctCompensated"] > last["pctCompensated"]
+
+
+def test_simulated_patients_are_tagged_and_kept_apart(tmp_path, monkeypatch, capsys):
+    from software.dashboard import export
+    from software.dashboard.fake_history import PATIENTS, make_patients
+
+    fake = tmp_path / "fake"
+    make_patients(fake)
+    monkeypatch.setattr(export, "RAW_DIR", tmp_path / "no-real-data-here")
+    monkeypatch.setattr(export, "SAMPLE_DIR", tmp_path / "no-samples-here")
+    monkeypatch.setattr(export, "FAKE_DIR", fake)
+    sessions = export.export_groups(export.patient_folders())["sessions"]
+
+    by_patient = {p["id"]: [s for s in sessions if s["patient"] == p["id"]] for p in PATIENTS}
+    assert {pid: len(ss) for pid, ss in by_patient.items()} == {p["id"]: p["sessions"] for p in PATIENTS}
+    assert len({s["id"] for s in sessions}) == len(sessions)          # ids stay unique across patients
+    assert all(s["id"][:8].isdigit() for s in sessions)               # and still start with the date
+    a, c = by_patient["sim-a"], by_patient["sim-c"]
+    assert a[0]["summary"]["pctCompensated"] > a[-1]["summary"]["pctCompensated"]   # sim-a improves
+    assert c[0]["summary"]["pctCompensated"] < c[-1]["summary"]["pctCompensated"]   # sim-c gets worse
+
+
 def test_phase_summary(session_folder):
     reps = load_reps([session_folder])
     first = summarize_phases(reps[reps["session"] == 1])

@@ -1,0 +1,2 @@
+man-base.glb: "Male Base Mesh (Rigged)" by BoQsc, https://github.com/BoQsc/Godot-Male-Base-Mesh
+Licence: CC0 1.0 Universal (public domain). Used as-is on the landing page (software/web/src/landing/SkinnedHumanoid.tsx).

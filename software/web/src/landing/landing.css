@@ -1,0 +1,331 @@
+
+/* Re:Motion landing page. Scoped to .lp so the dashboard is untouched. */
+
+html.lp-root {
+  background: var(--color-plaster);
+  scrollbar-color: var(--color-eucalyptus) var(--color-plaster);
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.lp-root { scroll-behavior: auto; }
+}
+
+.lp {
+  font-family: var(--font-text);
+  color: var(--color-forest);
+  background: var(--color-plaster);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  caret-color: var(--color-eucalyptus);
+}
+.lp ::selection { background: var(--color-eucalyptus); color: var(--color-plaster); }
+.lp a { color: inherit; text-underline-offset: 0.22em; text-decoration-thickness: 1px; }
+.lp :focus-visible { outline: 3px solid var(--color-eucalyptus); outline-offset: 3px; border-radius: 6px; }
+
+.lp-skip {
+  position: fixed; left: 16px; top: -60px; z-index: 50;
+  background: var(--color-forest); color: var(--color-plaster);
+  padding: 10px 16px; border-radius: 8px; text-decoration: none;
+}
+.lp-skip:focus { top: 16px; }
+
+/* ---------- nav ---------- */
+.lp-nav {
+  position: fixed; inset: 0 0 auto 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  padding: 20px clamp(20px, 5vw, 64px);
+  pointer-events: none;
+}
+.lp-nav > * { pointer-events: auto; }
+.lp-nav.is-solid {
+  pointer-events: auto;
+  background: var(--color-plaster);
+  border-bottom: 1px solid var(--color-wall);
+  padding-block: 12px;
+}
+.lp-nav { transition: padding 200ms ease-out; }
+.lp-mark {
+  font-family: var(--font-display); font-size: 1.6rem; font-weight: 600;
+  letter-spacing: -0.02em; text-decoration: none;
+}
+.lp-nav nav { display: flex; align-items: center; gap: clamp(14px, 2.4vw, 32px); font-size: 1rem; }
+.lp-nav nav a { text-decoration: none; }
+.lp-nav nav a:not(.lp-nav-btn):hover { text-decoration: underline; }
+.lp-nav-btn {
+  background: var(--color-forest); color: var(--color-plaster) !important;
+  padding: 9px 18px; border-radius: 10px; font-weight: 600;
+}
+.lp-nav-btn:hover { background: #14201b; }
+@media (max-width: 760px) {
+  .lp-nav nav a:not(.lp-nav-btn) { display: none; }
+}
+
+/* ---------- buttons ---------- */
+.lp-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--color-forest); color: var(--color-plaster) !important;
+  font-weight: 700; font-size: 1.125rem; text-decoration: none;
+  padding: 16px 26px; border-radius: 12px;
+  box-shadow: 0 1px 2px rgb(31 45 39 / 0.18), 0 6px 18px -8px rgb(31 45 39 / 0.45);
+  transition: background-color 160ms ease-out, transform 160ms ease-out;
+}
+.lp-btn:hover { background: #14201b; }
+.lp-btn:active { transform: translateY(1px); }
+.lp-btn-light { background: var(--color-plaster); color: var(--color-forest) !important; }
+.lp-btn-light:hover { background: #ffffff; }
+
+/* ---------- the story: sticky room + steps ---------- */
+.lp-story { position: relative; }
+.lp-stage {
+  position: sticky; top: 0; height: 100svh; overflow: hidden;
+  /* paper: the 3D graph-paper room fades into this */
+  background: var(--color-plaster);
+  touch-action: pan-y;
+}
+/* Drag area over the figure on the first screen. The 3D scene sets its box each frame; the
+   values here only place it for the 2D fallback. Grab cursor over it, grabbing while dragging. */
+.lp-hit {
+  position: absolute; z-index: 3;
+  left: 30%; top: 15%; width: 50%; height: 70%;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.lp-hit.is-dragging { cursor: grabbing; }
+.lp-hit.is-off { pointer-events: none; }
+.lp-canvas { position: absolute; inset: 0; }
+.lp-stage::after {
+  /* the lean, felt in the room: a warm glow from the figure while flagged */
+  content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: radial-gradient(ellipse 46% 60% at 68% 42%, rgb(180 83 47 / 0.17), rgb(180 83 47 / 0) 70%);
+  opacity: 0; transition: opacity 360ms ease-out;
+}
+.lp-stage.is-flagged::after { opacity: 1; }
+@media (max-width: 760px) {
+  .lp-stage::after { background: radial-gradient(ellipse 70% 40% at 55% 32%, rgb(180 83 47 / 0.26), rgb(180 83 47 / 0) 70%); }
+}
+.lp-fallback { width: 100%; height: 100%; }
+
+.lp-instrument {
+  position: absolute; z-index: 5;
+  right: clamp(20px, 7vw, 120px); top: clamp(96px, 15vh, 150px);
+  display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+}
+/* the instrument: a plaster plate lifted off the wall by shadow, not outlined */
+.lp-readout {
+  display: flex; flex-direction: column;
+  width: 17rem;
+  background: var(--color-plaster);
+  border: 1px solid transparent; /* forced-colors mode keeps an edge when shadows are dropped */
+  border-radius: 18px;
+  padding: 14px 18px 16px;
+  box-shadow:
+    0 0 0 1px rgb(31 45 39 / 0.1),
+    0 1px 2px rgb(31 45 39 / 0.06),
+    0 16px 36px -18px rgb(31 45 39 / 0.45);
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+.lp-readout:focus-visible { outline: 3px solid var(--color-forest); outline-offset: 4px; }
+.lp-readout-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lp-readout-label { font-weight: 700; font-size: 0.9rem; color: var(--color-forest); white-space: nowrap; }
+.lp-readout-state {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-weight: 700; font-size: 0.78rem; line-height: 1;
+  padding: 5px 9px 5px 7px; border-radius: 999px;
+  color: var(--color-eucalyptus); background: rgb(79 111 95 / 0.1);
+  transition-property: color, background-color; transition-duration: 150ms; transition-timing-function: ease-out;
+}
+.lp-readout-value {
+  font-family: var(--font-readout); font-variant-numeric: tabular-nums;
+  font-size: clamp(3.4rem, 5.4vw, 4.75rem); line-height: 0.95; letter-spacing: -0.03em;
+  margin: 12px 0 14px; color: var(--color-forest); align-self: flex-start; text-align: left;
+  transition-property: color; transition-duration: 150ms; transition-timing-function: ease-out;
+}
+.lp-readout-unit { font-size: 0.5em; vertical-align: 0.8em; margin-left: 3px; letter-spacing: 0; }
+
+/* the scale: 0 to 30 degrees, the zone past the limit hatched, a needle at the live angle */
+.lp-scale-track {
+  position: relative; height: 8px; border-radius: 999px;
+  background: rgb(79 111 95 / 0.16);
+}
+.lp-scale-over {
+  position: absolute; inset-block: 0; right: 0; left: calc(var(--limit) * 100%);
+  border-radius: 0 999px 999px 0;
+  background: repeating-linear-gradient(135deg, rgb(31 45 39 / 0.22) 0 2px, transparent 2px 5px);
+  transition-property: background; transition-duration: 150ms;
+}
+.lp-scale-fill {
+  position: absolute; inset-block: 0; left: 0; width: calc(var(--lean) * 100%);
+  border-radius: 999px; background: var(--color-eucalyptus);
+  transition-property: background-color; transition-duration: 150ms; transition-timing-function: ease-out;
+}
+.lp-scale-limit {
+  position: absolute; top: -4px; bottom: -4px; left: calc(var(--limit) * 100%);
+  width: 2px; margin-left: -1px; border-radius: 1px; background: var(--color-forest); z-index: 1;
+}
+.lp-scale-needle {
+  position: absolute; top: -7px; bottom: -7px; left: calc(var(--lean) * 100%); z-index: 2;
+  width: 6px; margin-left: -3px; border-radius: 3px;
+  background: var(--color-forest);
+  box-shadow: 0 0 0 2px var(--color-plaster);
+  transition-property: background-color; transition-duration: 150ms; transition-timing-function: ease-out;
+}
+.lp-scale-ticks {
+  position: relative; display: flex; justify-content: space-between; margin-top: 9px;
+  font-family: var(--font-readout); font-size: 0.72rem; color: var(--color-forest-2); font-variant-numeric: tabular-nums;
+}
+.lp-scale-limit-label { position: absolute; left: calc(var(--limit) * 100%); transform: translateX(-50%); color: var(--color-forest); }
+
+.lp-readout.is-flagged .lp-readout-value { color: var(--color-terra); }
+.lp-readout.is-flagged .lp-readout-state { color: var(--color-terra-deep); background: rgb(180 83 47 / 0.12); }
+.lp-readout.is-flagged .lp-scale-needle, .lp-readout.is-flagged .lp-scale-fill { background: var(--color-terra); }
+.lp-readout.is-flagged .lp-scale-over { background: repeating-linear-gradient(135deg, rgb(180 83 47 / 0.5) 0 2px, transparent 2px 5px); }
+@media (prefers-reduced-motion: reduce) {
+  .lp-readout-state, .lp-readout-value, .lp-scale-needle, .lp-scale-over, .lp-scale-fill { transition: none; }
+}
+
+.lp-steps { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+/* every step sits in the pinned room, on top of each other; the scroll crossfades them */
+.lp-steps .lp-step { position: absolute; inset: 0; will-change: opacity, transform; }
+.lp-scroll {
+  position: absolute; z-index: 5; left: 50%; bottom: 28px; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 0.95rem; color: var(--color-forest); text-decoration: none;
+  padding: 8px 14px; border-radius: 999px;
+  transition: opacity 240ms ease-out;
+}
+.lp-scroll:hover { color: var(--color-forest); }
+.lp-scroll.is-hidden { opacity: 0; pointer-events: none; }
+.lp-step {
+  height: 100svh; display: flex; flex-direction: column; justify-content: center;
+  padding-inline: clamp(20px, 6vw, 104px);
+  box-sizing: border-box;
+}
+.lp-step > * { max-width: min(36rem, 46vw); }
+.lp-step-hero > * { max-width: min(44rem, 52vw); }
+.lp-step a, .lp-step button { pointer-events: auto; }
+/* story steps sit high on the wall, clear of the horizon */
+.lp-step:not(.lp-step-hero) { justify-content: flex-start; padding-top: clamp(150px, 24vh, 240px); }
+.lp-step p { color: var(--color-forest); font-size: 1.2rem; line-height: 1.55; max-width: 34ch; text-wrap: pretty; }
+.lp-step-hero { justify-content: flex-start; padding-top: clamp(120px, 17vh, 170px); }
+.lp-h1 {
+  font-family: var(--font-display); font-weight: 500;
+  font-size: clamp(3rem, 6.2vw, 6rem); line-height: 1.0; letter-spacing: -0.025em;
+  text-wrap: balance; margin: 0 0 0.35em;
+}
+.lp-lede { font-size: clamp(1.15rem, 1.5vw, 1.35rem) !important; max-width: 40ch !important; margin: 0 0 2rem; }
+.lp-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; }
+.lp-cue { font-size: 0.98rem; color: var(--color-forest); }
+.lp-h2 {
+  font-family: var(--font-display); font-weight: 500;
+  font-size: clamp(2rem, 3.6vw, 3.25rem); line-height: 1.08; letter-spacing: -0.02em;
+  text-wrap: balance; margin: 0 0 0.5em;
+}
+
+.lp-trace { margin: 0.5rem 0 0; max-width: 30rem; }
+.lp-trace svg { width: 100%; height: auto; overflow: visible; }
+.lp-trace-axis { stroke: var(--color-forest-2); stroke-width: 1.5; }
+.lp-trace-limit { stroke: var(--color-forest); stroke-width: 1.5; stroke-dasharray: 6 6; }
+.lp-trace-line { fill: none; stroke: var(--color-forest); stroke-width: 3.5; stroke-linejoin: round; }
+.lp-trace-peak { fill: var(--color-terra); }
+.lp-trace-tick { font-family: var(--font-readout); font-size: 15px; fill: var(--color-forest); }
+.lp-trace figcaption { font-size: 0.95rem; color: var(--color-forest); margin-top: 8px; }
+
+@media (max-width: 760px) {
+  .lp-instrument { right: 16px; top: 78px; }
+  .lp-readout { width: 12.5rem; padding: 11px 13px 12px; border-radius: 16px; }
+  .lp-readout-value { font-size: 2.6rem; margin: 8px 0 10px; }
+  .lp-readout-state { font-size: 0.7rem; padding: 4px 7px 4px 5px; }
+  .lp-readout-label { font-size: 0.8rem; }
+  .lp-scale-limit-word { display: none; }
+  .lp-readout { width: 13.5rem; }
+  .lp-scroll { display: none; }
+  /* the scene owns the top half; text sits on the plaster floor below it */
+  .lp-step > *, .lp-step-hero > * { max-width: none; }
+  .lp-step, .lp-step-hero {
+    justify-content: center;
+    padding: 50svh 20px 0;
+    background: linear-gradient(to bottom, rgb(238 240 236 / 0) 0%, rgb(238 240 236 / 0) 50%, var(--color-plaster) 50%, var(--color-plaster) 100%);
+    height: 100svh; box-sizing: border-box;
+  }
+  .lp-step > * { position: relative; }
+  .lp-step p { font-size: 1.05rem; }
+  .lp-h1 { font-size: clamp(2.4rem, 10vw, 3.2rem); }
+}
+
+/* ---------- sections ---------- */
+.lp-section { padding-block: clamp(104px, 15vh, 184px) clamp(88px, 12vh, 152px); }
+.lp-wrap { max-width: 1200px; margin-inline: auto; padding-inline: clamp(20px, 5vw, 64px); }
+.lp-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(40px, 6vw, 96px); align-items: center; }
+@media (max-width: 900px) { .lp-split { grid-template-columns: minmax(0, 1fr); } }
+.lp-section p { max-width: 62ch; color: var(--color-forest-2); font-size: 1.125rem; line-height: 1.6; margin: 0 0 1.75rem; }
+
+.lp-chart { margin: 0; }
+.lp-chart svg { width: 100%; height: auto; }
+.lp-grid { stroke: var(--color-wall); stroke-width: 1; }
+.lp-axis { font-family: var(--font-readout); font-size: 14px; fill: var(--color-forest-2); }
+.lp-line { fill: none; stroke: var(--color-forest); stroke-width: 3; stroke-linejoin: round; }
+.lp-dot { fill: var(--color-plaster); stroke: var(--color-forest); stroke-width: 2.5; }
+.lp-chart figcaption { font-size: 0.95rem; color: var(--color-forest-2); margin-top: 10px; }
+.lp-sim { color: var(--color-forest); font-weight: 700; }
+.lp-chart-empty { border: 1.5px dashed var(--color-eucalyptus); border-radius: 12px; padding: 48px 24px; text-align: center; color: var(--color-forest-2); }
+
+.lp-evidence { background: var(--color-forest); color: var(--color-plaster); }
+.lp-evidence .lp-h2 { color: var(--color-plaster); }
+.lp-evidence p { color: var(--color-wall); }
+.lp-measure { max-width: 58ch; }
+.lp-studies {
+  list-style: none; padding: 0; margin: 3rem 0 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 clamp(24px, 3vw, 48px);
+}
+.lp-studies li { border-top: 1px solid rgb(201 211 203 / 0.35); padding-top: 1.4rem; }
+.lp-studies h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.4rem; margin: 0 0 0.6rem; color: var(--color-plaster); }
+.lp-studies p { font-size: 1.05rem !important; margin: 0 0 0.9rem !important; }
+.lp-studies .lp-caveat { font-size: 0.95rem !important; color: #b7c4ba !important; }
+.lp-studies a { font-size: 0.95rem; color: var(--color-plaster); }
+.lp-studies a.lp-id { font-family: var(--font-readout); font-size: 0.9rem; }
+@media (max-width: 900px) { .lp-studies { grid-template-columns: 1fr; gap: 2rem; } }
+.lp-ours {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px 48px;
+  margin-top: clamp(56px, 8vh, 96px); padding: 2rem 0;
+  border-top: 1px solid rgb(201 211 203 / 0.35); border-bottom: 1px solid rgb(201 211 203 / 0.35);
+}
+.lp-ours h3 { font-weight: 700; font-size: 1.1rem; margin: 0 0 0.4rem; color: var(--color-plaster); }
+.lp-ours p { margin: 0 !important; max-width: 48ch; }
+.lp-ours-value { font-family: var(--font-display); font-size: clamp(2rem, 3.4vw, 3rem) !important; color: var(--color-plaster) !important; }
+.lp-honest { margin-top: 2rem !important; font-size: 1rem !important; }
+
+.lp-spec { margin: 1.5rem 0 0; }
+.lp-spec div { display: grid; grid-template-columns: 7.5rem 1fr; gap: 16px; padding: 12px 0; border-top: 1px solid var(--color-wall); }
+.lp-spec div:last-child { border-bottom: 1px solid var(--color-wall); }
+.lp-spec dt { font-weight: 700; }
+.lp-spec dd { margin: 0; color: var(--color-forest-2); }
+.lp-media { display: grid; gap: 16px; min-width: 0; }
+.lp-schematic { margin: 0; }
+.lp-schematic img { width: 100%; height: auto; display: block; background: #fff; border: 1px solid var(--color-wall); border-radius: 12px; }
+.lp-schematic figcaption { font-size: 0.95rem; color: var(--color-forest-2); margin-top: 8px; }
+.lp-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.lp-slot {
+  aspect-ratio: 4 / 3; display: grid; place-items: center; text-align: center;
+  padding: 16px; border: 1.5px dashed var(--color-eucalyptus); border-radius: 12px;
+  background: #e4e8e2; color: var(--color-forest-2); font-size: 0.98rem;
+}
+
+.lp-close { background: var(--color-wall); padding-block: clamp(104px, 16vh, 196px) 48px; }
+.lp-close-h {
+  font-family: var(--font-display); font-weight: 500;
+  font-size: clamp(2.6rem, 5.4vw, 5rem); line-height: 1.02; letter-spacing: -0.025em;
+  margin: 0 0 2rem;
+}
+.lp-close .lp-btn-light { background: var(--color-forest); color: var(--color-plaster) !important; }
+.lp-credits { margin-top: clamp(80px, 12vh, 140px); padding-top: 20px; border-top: 1px solid rgb(31 45 39 / 0.2); display: flex; flex-wrap: wrap; gap: 8px 32px; font-size: 0.98rem; color: var(--color-forest-2); }
+.lp-credits p { margin: 0; }
+.lp-credits strong { color: var(--color-forest); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lp *, .lp *::before, .lp *::after { transition: none !important; }
+}
+
+@media (max-width: 760px) {
+  .lp-step:not(.lp-step-hero) { padding-top: 50svh; justify-content: center; }
+}

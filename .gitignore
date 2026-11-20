@@ -44,6 +44,8 @@ exam-guide/
 # Recorded sessions: raw logs stay local; commit small examples to data/sample/
 data/raw/
 data/*.csv
+# Fake history for building the dashboard (python -m software.dashboard.fake_history)
+data/fake/
 
 # Arduino / PlatformIO build output
 firmware/**/build/
@@ -65,5 +67,13 @@ _autosave-*
 software/web/dist/
 software/web/public/sessions.json
 
-# Local tool caches
-.impeccable/
+# Impeccable: keep the per-machine files out; PRODUCT.md, DESIGN.md and
+# .impeccable/config.json etc. are meant to be committed (runtime folders
+# like mocks/ and questions/ ignore themselves)
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/hook-*
+.impeccable/work/
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/questions/
