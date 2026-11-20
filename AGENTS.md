@@ -1,4 +1,4 @@
-# AGENTS.md — IMU Reach Tracker (ECE 198, UWaterloo, Group 19)
+# AGENTS.md — ReMotion (ECE 198, UWaterloo, Group 19)
 
 **This file is the single source of truth** for humans and AI agents. `CLAUDE.md` imports it; Codex, Cursor and Copilot read it directly. If you change how the project works, change it **here**, not in a second file or a group chat.
 
@@ -73,7 +73,7 @@ These are the joins between people's work. Changing one side silently breaks som
 - Code must be readable for 1st-year engineering students: clear constants at the top, comments explaining each state.
 - If `arduino-cli` is available, compile every sketch for `arduino:renesas_uno:minima` and fix all errors.
 - Reference material: `hardware/ECE 198 Parts List.pdf`.
-- Circuit source of truth: KiCad project `hardware/kicad/` and its export `docs/imu-reach-tracker-schematic.pdf` ("IMU Reach Tracker", Group 19). Full specs, Digi-Key cart, wiring rules and bench test: `docs/parts-list.md`. Schematic review findings: `docs/schematic-review.md`. Open checks: `docs/confirmations.md`. Research notes: `docs/research/`.
+- Circuit source of truth: KiCad project `hardware/kicad/` and its export `docs/imu-reach-tracker-schematic.pdf` ("ReMotion", Group 19). Full specs, Digi-Key cart, wiring rules and bench test: `docs/parts-list.md`. Schematic review findings: `docs/schematic-review.md`. Open checks: `docs/confirmations.md`. Research notes: `docs/research/`.
 - Scope it like a hackathon: the forward seated reach, done reliably, is the finish line for the demo. Three more exercises are in scope *after* it works (section 1, Exercises); don't start them before the forward reach is solid. Rule-based detection, not ML. Don't propose extra sensors unless they add something meaningful (build is about $150).
 
 ## 1. What we are building
@@ -114,7 +114,7 @@ Rough plan: (1) wiring + firmware streaming at 100 Hz, ship a sample CSV early s
 **Team split:** hardware/firmware · signal processing · dashboard/storage · mounting/testing.
 
 ### Demo plan
-A judge straps on the chest and wrist sensors, the team measures their arm and places the mat, they press START, sit upright for 3 s, do ~5 reaches, hear the beep when leaning, then see the dashboard. Rehearse it, and keep a pre-recorded session as a fallback if the wiring fails.
+A judge straps on the chest and wrist sensors, the team measures their arm and places the mat, they press START, sit upright for 3 s, do ~5 reaches, hear the beep when leaning, then see the dashboard. For the demo, run the logger with `--plan 0,0,5,0` (5 TRAINING reps, buzzer on). Rehearse it, and keep a pre-recorded session as a fallback if the wiring fails.
 
 ## 2. Session procedure (how a patient uses it)
 
@@ -125,11 +125,11 @@ A judge straps on the chest and wrist sensors, the team measures their arm and p
    - **BLUE** target: ~70%
    - **RED** target: ~100% of comfortable seated reach (reachable WITHOUT leaning)
 3. Operator presses **START** (yellow arcade button, beside the Arduino, not on the mat).
-4. Calibration: patient sits upright and still for 3 s. HOME LED blinks during calibration; short beep when done.
-5. Patient rests the reaching hand on HOME. After HOME is held for 1 s, a random target's LED lights up.
+4. Calibration: patient sits upright and still for 3 s. HOME LED blinks during calibration; 2 short beeps start each block.
+5. Patient rests the reaching hand on HOME. After HOME is held for 1 s, the next target's LED lights up (each block deals equal numbers of GREEN, BLUE and RED from a shuffled deck).
 6. Patient lifts off HOME, reaches, presses the lit target, returns to HOME. ONE hand does everything.
-7. During the reach, if trunk angle exceeds the threshold, the buzzer sounds. After the target press: green LED = clean rep, red LED = compensated rep.
-8. Repeat (~10 reps). Operator presses START again to end the session.
+7. During the reach, if trunk angle exceeds the threshold, the buzzer sounds. The buzzer is the only feedback (no result LEDs); each rep's clean/compensated label goes to the laptop in the `R` line.
+8. The session runs in blocks with no operator input (`docs/PROTOCOL.md`, Session blocks): PRACTICE 3 reps (buzzer off, not scored), BASELINE 15 (off), 30 s rest, TRAINING 30 (buzzer on), 30 s rest, POST 15 (off). Lean is judged the same in every block; only the buzzer changes. BASELINE vs POST is the result. 3 beeps when done (about 7 minutes). START ends it early.
 
 Timing captured per rep:
 - **Reaction time:** cue → leaving HOME
@@ -144,14 +144,13 @@ We do NOT have the course sign-out parts (no OLED, no potentiometer, no kit push
 | Part | Qty | Role |
 |---|---|---|
 | Arduino UNO R4 Minima (Renesas RA4M1, 5V logic, USB-C) | 2 | One main board, one spare |
-| GY-521 (MPU-6050 accel + gyro, onboard regulator: 3.3–5 V in, confirmed) | 3 | Trunk (0x69), wrist (0x68), one spare |
-| Adafruit 757 BSS138 4-ch I2C-safe bidirectional level shifter | 2 | 5V Arduino ↔ 3.3V IMUs |
+| GY-521 (MPU-6050 accel + gyro, onboard regulator: 3.3–5 V in, confirmed) | 3 | Trunk (0x68), wrist (0x69), one spare |
+| Adafruit 757 BSS138 4-ch I2C-safe bidirectional level shifter | 2 | 5V Arduino ↔ 3.3V IMUs (lives on the wrist board) |
 | 30 mm arcade buttons with built-in 5V LED (white, green, blue, red, yellow) | 5 | HOME, 3 targets, START |
 | CUI CMI-1295-0585T 5V magnetic buzzer, 12 mm | 2 | Lean alarm (driven via transistor) |
 | 2N3904 NPN transistors | 10 | Buzzer driver + 4 button-LED drivers |
 | 1N4148 diodes | 10 | Flyback diode across buzzer |
-| Red / green 5 mm LEDs (Kingbright) | 10 each | Rep result |
-| 1 kΩ, 10 kΩ resistors | 15 each | LED limit, transistor base |
+| 1 kΩ, 10 kΩ resistors | 15 each | Transistor base (1 kΩ), base pull-downs (10 kΩ) |
 | Adafruit 4-conductor 1 m flat cable, jumpers, headers, heat shrink | — | Wiring |
 | Wrist brace, GoPro-style chest harness | — | Sensor mounts |
 
@@ -159,21 +158,23 @@ Sourcing: the team buys its own parts (no course kit). Laptop USB powers everyth
 
 ### Part notes
 - **IMU clones:** clone chips may report a different WHO_AM_I (register 0x75, genuine = 0x68). If the Adafruit library rejects the chip ID, read the registers directly or use a library that doesn't check it. Run the I2C scanner first.
-- **Chest AD0 goes to 3.3V, never 5V.** Wrist AD0 floats low via the GY-521's onboard pull-down.
+- **Wrist AD0 goes to 3.3V, never 5V** (tied on the wrist board). Chest AD0 floats low via the GY-521's onboard pull-down.
 - **Arcade button LEDs:** rated voltage and built-in resistor still unconfirmed. If they are bare LEDs, add a ~150–220 Ω series resistor each; if they are 12 V LEDs they will be dim at 5 V.
 - **Buzzer** (CMI-1295-0585T) is rated 5 V, ~30 mA.
-- **Arduino 3.3V pin** comes from the chip's USB regulator (~50 mA, unconfirmed officially); it only feeds chest AD0 and the shifter LV side.
+- **Arduino 3.3V pin** comes from the chip's USB regulator (~50 mA, unconfirmed officially); it only feeds the shifter LV side and wrist AD0, over the 5th wire of the mat → wrist cable.
 - **Recommended addition (not in the schematic yet, ask before adding):** a 10 kΩ pull-down from each 2N3904 base to GND, so the buzzer doesn't chirp and LEDs don't flicker while the Arduino resets.
 
 ### Physical layout
-- **Table unit:** Arduino, level shifter, buttons/mat, transistors, buzzer and result LEDs.
-- **Chest box:** small box on the sternum strap holding the chest IMU; one 4-conductor cable (VCC, GND, SDA, SCL) from the table unit. The wrist IMU chains from the chest box on a second 4-conductor cable along the forearm. The person wears one cable; USB stays on the table.
+- **Button mat:** the Arduino sits on the mat (not soldered; jumper wires plug into its headers), with the driver perfboard (transistors, buzzer) and the five buttons.
+- **Wrist box:** wrist IMU plus the level shifter. One 5-wire cable from the mat (5 V-side SDA, SCL, plus 5V, GND, 3V3).
+- **Chest box:** chest IMU only. It chains from the wrist box on a 4-conductor cable (3.3 V-side SDA, SCL, plus 5V, GND) up the arm. The person wears one cable run; USB stays on the mat.
+- Cable order is **mat → wrist → chest** because the shifter must sit between the Arduino and both IMUs. Perfboard layouts: `hardware/kicad/perfboard/BUILD.md`.
 - Keep SDA and SCL apart in each cable (e.g. order SDA, GND, SCL, VCC). If 100 kHz drops out at full length, try 50 kHz. Test at full cable length early.
-- **Prototype:** full-size breadboard and jumpers; only soldering is IMU/shifter headers. **Final build:** Perma-Proto board in the table unit with female headers for the IMUs, soldered and heat-shrunk cables with zip-tie strain relief, Velcro along the forearm, 3D-printed chest box and table enclosure.
+- **Prototype:** full-size breadboard and jumpers; only soldering is IMU/shifter headers. **Final build:** perfboards (mat driver, wrist, chest) with female headers for the IMUs and shifter, soldered and heat-shrunk cables with zip-tie strain relief, Velcro along the forearm, 3D-printed chest and wrist boxes.
 
 ### Electrical constraints
 - **R4 Minima GPIO can only safely source/sink about 8 mA per pin.** Never drive the arcade button LEDs or the buzzer directly from a pin. Use 2N3904 low-side switches.
-- **I2C:** R4 Minima is 5V logic; MPU-6050 is 3.3V. IMUs sit behind the BSS138 shifter. Keep I2C at **100 kHz** (long leads: ~30 cm chest, ~45 cm wrist). ⚠ An older plan assumed ~1 m table→chest and ~70–80 cm chest→wrist (≈2 m total); confirm actual cable lengths with the user.
+- **I2C:** R4 Minima is 5V logic; MPU-6050 is 3.3V. IMUs sit behind the BSS138 shifter on the wrist board. Keep I2C at **100 kHz** (long leads: ~30 cm chest, ~45 cm wrist). ⚠ An older plan assumed ~1 m table→chest and ~70–80 cm chest→wrist (≈2 m total); confirm actual cable lengths with the user.
 - MPU-6050 has only two addresses (0x68 / 0x69), so we use exactly two IMUs on one bus.
 
 ## 4. Pin map and wiring
@@ -182,41 +183,40 @@ Sourcing: the team buys its own parts (no course kit). Laptop USB powers everyth
 | From | To |
 |---|---|
 | Arduino 5V | Shifter HV, chest VCC, wrist VCC |
-| Arduino 3.3V | Shifter LV, chest AD0 |
+| Arduino 3.3V | Shifter LV, wrist AD0 (5th wire of the mat → wrist cable) |
 | Arduino GND | Shifter GND, chest GND, wrist GND |
 | Arduino SDA | Shifter B1 |
 | Arduino SCL | Shifter B2 |
 | Shifter A1 | Chest SDA + wrist SDA |
 | Shifter A2 | Chest SCL + wrist SCL |
-| Chest AD0 → 3.3V | Chest address = **0x69** |
-| Wrist AD0 unconnected | Wrist address = **0x68** |
+| Wrist AD0 → 3.3V | Wrist address = **0x69** |
+| Chest AD0 unconnected | Chest address = **0x68** |
 | INT, XDA, XCL (both) | Not connected (we poll every 10 ms) |
 
 IMU box pinouts:
-- **Chest:** VCC, GND, SDA, SCL, AD0
-- **Wrist:** VCC, GND, SDA, SCL
+- **Wrist (from mat):** VCC, GND, SDA, SCL, 3V3. **Wrist (to chest):** VCC, GND, SDA, SCL
+- **Chest:** VCC, GND, SDA, SCL
 
 ### Buttons
 Microswitch: one tab to pin, other tab to GND, `INPUT_PULLUP`, **LOW = pressed**.
 
 | Pin | Button |
 |---|---|
-| D2 | HOME (white) |
-| D3 | Target GREEN |
-| D4 | Target BLUE |
-| D5 | Target RED |
-| D6 | START/STOP (yellow) |
+| D2 | START/STOP (yellow) |
+| D3 | HOME (white) |
+| D4 | Target GREEN |
+| D5 | Target BLUE |
+| D6 | Target RED |
 
 ### Outputs
 | Pin | Circuit |
 |---|---|
-| D7 | 1k → 2N3904 base; E → GND; C → HOME button LED (−); LED (+) → 5V |
-| D8 | Same driver → GREEN button LED |
-| D9 | Same driver → BLUE button LED |
-| D10 | Same driver → RED button LED |
-| D11 | 1k → 2N3904 base; E → GND; C → buzzer (−); buzzer (+) → 5V; 1N4148 across buzzer, stripe to 5V. Drive with `tone(11, 2400)` / `noTone(11)` (works whether the buzzer is an indicator or transducer type) |
-| D12 | 1k → green 5 mm LED → GND (clean rep) |
-| D13 | 1k → red 5 mm LED → GND (compensated rep) |
+| D9 | 1k → 2N3904 base; E → GND; C → buzzer (−); buzzer (+) → 5V; 1N4148 across buzzer, stripe to 5V. Drive with `tone(9, 2400)` / `noTone(9)` (works whether the buzzer is an indicator or transducer type) |
+| D10 | 1k → 2N3904 base; E → GND; C → HOME button LED (−); LED (+) → 5V |
+| D11 | Same driver → GREEN button LED |
+| D12 | Same driver → BLUE button LED |
+| D13 | Same driver → RED button LED (the on-board LED follows it) |
+| D7, D8 | Not used. (The red/green result LEDs were removed; the buzzer is the only feedback) |
 
 The yellow START button's LED is optional; leave it unconnected unless the user asks.
 
@@ -242,8 +242,10 @@ The yellow START button's LED is optional; leave it unconnected unless the user 
 ### State machine
 ```
 IDLE -> CALIBRATING -> WAIT_HOME -> CUED -> REACHING -> RETURNING -> WAIT_HOME ...
+                                                            (block done) -> REST -> next block ... -> IDLE
 ```
-- START in any active state ends the session (emit `S,` line) and returns to IDLE.
+- After the last block the session ends by itself (emit `S,` line). START in any active state ends it early.
+- Buzzer: lean alarm only in the TRAINING block. `T` and `P` are refused mid-session.
 - Reach timeout (e.g. 15 s) aborts the rep and returns to WAIT_HOME.
 - Debounce all buttons (arcade microswitches bounce).
 - Sample at **100 Hz** using `micros()` timing, not `delay()`.
@@ -259,7 +261,7 @@ IDLE -> CALIBRATING -> WAIT_HOME -> CUED -> REACHING -> RETURNING -> WAIT_HOME .
 ```
 # comment lines start with '#'
 D,t_ms,state,trunk_deg,wrist_dps,threshold      (every sample, 100 Hz; toggle with a constant)
-R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated
+R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase
 S,reps,compensated_reps
 E,message                                       (errors)
 ```
@@ -267,6 +269,7 @@ E,message                                       (errors)
 Commands accepted from the laptop:
 - `T<deg>` — set threshold (e.g. `T12`)
 - `D0` / `D1` — disable / enable sample (`D`) streaming
+- `P<a>,<b>,<c>,<d>` — reps per block (PRACTICE, BASELINE, TRAINING, POST), e.g. `P3,15,30,15`
 
 **Do not change this format without updating the logger and dashboard together.**
 
@@ -345,7 +348,7 @@ Dashboard (`software/web/`) must: load all `reps_*.csv`; show per-session % comp
 
 Protocol details:
 - **Arm's-length rule (setup, not sensed):** before each tester's session, measure arm length (shoulder to fingertip, seated, arm extended) and place the RED target inside it, so a clean reach needs essentially no trunk motion. Foreman & Engsberg 2020 (n=5, see `docs/research/stroke-compensations.md`): healthy trunk flexion ~0.4° at arm's length vs ~18.7° at +20 cm. Record target distance per tester. The literature has no validated degree cutoff, so 10° is a tuning default only.
-- **Video sync:** at the start of each recording, press START with a result LED in camera frame. Testers follow a fixed rep script (e.g. 5 clean, then 5 leaned) and say each rep number aloud as a cross-check.
+- **Video sync:** at the start of each recording, press START with the HOME button in camera frame (its LED blinks during calibration; the end-of-calibration beep is on the audio). Testers follow a fixed rep script (e.g. 5 clean, then 5 leaned) and say each rep number aloud as a cross-check.
 - **Labeling:** a teammate who did not perform that session labels from the video (not the script, since a "clean" rep can lean by accident), without seeing the device's output. Label by clearly visible lean, not a measured angle.
 - **Testers** are team members and possibly friends simulating compensation; no patients (ethics). State this plainly in the report and check whether the course requires consent for testers outside the team.
 - **Client input:** ask CCCARE what real stroke compensation looks like (ideally example videos) so scripted leaned reps resemble the real thing.

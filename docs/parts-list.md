@@ -1,6 +1,6 @@
 # Bill of materials
 
-Matches the team's KiCad schematic (`docs/imu-reach-tracker-schematic.pdf`, "IMU Reach Tracker"). Board: **Arduino UNO R4 Minima** (5 V logic, 8 mA per pin). Prices are CAD from Digi-Key product pages and the team's cart (checked 2026-11-01 to 2026-11-05); confirm at checkout. Orders of $100 CAD or more ship free, usually next day.
+Matches the team's KiCad schematic (`docs/imu-reach-tracker-schematic.pdf`, "ReMotion"). Board: **Arduino UNO R4 Minima** (5 V logic, 8 mA per pin). Prices are CAD from Digi-Key product pages and the team's cart (checked 2026-11-01 to 2026-11-05); confirm at checkout. Orders of $100 CAD or more ship free, usually next day.
 
 ## Teammate (bought)
 
@@ -23,9 +23,9 @@ Matches the team's KiCad schematic (`docs/imu-reach-tracker-schematic.pdf`, "IMU
 | Breadboard, full size 830 (Adafruit 239) | — | [1528-239-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/239/7244929) | 1 | $9.42 |
 | Jumpers male-male, 40 × 150 mm (Adafruit 758) | — | [1528-1154-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/758/5353614) | 1 (40 wires) | $5.87 |
 | Jumpers male-female, 40 × 150 mm (Adafruit 826) | — | [1528-826-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/826/5353622) | 1 (40 wires) | $5.87 |
-| Red LED, 5 mm diffused (Kingbright WP7113ID) | D3 | [754-1264-ND](https://www.digikey.ca/en/products/detail/kingbright/WP7113ID/1747663) | 10 | $2.30 |
-| Green LED, 5 mm diffused (Kingbright WP7113GD) | D2 | [754-1263-ND](https://www.digikey.ca/en/products/detail/kingbright/WP7113GD/1747662) | 10 | $2.44 |
-| 1 kΩ resistor, 1/4 W (Stackpole CF14JT1K00) | R1–R7 | [CF14JT1K00CT-ND](https://www.digikey.ca/en/products/detail/stackpole-electronics-inc/CF14JT1K00/1741314) | 15 | $0.65 |
+| Red LED, 5 mm diffused (Kingbright WP7113ID) | — (not used) | [754-1264-ND](https://www.digikey.ca/en/products/detail/kingbright/WP7113ID/1747663) | 10 | $2.30 |
+| Green LED, 5 mm diffused (Kingbright WP7113GD) | — (not used) | [754-1263-ND](https://www.digikey.ca/en/products/detail/kingbright/WP7113GD/1747662) | 10 | $2.44 |
+| 1 kΩ resistor, 1/4 W (Stackpole CF14JT1K00) | R1–R5 | [CF14JT1K00CT-ND](https://www.digikey.ca/en/products/detail/stackpole-electronics-inc/CF14JT1K00/1741314) | 15 | $0.65 |
 | Active buzzer, 5 V, 30 mA (Same Sky CMI-1295-0585T) | BZ1 | [102-CMI-1295-0585T-ND](https://www.digikey.ca/en/products/detail/cui-devices/CMI-1295-0585T/10326184) | 2 | $6.58 |
 | NPN transistor (onsemi 2N3904BU) | Q1–Q5 | [2N3904FS-ND](https://www.digikey.ca/en/products/detail/onsemi/2N3904BU/1413) | 10 | $2.83 |
 | Diode (onsemi 1N4148) | D1 | 1N4148FS-ND | 10 | $0.89 |
@@ -38,7 +38,7 @@ Subtotal: $85.64.
 | Item | Why | Digi-Key part number | Qty | ≈ CAD |
 |---|---|---|---|---|
 | 10 kΩ resistor, 1/4 W (Stackpole CF14JT10K0) | Base pull-down on Q1–Q5, so the buzzer doesn't chirp and target LEDs don't flicker at reset. Not in the schematic yet | [CF14JT10K0](https://www.digikey.ca/en/products/detail/stackpole-electronics-inc/CF14JT10K0/1741265) | 10 | ~$0.60 |
-| 4-wire silicone ribbon cable, 26 AWG, 1 m (Adafruit 3892) | One for table unit → chest box, one for chest box → wrist. Low stock; if gone, Adafruit 3889 is the same cable in 30 AWG | [1528-2695-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/3892/9603618) | 2 | ~$5.80 |
+| 4-wire silicone ribbon cable, 26 AWG, 1 m (Adafruit 3892) | One for mat → wrist (plus one extra wire for 3V3), one for wrist → chest. Low stock; if gone, Adafruit 3889 is the same cable in 30 AWG | [1528-2695-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/3892/9603618) | 2 | ~$5.80 |
 | Heat shrink kit, ~280 pieces (Adafruit 4559) | Insulates the cable joints | [1528-4559-ND](https://www.digikey.ca/en/products/detail/adafruit-industries-llc/4559/12396896) | 1 | $15.75 |
 
 Running total: about $108, so shipping is free.
@@ -74,38 +74,37 @@ Running total: about $108, so shipping is free.
 
 ## Layout
 
-- **Table unit:** Arduino, level shifter, Q1–Q5, buzzer, result LEDs, Perma-Proto. The five arcade buttons mount on the target board and wire back to it.
-- **Chest box:** chest IMU (U1) on the sternum strap, plus the junction where the wrist cable continues.
-- **Wrist:** wrist IMU (U2) on the forearm strap.
-- **Cables:** table → chest about 1 m, chest → wrist about 70–80 cm, each 4 wires (VCC, GND, SDA, SCL). The USB cable stays on the table.
+- **Button mat:** the Arduino (not soldered; jumper wires plug into its headers) plus the 5×7 cm driver perfboard (Q1–Q5, buzzer; replaces the Perma-Proto). The five arcade buttons mount on the mat and wire to it. Layout and wire map: `hardware/kicad/perfboard/BUILD.md`.
+- **Wrist:** wrist IMU (U2) and the level shifter (U3) on one board, on the forearm strap.
+- **Chest box:** chest IMU (U1) on the sternum strap, at the end of the chain.
+- **Cables:** mat → wrist, 5 wires (SDA, SCL on the 5 V side, plus 5V, GND, 3V3); wrist → chest, 4 wires (VCC, GND, SDA, SCL on the 3.3 V side). The USB cable stays on the mat.
 
 ## Pin map (from the schematic)
 
 | Arduino pin | Connects to |
 |---|---|
-| D2–D6 | SW1–SW5 buttons (other side to GND, `INPUT_PULLUP`). Confirm the exact order in KiCad |
-| D7 | Q1 → Home button LED |
-| D8 | Q2 → Green button LED |
-| D9 | Q3 → Blue button LED |
-| D10 | Q4 → Red button LED |
-| D11 | Q5 → buzzer |
-| D12 | Green result LED (clean rep) via 1 kΩ |
-| D13 | Red result LED (compensated rep) via 1 kΩ; also lights the on-board LED |
+| D2 | SW5 START (yellow) |
+| D3–D6 | SW1 HOME, SW2 GREEN, SW3 BLUE, SW4 RED (other side to GND, `INPUT_PULLUP`) |
+| D7, D8 | Not used |
+| D9 | Q5 → buzzer |
+| D10 | Q1 → Home button LED |
+| D11 | Q2 → Green button LED |
+| D12 | Q3 → Blue button LED |
+| D13 | Q4 → Red button LED (the on-board LED follows it) |
 | A4 / A5 (SDA / SCL) | Level shifter B1 / B2 |
 | 5V | Shifter HV, buzzer +, button LED anodes, IMU VCC (the GY-521 regulator takes 3.3–5 V) |
-| 3V3 | Shifter LV, chest IMU AD0 |
+| 3V3 | Shifter LV, wrist IMU AD0 (both on the wrist board) |
 
 ## Wiring rules
 
 - **IMU power:** from 5V. Confirmed: our GY-521 boards have the on-board regulator (3.3–5 V input).
 - **Level shifter:** HV to 5V, LV to 3V3, GND to GND. B side (HV) to the Arduino, A side (LV) to the IMUs.
-- **Addresses:** chest IMU AD0 to **3V3** → 0x69. Wrist IMU AD0 unconnected → 0x68. Never put 5V on AD0.
+- **Addresses:** wrist IMU AD0 to **3V3** → 0x69. Chest IMU AD0 unconnected → 0x68. Never put 5V on AD0.
 - **I2C speed:** 100 kHz (the default). Total run is about 2 m, so drop to 50 kHz if a sensor drops out.
 - **Cable wire order:** keep SDA and SCL apart, e.g. SDA, GND, SCL, VCC.
 - **Transistor drivers (Q1–Q5):** pin → 1 kΩ → base, 10 kΩ base → GND, emitter → GND, collector → load (−), load (+) → 5V.
 - **Buzzer:** 1N4148 across it, cathode (striped end) to 5V.
 - **Arcade button LEDs:** if they are bare LEDs with no built-in resistor, add a ~150–220 Ω resistor in series with each.
-- **Result LEDs:** pin → 1 kΩ → LED → GND.
 
 ## Soldering
 
@@ -115,8 +114,8 @@ Running total: about $108, so shipping is free.
 ## Bench test before building anything permanent
 
 1. Upload Blink to confirm the board and USB cable.
-2. Wire the wrist IMU (AD0 unconnected) through the shifter, run an I2C scanner, expect 0x68.
+2. Wire the chest IMU (AD0 unconnected) through the shifter, run an I2C scanner, expect 0x68.
 3. Read WHO_AM_I (register 0x75). Genuine = 0x68; clone chips report other IDs and some libraries refuse them.
-4. Add the chest IMU (AD0 to 3V3), expect 0x68 and 0x69.
-5. Repeat step 4 at full cable length (table → chest → wrist, about 2 m).
-6. Test each button, each button LED, the buzzer and both result LEDs.
+4. Add the wrist IMU (AD0 to 3V3), expect 0x68 and 0x69.
+5. Repeat step 4 at full cable length (mat → wrist → chest).
+6. Test each button, each button LED and the buzzer.

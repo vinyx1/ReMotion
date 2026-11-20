@@ -1,12 +1,12 @@
 /*
-  io_test.ino  —  IMU Reach Tracker, ECE 198 Group 19
+  io_test.ino  —  ReMotion, ECE 198 Group 19
 
   PURPOSE
     Checks every button, LED and the buzzer WITHOUT the IMUs.
 
     1. Cycles through the outputs one at a time (about 0.6 s each):
-         HOME LED (D7) -> GREEN LED (D8) -> BLUE LED (D9) -> RED LED (D10)
-         -> result green LED (D12) -> result red LED (D13) -> buzzer beep (D11)
+         HOME LED (D10) -> GREEN LED (D11) -> BLUE LED (D12) -> RED LED (D13)
+         -> buzzer beep (D9)
        and prints which one should be on.
     2. Prints a line every time a button is pressed or released.
        While you hold a mat button, its own LED also lights, so you can
@@ -14,10 +14,9 @@
 
   WIRING (from the KiCad schematic)
     Buttons: one tab to pin, other tab to GND, INPUT_PULLUP, LOW = pressed.
-      D2 HOME (SW1), D3 GREEN (SW2), D4 BLUE (SW3), D5 RED (SW4), D6 START (SW5)
+      D2 START (SW5), D3 HOME (SW1), D4 GREEN (SW2), D5 BLUE (SW3), D6 RED (SW4)
     Button LEDs go through 2N3904 transistors Q1-Q4 (pin HIGH = LED on).
-    Buzzer goes through 2N3904 Q5 on D11.
-    Result LEDs D12 (green) and D13 (red) are driven directly through 1k.
+    Buzzer goes through 2N3904 Q5 on D9.
 
   What to look for
     - An LED that never lights: check its transistor (E to GND, C to LED -),
@@ -28,19 +27,17 @@
 */
 
 // ---------------- Pins ----------------
-const uint8_t PIN_BTN_HOME  = 2;
-const uint8_t PIN_BTN_GREEN = 3;
-const uint8_t PIN_BTN_BLUE  = 4;
-const uint8_t PIN_BTN_RED   = 5;
-const uint8_t PIN_BTN_START = 6;
+const uint8_t PIN_BTN_START = 2;
+const uint8_t PIN_BTN_HOME  = 3;
+const uint8_t PIN_BTN_GREEN = 4;
+const uint8_t PIN_BTN_BLUE  = 5;
+const uint8_t PIN_BTN_RED   = 6;
 
-const uint8_t PIN_LED_HOME  = 7;
-const uint8_t PIN_LED_GREEN = 8;
-const uint8_t PIN_LED_BLUE  = 9;
-const uint8_t PIN_LED_RED   = 10;
-const uint8_t PIN_BUZZER    = 11;
-const uint8_t PIN_RESULT_CLEAN = 12;  // green 5 mm LED
-const uint8_t PIN_RESULT_COMP  = 13;  // red 5 mm LED
+const uint8_t PIN_BUZZER    = 9;
+const uint8_t PIN_LED_HOME  = 10;
+const uint8_t PIN_LED_GREEN = 11;
+const uint8_t PIN_LED_BLUE  = 12;
+const uint8_t PIN_LED_RED   = 13;
 
 // ---------------- Settings ----------------
 const uint32_t STEP_MS   = 600;   // how long each output stays on
@@ -50,18 +47,17 @@ const bool BUZZER_USE_TONE = true; // false = plain on/off (only for an active b
 // ---------------- Tables ----------------
 const uint8_t NUM_BUTTONS = 5;
 const uint8_t buttonPins[NUM_BUTTONS]  = { PIN_BTN_HOME, PIN_BTN_GREEN, PIN_BTN_BLUE, PIN_BTN_RED, PIN_BTN_START };
-const char*   buttonNames[NUM_BUTTONS] = { "HOME (D2)", "GREEN (D3)", "BLUE (D4)", "RED (D5)", "START (D6)" };
+const char*   buttonNames[NUM_BUTTONS] = { "HOME (D3)", "GREEN (D4)", "BLUE (D5)", "RED (D6)", "START (D2)" };
 // The LED that belongs to each button (START has none connected -> 0)
 const uint8_t buttonLeds[NUM_BUTTONS]  = { PIN_LED_HOME, PIN_LED_GREEN, PIN_LED_BLUE, PIN_LED_RED, 0 };
 
-// Output sequence. Step 6 is the buzzer.
-const uint8_t NUM_STEPS = 7;
+// Output sequence. The last step is the buzzer.
+const uint8_t NUM_STEPS = 5;
 const uint8_t stepPins[NUM_STEPS]  = { PIN_LED_HOME, PIN_LED_GREEN, PIN_LED_BLUE, PIN_LED_RED,
-                                       PIN_RESULT_CLEAN, PIN_RESULT_COMP, PIN_BUZZER };
-const char*   stepNames[NUM_STEPS] = { "HOME button LED (D7)", "GREEN button LED (D8)",
-                                       "BLUE button LED (D9)", "RED button LED (D10)",
-                                       "result GREEN LED (D12)", "result RED LED (D13)",
-                                       "BUZZER (D11)" };
+                                       PIN_BUZZER };
+const char*   stepNames[NUM_STEPS] = { "HOME button LED (D10)", "GREEN button LED (D11)",
+                                       "BLUE button LED (D12)", "RED button LED (D13)",
+                                       "BUZZER (D9)" };
 
 bool lastPressed[NUM_BUTTONS];
 uint8_t step = 0;

@@ -3,7 +3,8 @@
 
   The logger doesn't record who did a session yet, so the ids come from where the
   files were: "recorded" for real recordings in data/raw, and "sim-a", "sim-b",
-  "sim-c" for the simulated patients made by fake_history.py. Older exports have no
+  "sim-c" for the simulated patients made by fake_history.py, and "sample" for the
+  committed example session in data/sample (one full four-block session). Older exports have no
   patient field; those sessions count as "sim-a" when simulated, else "recorded".
 */
 import type { Session } from '../types'
@@ -20,6 +21,7 @@ const KNOWN: Record<string, { name: string; initials: string }> = {
   'sim-a': { name: 'Simulated patient A', initials: 'A' },
   'sim-b': { name: 'Simulated patient B', initials: 'B' },
   'sim-c': { name: 'Simulated patient C', initials: 'C' },
+  sample: { name: 'Example session', initials: 'E' },
   recorded: { name: 'Recorded sessions', initials: 'R' },
 }
 

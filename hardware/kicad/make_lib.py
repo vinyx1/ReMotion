@@ -1,4 +1,4 @@
-"""Builds ECE198.kicad_sym: every part in the IMU Reach Tracker in one KiCad library.
+"""Builds ECE198.kicad_sym: every part of ReMotion in one KiCad library.
 Run: python3 make_lib.py   (then: kicad-cli sym upgrade ECE198.kicad_sym to normalise)"""
 import re, os
 KI = "/usr/share/kicad/symbols"
@@ -53,7 +53,7 @@ syms = []
 gy = [("VCC", "power_in"), ("GND", "power_in"), ("SCL", "input"), ("SDA", "bidirectional"),
       ("XDA", "bidirectional"), ("XCL", "output"), ("AD0", "input"), ("INT", "output")]
 syms.append(custom("GY-521", "U", "GY-521", "Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical",
-                   "GY-521 MPU-6050 accel+gyro breakout (5 V in via onboard 3.3 V regulator; I2C pins are 3.3 V). AD0 open = 0x68, AD0 to 3.3 V = 0x69. Chest = 0x69, wrist = 0x68.",
+                   "GY-521 MPU-6050 accel+gyro breakout (5 V in via onboard 3.3 V regulator; I2C pins are 3.3 V). AD0 open = 0x68, AD0 to 3.3 V = 0x69. Chest = 0x68, wrist = 0x69.",
                    ((-7.62, 12.7), (12.7, -10.16)),
                    [pin(k, -10.16, 10.16 - 2.54 * i, 0, n, i + 1) for i, (n, k) in enumerate(gy)],
                    [("MPU-6050", 6.35, 0)]))
@@ -77,12 +77,8 @@ syms.append(copy("Device.kicad_sym", "Buzzer", "CMI-1295-0585T", "CMI-1295-0585T
                  datasheet="https://www.sameskydevices.com/product/resource/cmi-1295-0585t.pdf"))
 syms.append(copy("Transistor_BJT.kicad_sym", "2N3904", "2N3904", "2N3904"))
 syms.append(copy("Diode.kicad_sym", "1N4148", "1N4148", "1N4148"))
-syms.append(copy("Device.kicad_sym", "LED", "LED_Green_5mm", "Green 5mm", footprint="LED_THT:LED_D5.0mm",
-                 desc="Kingbright 5 mm green LED (clean rep, D12 via 1 k)"))
-syms.append(copy("Device.kicad_sym", "LED", "LED_Red_5mm", "Red 5mm", footprint="LED_THT:LED_D5.0mm",
-                 desc="Kingbright 5 mm red LED (compensated rep, D13 via 1 k)"))
 RFP = "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
-syms.append(copy("Device.kicad_sym", "R", "R_1k", "1k", footprint=RFP, desc="1 kOhm 1/4 W (LED limit, transistor base)"))
+syms.append(copy("Device.kicad_sym", "R", "R_1k", "1k", footprint=RFP, desc="1 kOhm 1/4 W (transistor base)"))
 syms.append(copy("Device.kicad_sym", "R", "R_10k", "10k", footprint=RFP, desc="10 kOhm 1/4 W"))
 syms.append(copy("Connector_Generic.kicad_sym", "Conn_01x04", "Cable_Wrist_4pin", "Wrist cable", footprint="Connector_PinHeader_2.54mm:PinHeader_1x04_P2.54mm_Vertical",
                  desc="Flat cable to wrist box: 1 VCC, 2 SDA, 3 GND, 4 SCL (GND between SDA and SCL)"))
