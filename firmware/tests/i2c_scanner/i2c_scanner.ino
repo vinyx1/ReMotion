@@ -1,11 +1,11 @@
 /*
-  i2c_scanner.ino  —  IMU Reach Tracker, ECE 198 Group 19
+  i2c_scanner.ino  —  ReMotion, ECE 198 Group 19
 
   PURPOSE
     First bring-up test. Scans the I2C bus every 3 seconds and prints every
     device that answers. With both IMUs wired correctly you should see:
-        0x68  -> wrist IMU (U2, AD0 unconnected)
-        0x69  -> chest IMU (U1, AD0 tied to 3.3V)
+        0x68  -> chest IMU (U1, AD0 unconnected)
+        0x69  -> wrist IMU (U2, AD0 tied to 3.3V)
 
     It also reads each IMU's WHO_AM_I register (0x75). A genuine MPU-6050
     answers 0x68. Clone chips sometimes answer something else (e.g. 0x70,
@@ -16,11 +16,13 @@
     Flash, open Serial Monitor at 115200 baud. Nothing else to wire.
 
   TROUBLESHOOTING
-    - Nothing found: check 5V / 3.3V / GND to the level shifter, and that
-      SDA->B1 and SCL->B2 (Arduino side), A1/A2 to the IMUs (3.3V side).
-    - Only 0x68 found: chest AD0 is not reaching 3.3V (both IMUs are at 0x68
-      and fighting) or the chest IMU is unplugged.
-    - Only 0x69 found: wrist IMU unplugged or its SDA/SCL swapped.
+    - Nothing found: check 5V / 3.3V / GND on the mat -> wrist cable and the
+      level shifter on the wrist board: SDA->B1, SCL->B2 (Arduino side),
+      A1/A2 to the IMUs (3.3V side).
+    - Only 0x68 found: wrist AD0 is not reaching 3.3V (both IMUs are at 0x68
+      and fighting) or the wrist IMU is unplugged.
+    - Only 0x69 found: chest IMU unplugged, or the wrist -> chest cable is
+      broken or has SDA/SCL swapped.
 */
 
 #include <Wire.h>
@@ -29,8 +31,8 @@
 const uint32_t I2C_CLOCK_HZ   = 100000;  // 100 kHz: required for our long IMU cables
 const uint32_t SCAN_PERIOD_MS = 3000;    // how often to rescan
 
-const uint8_t ADDR_WRIST = 0x68;
-const uint8_t ADDR_CHEST = 0x69;
+const uint8_t ADDR_WRIST = 0x69;
+const uint8_t ADDR_CHEST = 0x68;
 const uint8_t REG_WHO_AM_I = 0x75;       // MPU-6050 identity register
 
 uint32_t lastScanMs = 0;
@@ -88,8 +90,8 @@ void scanBus() {
 
   Serial.print("# devices found: ");
   Serial.println(found);
-  if (!wristFound) Serial.println("E,wrist IMU (0x68) not found");
-  if (!chestFound) Serial.println("E,chest IMU (0x69) not found");
+  if (!wristFound) Serial.println("E,wrist IMU (0x69) not found");
+  if (!chestFound) Serial.println("E,chest IMU (0x68) not found");
   if (wristFound && chestFound) Serial.println("# OK: both IMUs present");
   Serial.println();
 }
@@ -101,7 +103,7 @@ void setup() {
 
   Wire.begin();
   Wire.setClock(I2C_CLOCK_HZ);
-  Serial.println("# I2C scanner ready (expect 0x68 wrist and 0x69 chest)");
+  Serial.println("# I2C scanner ready (expect 0x68 chest and 0x69 wrist)");
 }
 
 void loop() {

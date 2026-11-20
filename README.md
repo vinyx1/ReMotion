@@ -1,4 +1,4 @@
-# IMU Reach Tracker (Re:Motion)
+# ReMotion
 
 **ECE 198, University of Waterloo, Group 19**
 
@@ -35,19 +35,19 @@ This way a therapist can see progress over time.
 | Adafruit 757 level shifter | Lets the 5 V Arduino talk safely to the 3.3 V sensors |
 | 5× 30 mm arcade buttons | HOME, three targets (green, blue, red), and START |
 | 5× 2N3904 transistors | Switch the button lights and buzzer, which need more current than an Arduino pin can give |
-| Buzzer + red/green LEDs | Instant feedback for the patient |
+| Buzzer | Instant feedback for the patient when they lean |
 
 ## Schematic
 
-![IMU Reach Tracker schematic](docs/images/schematic.png)
+![ReMotion schematic](docs/images/schematic.png)
 
 Full-resolution PDF: [`docs/imu-reach-tracker-schematic.pdf`](docs/imu-reach-tracker-schematic.pdf). KiCad source: [`hardware/kicad/`](hardware/kicad/).
 
 **Reading the schematic:**
-- **Top left:** the five arcade buttons, each wired to an Arduino pin (D2–D6).
+- **Top left:** the five arcade buttons, each wired to an Arduino pin: START D2, then HOME, GREEN, BLUE, RED on D3–D6.
 - **Middle:** the Arduino, with the level shifter to its right.
-- **Top right:** the two motion sensors. The chest sensor's AD0 pin is tied to 3.3 V, which gives it address 0x69, so it doesn't clash with the wrist sensor at 0x68.
-- **Bottom:** the transistor switches for the four button lights and the buzzer, and the two result LEDs.
+- **Top right:** the two motion sensors. The wrist sensor's AD0 pin is tied to 3.3 V, which gives it address 0x69, so it doesn't clash with the chest sensor at 0x68. In the built device the level shifter sits on the wrist board, and the cable runs mat → wrist → chest (see `hardware/kicad/perfboard/BUILD.md`).
+- **Bottom:** the transistor switches for the four button lights and the buzzer.
 
 ## What's in this repo
 
@@ -69,13 +69,14 @@ Full-resolution PDF: [`docs/imu-reach-tracker-schematic.pdf`](docs/imu-reach-tra
 **Arduino**
 1. Install the Arduino IDE, the **Arduino UNO R4 Boards** package, and the **Adafruit MPU6050** library.
 2. Open `firmware/reach_tracker/reach_tracker.ino` and upload it to the board.
-3. Press the yellow START button to begin a session.
+3. Press the yellow START button. The whole session then runs by itself (about 7 minutes): calibration, 3 practice reps, 15 baseline reps without the buzzer, 30 training reps with it, and 15 more without it to see whether the change held. 3 beeps mean it's done.
 
 **Laptop: record a session**
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python -m software.tools.logger
+python -m software.tools.logger --plan 0,0,5,0   # short demo: 5 reps with the buzzer
 ```
 
 **Laptop: view the dashboard**

@@ -37,7 +37,9 @@ FIRST_SESSION = datetime(2026, 11, 2, 10, 0)   # a Monday
 DAYS_BETWEEN = [2, 2, 3]                       # Mon, Wed, Fri, Mon, ...
 START_LEAN = 0.6                               # fraction of reps that lean in session 1
 END_LEAN = 0.1                                 # ... and in the last session
-REPS_RANGE = (10, 14)
+# Reps per block (PRACTICE, BASELINE, TRAINING, POST) for a simulated session: the
+# firmware's blocks, shorter than its default 3/15/30/15 so sessions.json stays small
+FAKE_PLAN = (3, 6, 6, 6)
 MIN_LEAN = 0.1     # never a perfect 0% session: fake data shouldn't look like a finished outcome
 
 # The simulated patients: folder/id, sessions, seed, first session, lean at the start and at the end
@@ -65,11 +67,12 @@ def make_history(sessions=8, seed=1, out_dir=FAKE_DIR, first=FIRST_SESSION, star
     when = first
     written = []
     for i in range(sessions):
-        lines = generate(
-            reps=rng.randint(*REPS_RANGE),
-            lean_fraction=lean_fraction(i, sessions, rng, start, end),
-            seed=rng.randrange(1_000_000),
-        )
+        lean = lean_fraction(i, sessions, rng, start, end)
+        # never a 0%-compensated session (it would look like a finished outcome): re-deal if so
+        for _ in range(50):
+            lines = generate(plan=FAKE_PLAN, lean_fraction=lean, seed=rng.randrange(1_000_000))
+            if not any(line.startswith("S,") and line.rstrip().endswith(",0") for line in lines):
+                break
         # SessionWriter names files by the current time; give each one the
         # session's pretend date instead, so the dashboard shows a timeline.
         tmp = out_dir / f"tmp_{i}"

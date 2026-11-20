@@ -8,7 +8,11 @@ lean rule, so the R lines agree with the D lines.
 
     python -m software.tools.fake_session                       # print to the screen
     python -m software.tools.fake_session --out data/sample/fake_session.txt
-    python -m software.tools.fake_session --reps 20 --lean 0.5 --seed 3
+    python -m software.tools.fake_session --plan 0,0,5,0 --lean 0.5 --seed 3
+
+The fake patient leans on about `--lean` of the BASELINE reps, less and less
+during TRAINING (the buzzer is teaching them), and keeps part of that gain in
+POST. Made up, but it gives the dashboard a realistic before/after to show.
 
 Then feed the file through the logger exactly like a real session:
 
@@ -20,7 +24,7 @@ import math
 import random
 
 from software.tools.protocol import (
-    Rep, Sample, SessionEnd, TARGETS,
+    DEFAULT_PLAN, PHASES, Rep, Sample, SessionEnd, TARGETS,
     format_rep, format_sample, format_session_end,
 )
 
@@ -30,6 +34,13 @@ LEAN_SUSTAIN_MS = 200          # firmware: must lean this long to count
 BURST_ENTER_DPS = 60.0         # firmware burst hysteresis
 BURST_EXIT_DPS = 30.0
 TRUNK_ALPHA = 0.15             # firmware smoothing
+REST_MS = 30000                # firmware rest before TRAINING and POST
+REST_BEFORE = {"TRAINING", "POST"}
+
+# Fraction of `lean` the fake patient keeps in each block (TRAINING goes from
+# the first number to the second across the block). Made up; tune on real data.
+LEAN_SCALE = {"PRACTICE": (1.0, 1.0), "BASELINE": (1.0, 1.0),
+              "TRAINING": (0.9, 0.25), "POST": (0.5, 0.5)}
 
 # Typical sizes for a seated reach (made up but plausible; tune against real data)
 CLEAN_PEAK_DEG = (1.0, 6.0)    # upright reach: a little trunk movement
@@ -74,10 +85,9 @@ def bump(fraction):
     return math.sin(math.pi * fraction) ** 2
 
 
-def fake_rep(dev, rep_number, leaned):
+def fake_rep(dev, rep_number, target, phase, leaned):
     """Simulate one rep and return its Rep summary (computed the firmware's way)."""
     rng = dev.rng
-    target = rng.choice(TARGETS)
     peak_wanted = rng.uniform(*(LEAN_PEAK_DEG if leaned else CLEAN_PEAK_DEG))
     react_ms = rng.randint(*REACT_MS) // SAMPLE_MS * SAMPLE_MS
     reach_ms = rng.randint(*REACH_MS[target]) // SAMPLE_MS * SAMPLE_MS
@@ -112,45 +122,63 @@ def fake_rep(dev, rep_number, leaned):
             over_since = None
 
     rep = Rep(rep_number, target, react_ms, reach_ms, peak_deg, bursts,
-              compensated=peak_deg > dev.threshold and sustain_met)
+              compensated=peak_deg > dev.threshold and sustain_met, phase=phase)
     dev.lines.append(format_rep(rep))
 
     dev.hold("RETURNING", rng.randint(600, 1000), wrist_dps=40.0)   # hand comes back
     return rep
 
 
-def generate(reps=10, lean_fraction=0.3, seed=None, threshold=THRESHOLD_DEG):
-    """Return the lines of one fake session, as the Arduino would print them."""
+def generate(plan=DEFAULT_PLAN, lean_fraction=0.5, seed=None, threshold=THRESHOLD_DEG):
+    """Return the lines of one fake session (all blocks of `plan`), as the Arduino prints them."""
     rng = random.Random(seed)
     dev = FakeDevice(rng, threshold)
 
-    dev.comment("IMU Reach Tracker, ECE 198 Group 19 (FAKE SESSION)")
+    dev.comment("ReMotion, ECE 198 Group 19 (FAKE SESSION)")
     dev.comment("both IMUs found. Press START to begin a session.")
+    dev.comment("plan: " + " ".join(f"{p} {n}" for p, n in zip(PHASES, plan)))
     dev.hold("IDLE", 1000)
     dev.comment("calibrating: sit upright and still for 3 s")
     dev.hold("CALIBRATING", 3000)
     dev.comment("calibration OK (std 0.12 m/s2)")
-    dev.comment("session started: put your hand on HOME")
+    dev.comment("session started")
 
-    leaned_reps = set(rng.sample(range(reps), round(reps * lean_fraction)))
-    results = [fake_rep(dev, n + 1, n in leaned_reps) for n in range(reps)]
+    results = []
+    for phase, count in zip(PHASES, plan):
+        if count == 0:
+            continue
+        if phase in REST_BEFORE and results:
+            dev.comment(f"rest {REST_MS // 1000} s before the {phase} block")
+            dev.hold("REST", REST_MS)
+        dev.comment(f"{phase} block: {count} reps")
+        deck = [TARGETS[i % 3] for i in range(count)]     # equal GREEN/BLUE/RED, like the firmware
+        rng.shuffle(deck)
+        start, end = LEAN_SCALE[phase]
+        for i, target in enumerate(deck):
+            p_lean = lean_fraction * (start + (end - start) * i / max(1, count - 1))
+            results.append(fake_rep(dev, len(results) + 1, target, phase, rng.random() < p_lean))
 
     compensated = sum(r.compensated for r in results)
+    dev.comment("all blocks done")
     dev.lines.append(format_session_end(SessionEnd(len(results), compensated)))
     dev.comment("session ended. Press START for a new session.")
     return dev.lines
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate a fake IMU Reach Tracker session.")
-    parser.add_argument("--reps", type=int, default=10, help="number of reps (default 10)")
-    parser.add_argument("--lean", type=float, default=0.3,
-                        help="fraction of reps that lean (default 0.3)")
+    parser = argparse.ArgumentParser(description="Generate a fake ReMotion session.")
+    parser.add_argument("--plan", default=",".join(map(str, DEFAULT_PLAN)),
+                        help="reps per block: PRACTICE,BASELINE,TRAINING,POST (default %(default)s)")
+    parser.add_argument("--lean", type=float, default=0.5,
+                        help="fraction of BASELINE reps that lean (default 0.5)")
     parser.add_argument("--seed", type=int, help="random seed, for repeatable sessions")
     parser.add_argument("--out", help="write to this file instead of the screen")
     args = parser.parse_args()
 
-    lines = generate(args.reps, args.lean, args.seed)
+    plan = [int(n) for n in args.plan.split(",")]
+    if len(plan) != len(PHASES):
+        parser.error(f"--plan needs {len(PHASES)} numbers: {','.join(PHASES)}")
+    lines = generate(plan, args.lean, args.seed)
     text = "\n".join(lines) + "\n"
     if args.out:
         with open(args.out, "w") as f:

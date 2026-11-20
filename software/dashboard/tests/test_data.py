@@ -5,7 +5,7 @@ import pytest
 
 from software.dashboard.data import (
     find_reach_windows, load_reps, load_samples, rep_trace,
-    session_threshold, summarize_sessions,
+    session_threshold, summarize_phases, summarize_sessions,
 )
 from software.tools.fake_session import generate
 from software.tools.logger import SessionWriter
@@ -13,9 +13,9 @@ from software.tools.logger import SessionWriter
 
 @pytest.fixture
 def session_folder(tmp_path):
-    """A folder holding one logger run that contains TWO sessions (8 reps, then 5)."""
+    """A folder holding one logger run that contains TWO sessions (8 reps in all blocks, then 5 TRAINING reps)."""
     writer = SessionWriter(tmp_path)
-    for line in generate(reps=8, lean_fraction=0.5, seed=1) + generate(reps=5, lean_fraction=0.2, seed=2):
+    for line in generate((1, 3, 3, 1), lean_fraction=0.5, seed=1) + generate((0, 0, 5, 0), lean_fraction=0.2, seed=2):
         writer.handle(line)
     writer.close()
     return tmp_path
@@ -118,3 +118,21 @@ def test_simulated_patients_are_tagged_and_kept_apart(tmp_path, monkeypatch, cap
     a, c = by_patient["sim-a"], by_patient["sim-c"]
     assert a[0]["summary"]["pctCompensated"] > a[-1]["summary"]["pctCompensated"]   # sim-a improves
     assert c[0]["summary"]["pctCompensated"] < c[-1]["summary"]["pctCompensated"]   # sim-c gets worse
+
+
+def test_phase_summary(session_folder):
+    reps = load_reps([session_folder])
+    first = summarize_phases(reps[reps["session"] == 1])
+    assert list(first["phase"]) == ["PRACTICE", "BASELINE", "TRAINING", "POST"]
+    assert list(first["reps"]) == [1, 3, 3, 1]
+    assert list(first["buzzer"]) == [False, False, True, False]
+    assert first["pct_compensated"].between(0, 100).all()
+    assert list(summarize_phases(reps[reps["session"] == 2])["phase"]) == ["TRAINING"]
+
+
+def test_old_logs_without_phase_still_load(tmp_path):
+    old = "session,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated\n1,1,BLUE,550,940,3.3,3,0\n"
+    (tmp_path / "reps_20261105_134323.csv").write_text(old)
+    reps = load_reps([tmp_path])
+    assert len(reps) == 1 and reps["phase"].iloc[0] == ""
+    assert summarize_phases(reps).empty

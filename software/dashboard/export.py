@@ -8,7 +8,9 @@ Each session carries a "patient" id. The logger doesn't record who did a session
 yet, so the id comes from where the files are:
     data/raw/              "recorded"   (real recordings)
     data/fake/<id>/        <id>         (simulated patients, from fake_history.py)
-    data/sample/, data/fake/ (loose files)   "sim-a" (the first simulated patient)
+    data/fake/ (loose files)  "sim-a"   (the first simulated patient)
+    data/sample/           "sample"     (the committed example session, full length; kept
+                                         apart so it doesn't break a simulated patient's story)
 
 The web app (software/web/) only reads this file. All the data logic stays in
 Python (data.py, which is tested), so the web app never has to understand the
@@ -23,7 +25,7 @@ from datetime import datetime
 from pathlib import Path
 
 from software.dashboard.data import (
-    load_reps, load_samples, rep_trace, session_threshold, summarize_sessions,
+    load_reps, load_samples, rep_trace, session_threshold, summarize_phases, summarize_sessions,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -58,6 +60,7 @@ def export_sessions(folders, patient=None):
                 "peakDeg": float(r.peak_deg),
                 "bursts": int(r.bursts),
                 "compensated": bool(r.compensated),
+                "phase": r.phase or None,      # None for logs from before the firmware had blocks
                 # Samples from the cue to 0.5 s after the target press (null if not found)
                 "trace": None if trace is None else {
                     "reachEndS": round(float(reach_end_s), 3),
@@ -77,6 +80,15 @@ def export_sessions(folders, patient=None):
             "simulated": str(first["folder"]) != str(RAW_DIR),   # only data/raw is real
             "thresholdDeg": threshold,
             "reps": rep_list,
+            # One entry per block, in session order; [] for logs from before blocks existed
+            "phases": [{
+                "phase": p.phase,
+                "reps": int(p.reps),
+                "compensated": int(p.compensated),
+                "pctCompensated": round(float(p.pct_compensated), 1),
+                "medianPeakDeg": round(float(p.median_peak_deg), 1),
+                "buzzer": bool(p.buzzer),
+            } for p in summarize_phases(reps).itertuples()],
             "summary": {
                 "reps": int(s["reps"]),
                 "compensated": int(s["compensated"]),
@@ -94,7 +106,8 @@ def patient_folders(include_fake=True):
     """[(folders, patient id)] for every patient whose files are on disk."""
     groups = [([str(RAW_DIR)], "recorded")]
     if include_fake:
-        groups.append(([str(SAMPLE_DIR), str(FAKE_DIR)], "sim-a"))       # loose example files
+        groups.append(([str(SAMPLE_DIR)], "sample"))                    # the committed example session
+        groups.append(([str(FAKE_DIR)], "sim-a"))                       # loose files in data/fake
         if FAKE_DIR.exists():
             for sub in sorted(p for p in FAKE_DIR.iterdir() if p.is_dir()):
                 if sub.name == "sim-a":

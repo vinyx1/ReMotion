@@ -5,7 +5,7 @@
 	(uuid "ca1245ff-b51e-4e86-b082-b5bffd122fd3")
 	(paper "A3")
 	(title_block
-		(title "IMU Reach Tracker")
+		(title "ReMotion")
 		(company "ECE 198 Group 19")
 	)
 	(lib_symbols
@@ -2105,408 +2105,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "ECE198:LED_Green_5mm"
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 1.016)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "D"
-				(at 0 2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "Green 5mm"
-				(at 0 -2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" "LED_THT:LED_D5.0mm"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Kingbright 5 mm green LED (clean rep, D12 via 1 k)"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Sim.Pins" "1=K 2=A"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "LED diode"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_fp_filters" "LED* LED_SMD:* LED_THT:*"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "LED_Green_5mm_0_1"
-				(polyline
-					(pts
-						(xy -3.048 -0.762) (xy -4.572 -2.286) (xy -3.81 -2.286) (xy -4.572 -2.286) (xy -4.572 -1.524)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.778 -0.762) (xy -3.302 -2.286) (xy -2.54 -2.286) (xy -3.302 -2.286) (xy -3.302 -1.524)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 0) (xy 1.27 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 -1.27) (xy -1.27 1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 -1.27) (xy 1.27 1.27) (xy -1.27 0) (xy 1.27 -1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "LED_Green_5mm_1_1"
-				(pin passive line
-					(at -3.81 0 0)
-					(length 2.54)
-					(name "K"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 3.81 0 180)
-					(length 2.54)
-					(name "A"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
-		(symbol "ECE198:LED_Red_5mm"
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 1.016)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "D"
-				(at 0 2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "Red 5mm"
-				(at 0 -2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" "LED_THT:LED_D5.0mm"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Kingbright 5 mm red LED (compensated rep, D13 via 1 k)"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Sim.Pins" "1=K 2=A"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "LED diode"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_fp_filters" "LED* LED_SMD:* LED_THT:*"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "LED_Red_5mm_0_1"
-				(polyline
-					(pts
-						(xy -3.048 -0.762) (xy -4.572 -2.286) (xy -3.81 -2.286) (xy -4.572 -2.286) (xy -4.572 -1.524)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.778 -0.762) (xy -3.302 -2.286) (xy -2.54 -2.286) (xy -3.302 -2.286) (xy -3.302 -1.524)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 0) (xy 1.27 0)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy -1.27 -1.27) (xy -1.27 1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 1.27 -1.27) (xy 1.27 1.27) (xy -1.27 0) (xy 1.27 -1.27)
-					)
-					(stroke
-						(width 0.254)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "LED_Red_5mm_1_1"
-				(pin passive line
-					(at -3.81 0 0)
-					(length 2.54)
-					(name "K"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 3.81 0 180)
-					(length 2.54)
-					(name "A"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "ECE198:R_1k"
 			(pin_numbers
 				(hide yes)
@@ -2561,7 +2159,7 @@
 					)
 				)
 			)
-			(property "Description" "1 kOhm 1/4 W (LED limit, transistor base)"
+			(property "Description" "1 kOhm 1/4 W (transistor base)"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2889,17 +2487,6 @@
 		)
 		(uuid "84c810b4-c631-4fdb-bc02-728c201fb683")
 	)
-	(text "Rep result LEDs (D12 green = clean, D13 red = compensated)"
-		(exclude_from_sim no)
-		(at 80.01 115.57 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "99591cc3-06bc-4760-96d3-8b05bc4872dc")
-	)
 	(junction
 		(at 190.5 34.29)
 		(diameter 0)
@@ -3023,6 +2610,14 @@
 	(no_connect
 		(at 125.73 58.42)
 		(uuid "051089b4-853b-4847-965d-1bd8a6293c63")
+	)
+	(no_connect
+		(at 100.33 58.42)
+		(uuid "80087b84-1650-4a57-a1f6-dcc631be643d")
+	)
+	(no_connect
+		(at 100.33 60.96)
+		(uuid "5ed6e966-5859-4454-a73c-8b7ce028dded")
 	)
 	(no_connect
 		(at 196.85 46.99)
@@ -3206,7 +2801,7 @@
 	)
 	(wire
 		(pts
-			(xy 100.33 48.26) (xy 90.17 48.26)
+			(xy 100.33 50.8) (xy 90.17 50.8)
 		)
 		(stroke
 			(width 0)
@@ -3316,7 +2911,7 @@
 	)
 	(wire
 		(pts
-			(xy 92.71 33.02) (xy 92.71 45.72)
+			(xy 92.71 33.02) (xy 92.71 48.26)
 		)
 		(stroke
 			(width 0)
@@ -3396,7 +2991,7 @@
 	)
 	(wire
 		(pts
-			(xy 100.33 53.34) (xy 85.09 53.34)
+			(xy 100.33 55.88) (xy 85.09 55.88)
 		)
 		(stroke
 			(width 0)
@@ -3446,7 +3041,7 @@
 	)
 	(wire
 		(pts
-			(xy 85.09 53.34) (xy 85.09 40.64)
+			(xy 85.09 55.88) (xy 85.09 40.64)
 		)
 		(stroke
 			(width 0)
@@ -3696,16 +3291,6 @@
 	)
 	(wire
 		(pts
-			(xy 88.9 120.65) (xy 88.9 124.46)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "8b56847c-316c-4aa4-9a31-32f251b0650c")
-	)
-	(wire
-		(pts
 			(xy 115.57 30.48) (xy 115.57 26.67)
 		)
 		(stroke
@@ -3776,7 +3361,7 @@
 	)
 	(wire
 		(pts
-			(xy 100.33 55.88) (xy 82.55 55.88)
+			(xy 100.33 45.72) (xy 82.55 45.72)
 		)
 		(stroke
 			(width 0)
@@ -3836,7 +3421,7 @@
 	)
 	(wire
 		(pts
-			(xy 87.63 50.8) (xy 87.63 38.1)
+			(xy 87.63 53.34) (xy 87.63 38.1)
 		)
 		(stroke
 			(width 0)
@@ -3886,7 +3471,7 @@
 	)
 	(wire
 		(pts
-			(xy 82.55 55.88) (xy 82.55 43.18)
+			(xy 82.55 45.72) (xy 82.55 43.18)
 		)
 		(stroke
 			(width 0)
@@ -3986,7 +3571,7 @@
 	)
 	(wire
 		(pts
-			(xy 92.71 45.72) (xy 100.33 45.72)
+			(xy 92.71 48.26) (xy 100.33 48.26)
 		)
 		(stroke
 			(width 0)
@@ -4046,7 +3631,7 @@
 	)
 	(wire
 		(pts
-			(xy 90.17 48.26) (xy 90.17 35.56)
+			(xy 90.17 50.8) (xy 90.17 35.56)
 		)
 		(stroke
 			(width 0)
@@ -4096,7 +3681,7 @@
 	)
 	(wire
 		(pts
-			(xy 100.33 50.8) (xy 87.63 50.8)
+			(xy 100.33 53.34) (xy 87.63 53.34)
 		)
 		(stroke
 			(width 0)
@@ -4156,16 +3741,6 @@
 	)
 	(wire
 		(pts
-			(xy 88.9 130.81) (xy 88.9 134.62)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "fd4748f9-01dc-4123-9314-f5f14f876be0")
-	)
-	(wire
-		(pts
 			(xy 115.57 26.67) (xy 173.99 26.67)
 		)
 		(stroke
@@ -4184,17 +3759,7 @@
 		)
 		(uuid "feefcd7c-3fb7-4465-b6d3-b45bed3b9d48")
 	)
-	(label "LED_RED"
-		(at 100.33 73.66 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "064146f2-4c29-4d49-8902-43f49613cedf")
-	)
-	(label "D11_BUZZER"
+	(label "D9_BUZZER"
 		(at 229.87 167.64 180)
 		(effects
 			(font
@@ -4204,8 +3769,8 @@
 		)
 		(uuid "14eb4bbd-1bbc-405f-b9e2-251e90cd8109")
 	)
-	(label "D11_BUZZER"
-		(at 100.33 68.58 180)
+	(label "D9_BUZZER"
+		(at 100.33 63.5 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4224,7 +3789,7 @@
 		)
 		(uuid "1b9f72a5-cb11-4ae5-87f3-3506000b7bd4")
 	)
-	(label "D8_GREEN_LED"
+	(label "D11_GREEN_LED"
 		(at 92.71 167.64 180)
 		(effects
 			(font
@@ -4234,7 +3799,7 @@
 		)
 		(uuid "216f792f-da78-4443-9ce9-10f5884d58ae")
 	)
-	(label "D10_RED_LED"
+	(label "D13_RED_LED"
 		(at 184.15 167.64 180)
 		(effects
 			(font
@@ -4254,8 +3819,8 @@
 		)
 		(uuid "2ffa97e2-7432-499c-9521-f250f2b5bcc2")
 	)
-	(label "D7_HOME_LED"
-		(at 100.33 58.42 180)
+	(label "D10_HOME_LED"
+		(at 100.33 66.04 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4284,8 +3849,8 @@
 		)
 		(uuid "6f2ff5b2-967a-4b06-aeb0-5eaec7615ceb")
 	)
-	(label "D9_BLUE_LED"
-		(at 100.33 63.5 180)
+	(label "D12_BLUE_LED"
+		(at 100.33 71.12 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4314,8 +3879,8 @@
 		)
 		(uuid "a1ce79aa-eeee-44ce-8700-4a8e2427b6a8")
 	)
-	(label "D8_GREEN_LED"
-		(at 100.33 60.96 180)
+	(label "D11_GREEN_LED"
+		(at 100.33 68.58 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4323,16 +3888,6 @@
 			(justify right bottom)
 		)
 		(uuid "b05b1e3c-6611-43ac-9091-173b1d7eb6fa")
-	)
-	(label "LED_RED"
-		(at 104.14 130.81 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "b4016518-cc6c-4ca8-9e74-ea6adbd3d96c")
 	)
 	(label "BUZZER_NEG"
 		(at 248.92 157.48 90)
@@ -4344,8 +3899,8 @@
 		)
 		(uuid "b86ec0c7-fbd4-4d25-8b6c-311d8aa5d9e8")
 	)
-	(label "D10_RED_LED"
-		(at 100.33 66.04 180)
+	(label "D13_RED_LED"
+		(at 100.33 73.66 180)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -4354,7 +3909,7 @@
 		)
 		(uuid "c0172363-6b3a-436c-bd09-1e21472a9b6a")
 	)
-	(label "D9_BLUE_LED"
+	(label "D12_BLUE_LED"
 		(at 138.43 167.64 180)
 		(effects
 			(font
@@ -4374,17 +3929,7 @@
 		)
 		(uuid "cf3ff4fd-9b7b-4d12-b570-48d47b2cba97")
 	)
-	(label "LED_GREEN"
-		(at 100.33 71.12 180)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "db8b3456-b3bd-4cb9-a955-9bd4e1424eb5")
-	)
-	(label "D7_HOME_LED"
+	(label "D10_HOME_LED"
 		(at 46.99 167.64 180)
 		(effects
 			(font
@@ -4393,16 +3938,6 @@
 			(justify right bottom)
 		)
 		(uuid "e72ab25e-e69a-4f55-9f8a-ac4b1fdb402f")
-	)
-	(label "LED_GREEN"
-		(at 104.14 120.65 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "ef8e3377-95d9-4c2b-a392-bf491be98193")
 	)
 	(label "BUZZER_NEG"
 		(at 69.85 30.48 0)
@@ -4556,7 +4091,7 @@
 				)
 			)
 		)
-		(property "Description" "1 kOhm 1/4 W (LED limit, transistor base)"
+		(property "Description" "1 kOhm 1/4 W (transistor base)"
 			(at 187.96 167.64 0)
 			(hide yes)
 			(show_name no)
@@ -4896,7 +4431,7 @@
 				)
 			)
 		)
-		(property "Description" "1 kOhm 1/4 W (LED limit, transistor base)"
+		(property "Description" "1 kOhm 1/4 W (transistor base)"
 			(at 142.24 167.64 0)
 			(hide yes)
 			(show_name no)
@@ -5010,7 +4545,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "234a4967-a887-4839-acea-82830bf12f83")
-		(property "Reference" "U2"
+		(property "Reference" "U1"
 			(at 220.98 69.8499 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5021,7 +4556,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "GY-521 Wrist (0x68)"
+		(property "Value" "GY-521 Chest (0x68)"
 			(at 220.98 72.3899 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5092,7 +4627,7 @@
 		(instances
 			(project "IMU_Reach_Tracker"
 				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
-					(reference "U2")
+					(reference "U1")
 					(unit 1)
 				)
 			)
@@ -5368,162 +4903,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 88.9 134.62 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "372bd797-6eae-4322-a5f9-a8b5a2963f01")
-		(property "Reference" "#PWR07"
-			(at 88.9 130.81 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 88.9 138.43 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 88.9 134.62 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 88.9 134.62 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 88.9 134.62 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "492e15ce-b66d-4586-9aee-9de07242997c")
-		)
-		(instances
-			(project "IMU_Reach_Tracker"
-				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
-					(reference "#PWR07")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "ECE198:R_1k")
-		(at 100.33 130.81 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "4778c88a-eca9-4d2c-992d-778c532722f6")
-		(property "Reference" "R7"
-			(at 100.33 128.27 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "1k"
-			(at 100.33 133.35 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
-			(at 100.33 130.81 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 100.33 130.81 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "1 kOhm 1/4 W"
-			(at 100.33 130.81 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "70ed5c5d-de15-4430-afa4-0d3dedd1b584")
-		)
-		(pin "2"
-			(uuid "7899b44a-e4f6-4b40-a53c-517ba803693a")
-		)
-		(instances
-			(project "IMU_Reach_Tracker"
-				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
-					(reference "R7")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Diode:1N4148")
 		(at 66.04 30.48 0)
 		(unit 1)
@@ -5680,7 +5059,7 @@
 				)
 			)
 		)
-		(property "Description" "1 kOhm 1/4 W (LED limit, transistor base)"
+		(property "Description" "1 kOhm 1/4 W (transistor base)"
 			(at 96.52 167.64 0)
 			(hide yes)
 			(show_name no)
@@ -5701,85 +5080,6 @@
 			(project "IMU_Reach_Tracker"
 				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
 					(reference "R2")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "ECE198:LED_Green_5mm")
-		(at 92.71 120.65 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "795fb0b3-805b-4280-a72b-7385b8c23545")
-		(property "Reference" "D2"
-			(at 92.71 116.84 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "Green 5mm"
-			(at 92.71 124.46 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "LED_THT:LED_D5.0mm"
-			(at 92.71 120.65 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 92.71 120.65 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 92.71 120.65 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "662a12b3-0934-4007-93df-05310f9e0c3a")
-		)
-		(pin "2"
-			(uuid "cd725a4c-fc3b-47bd-b964-81e53cce9b4e")
-		)
-		(instances
-			(project "IMU_Reach_Tracker"
-				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
-					(reference "D2")
 					(unit 1)
 				)
 			)
@@ -5994,7 +5294,7 @@
 				)
 			)
 		)
-		(property "Description" "1 kOhm 1/4 W (LED limit, transistor base)"
+		(property "Description" "1 kOhm 1/4 W (transistor base)"
 			(at 50.8 167.64 0)
 			(hide yes)
 			(show_name no)
@@ -6015,164 +5315,6 @@
 			(project "IMU_Reach_Tracker"
 				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
 					(reference "R1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "ECE198:R_1k")
-		(at 100.33 120.65 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "87c18d5f-d690-4501-96f6-fd0419387427")
-		(property "Reference" "R6"
-			(at 100.33 118.11 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "1k"
-			(at 100.33 123.19 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal"
-			(at 100.33 120.65 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 100.33 120.65 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "1 kOhm 1/4 W"
-			(at 100.33 120.65 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "12e6c326-85a5-499e-81db-34aa3b7a06b4")
-		)
-		(pin "2"
-			(uuid "1dcebf5d-a0a0-4807-98c9-68d1c4e99fa1")
-		)
-		(instances
-			(project "IMU_Reach_Tracker"
-				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
-					(reference "R6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "ECE198:LED_Red_5mm")
-		(at 92.71 130.81 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "8b9cfe81-9dcc-4ac2-af93-33a9aa5897bd")
-		(property "Reference" "D3"
-			(at 92.71 127 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "Red 5mm"
-			(at 92.71 134.62 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "LED_THT:LED_D5.0mm"
-			(at 92.71 130.81 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 92.71 130.81 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 92.71 130.81 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "d3d50cd6-550e-4284-9cea-77a5c4374488")
-		)
-		(pin "2"
-			(uuid "bcf7d0ab-de37-4ff0-96c9-4656e6cf86e3")
-		)
-		(instances
-			(project "IMU_Reach_Tracker"
-				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
-					(reference "D3")
 					(unit 1)
 				)
 			)
@@ -6463,7 +5605,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "bd714e32-d590-460a-89a3-e5968e0d69c9")
-		(property "Reference" "U1"
+		(property "Reference" "U2"
 			(at 220.98 41.9099 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6474,7 +5616,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "GY-521 Chest (0x69)"
+		(property "Value" "GY-521 Wrist (0x69)"
 			(at 220.98 44.4499 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6545,7 +5687,7 @@
 		(instances
 			(project "IMU_Reach_Tracker"
 				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
-					(reference "U1")
+					(reference "U2")
 					(unit 1)
 				)
 			)
@@ -6895,7 +6037,7 @@
 				)
 			)
 		)
-		(property "Description" "1 kOhm 1/4 W (LED limit, transistor base)"
+		(property "Description" "1 kOhm 1/4 W (transistor base)"
 			(at 233.68 167.64 0)
 			(hide yes)
 			(show_name no)
@@ -7304,83 +6446,6 @@
 			(project "IMU_Reach_Tracker"
 				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
 					(reference "U3")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 88.9 124.46 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "eafecfe4-6642-4dfe-80d5-71b6a5b35b4a")
-		(property "Reference" "#PWR06"
-			(at 88.9 120.65 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 88.9 128.27 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 88.9 124.46 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 88.9 124.46 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 88.9 124.46 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "6f24271e-bb47-443f-9d3c-d793aa72eb95")
-		)
-		(instances
-			(project "IMU_Reach_Tracker"
-				(path "/ca1245ff-b51e-4e86-b082-b5bffd122fd3"
-					(reference "#PWR06")
 					(unit 1)
 				)
 			)
