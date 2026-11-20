@@ -24,6 +24,7 @@ export interface Rep {
 export interface Session {
   id: string
   label: string
+  patient?: string    // who did it: 'recorded' (data/raw), or a simulated patient id ('sim-a'...). Missing in older exports.
   simulated: boolean
   thresholdDeg: number
   reps: Rep[]

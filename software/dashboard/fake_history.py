@@ -1,18 +1,22 @@
 """
 fake_history.py  —  make a few weeks of fake sessions for building the dashboard.
 
-    python -m software.dashboard.fake_history              # 8 sessions -> data/fake/
-    python -m software.dashboard.fake_history --sessions 12 --seed 4
+    python -m software.dashboard.fake_history              # three simulated patients -> data/fake/<id>/
     python -m software.dashboard.export                    # then rebuild sessions.json
 
-The story: one person practising at home about three times a week. Early
-sessions lean on most reps; by the end most reps are clean. Each session is
-made by software/tools/fake_session.py and saved by the logger's own
-SessionWriter, so the files are exactly what a real recording would produce.
+Three made-up people practising at home, each with a different story, so the
+dashboard has more than one patient to show:
+    sim-a  improves: early sessions lean on most reps, by the end most are clean
+    sim-b  holds steady at about a third of reps leaning
+    sim-c  gets worse: leans more as the weeks go on
+Each session is made by software/tools/fake_session.py and saved by the
+logger's own SessionWriter, so the files are exactly what a real recording
+would produce. Each patient's files go in their own folder, data/fake/<id>/;
+the folder name is the patient id that export.py writes into sessions.json.
 
-The files go in data/fake/ (git-ignored, never mixed with real recordings in
-data/raw/). The dashboard marks them "Simulated". Delete the folder to get rid
-of them; running this again replaces them.
+data/fake/ is git-ignored and never mixed with real recordings in data/raw/.
+The dashboard marks these sessions "Simulated". Delete the folder to get rid of
+them; running this again replaces them.
 """
 
 import argparse
@@ -36,27 +40,34 @@ END_LEAN = 0.1                                 # ... and in the last session
 REPS_RANGE = (10, 14)
 MIN_LEAN = 0.1     # never a perfect 0% session: fake data shouldn't look like a finished outcome
 
+# The simulated patients: folder/id, sessions, seed, first session, lean at the start and at the end
+PATIENTS = [
+    {"id": "sim-a", "sessions": 8, "seed": 1, "first": FIRST_SESSION, "start": 0.6, "end": 0.1},
+    {"id": "sim-b", "sessions": 7, "seed": 7, "first": datetime(2026, 11, 3, 14, 0), "start": 0.35, "end": 0.32},
+    {"id": "sim-c", "sessions": 6, "seed": 11, "first": datetime(2026, 11, 5, 9, 30), "start": 0.15, "end": 0.5},
+]
 
-def lean_fraction(i, n, rng):
-    """Steady improvement from START_LEAN to END_LEAN, with day-to-day wobble."""
+
+def lean_fraction(i, n, rng, start=START_LEAN, end=END_LEAN):
+    """A steady change from `start` to `end` over the sessions, with day-to-day wobble."""
     progress = i / max(1, n - 1)
-    base = START_LEAN + (END_LEAN - START_LEAN) * progress
+    base = start + (end - start) * progress
     return min(0.9, max(MIN_LEAN, base + rng.uniform(-0.08, 0.08)))
 
 
-def make_history(sessions=8, seed=1, out_dir=FAKE_DIR):
+def make_history(sessions=8, seed=1, out_dir=FAKE_DIR, first=FIRST_SESSION, start=START_LEAN, end=END_LEAN):
     """Write `sessions` fake sessions into out_dir. Returns the reps file paths."""
     rng = random.Random(seed)
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True)
 
-    when = FIRST_SESSION
+    when = first
     written = []
     for i in range(sessions):
         lines = generate(
             reps=rng.randint(*REPS_RANGE),
-            lean_fraction=lean_fraction(i, sessions, rng),
+            lean_fraction=lean_fraction(i, sessions, rng, start, end),
             seed=rng.randrange(1_000_000),
         )
         # SessionWriter names files by the current time; give each one the
@@ -77,15 +88,22 @@ def make_history(sessions=8, seed=1, out_dir=FAKE_DIR):
     return written
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Make a few weeks of fake sessions in data/fake/.")
-    parser.add_argument("--sessions", type=int, default=8, help="how many sessions (default 8)")
-    parser.add_argument("--seed", type=int, default=1, help="random seed, for repeatable data")
-    args = parser.parse_args()
+def make_patients(out_dir=FAKE_DIR):
+    """Write every simulated patient's sessions into out_dir/<id>/. Returns {id: reps paths}."""
+    if out_dir.exists():
+        shutil.rmtree(out_dir)        # also clears files from before patients had folders
+    written = {}
+    for p in PATIENTS:
+        written[p["id"]] = make_history(p["sessions"], p["seed"], out_dir / p["id"], p["first"], p["start"], p["end"])
+    return written
 
+
+def main():
+    argparse.ArgumentParser(description="Make a few weeks of fake sessions for three simulated patients in data/fake/.").parse_args()
     with contextlib.redirect_stdout(io.StringIO()):   # SessionWriter prints every rep
-        paths = make_history(args.sessions, args.seed)
-    print(f"wrote {len(paths)} fake sessions to {FAKE_DIR}")
+        written = make_patients()
+    for pid, paths in written.items():
+        print(f"wrote {len(paths)} fake sessions to {FAKE_DIR / pid}")
     print("now run: python -m software.dashboard.export")
 
 

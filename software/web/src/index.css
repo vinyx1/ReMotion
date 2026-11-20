@@ -1,38 +1,30 @@
 @import "tailwindcss";
 
 /*
-  Design tokens. One brand colour (ink navy) for structure; blue and orange are
-  reserved for meaning: clean rep / compensated rep. Everything else is neutral.
+  Design tokens: Rehab Studio (see DESIGN.md), shared by the landing page and the
+  therapist dashboard. Terracotta is a state: it marks a lean past the limit
+  (a compensated rep) and is never decoration.
 */
 @theme {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
-
-  --color-paper: #f4f5f7;      /* page background */
-  --color-surface: #ffffff;    /* cards */
-  --color-ink: #0f1a2a;        /* main text */
-  --color-ink-2: #4a5568;      /* secondary text */
-  --color-ink-3: #8a94a6;      /* captions, axes */
-  --color-line: #e2e6ec;       /* borders */
-  --color-line-2: #eef1f4;     /* gridlines, subtle fills */
-  --color-brand: #13243d;      /* header, primary buttons */
-
-  /* Landing page (Rehab Studio). Terracotta is a state, used only for a lean past the limit. */
   --font-display: "Literata Variable", "Iowan Old Style", Georgia, serif;
   --font-text: "Atkinson Hyperlegible Next Variable", "Avenir Next", system-ui, sans-serif;
   --font-readout: "Atkinson Hyperlegible Mono Variable", ui-monospace, monospace;
-  --color-plaster: #eef0ec;
-  --color-wall: #c9d3cb;
-  --color-eucalyptus: #4f6f5f;
-  --color-forest: #1f2d27;
-  --color-forest-2: #4a5a52;
-  --color-terra: #b4532f;
-  --color-terra-deep: #9a4526;
 
-  --color-clean: #2a78d6;
-  --color-clean-soft: #e8f1fc;
-  --color-comp: #eb6834;
-  --color-comp-soft: #fdeee6;
+  --color-plaster: #eef0ec;    /* page ground */
+  --color-panel: #f7f8f5;      /* dashboard panels, a step lighter than the ground */
+  --color-wash: #e2e8e1;       /* selected rows, hover on controls and rows */
+  --color-grid: #dbe1da;       /* chart gridlines */
+  --color-wall: #c9d3cb;       /* hairlines */
+  --color-folder: #a9b9ad;     /* back and tab of a patient folder in the sidebar */
+  --color-folder-shut: #34443c; /* a closed patient folder on the forest sidebar */
+  --color-folder-shut-hi: #3e5047; /* ... on hover */
+  --color-eucalyptus: #4f6f5f; /* focus, selection, "better" */
+  --color-forest: #1f2d27;     /* ink, top bar, chart lines */
+  --color-forest-deep: #14201b;
+  --color-forest-2: #4a5a52;   /* secondary text, axes (on plaster or panel only) */
+  --color-lake: #3f6a8a;       /* a patient leaning less: the trend pill and the wall's cool light */
+  --color-terra: #b4532f;      /* compensated marks, large readouts */
+  --color-terra-deep: #9a4526; /* small compensated text */
 }
 
 @layer base {
@@ -41,6 +33,70 @@
     -moz-osx-font-smoothing: grayscale;
   }
   body {
-    @apply bg-paper font-sans text-ink;
+    @apply bg-plaster font-text text-forest;
   }
+  ::selection {
+    background: rgb(79 111 95 / 0.25);
+  }
+}
+
+/* ---------- dashboard: the wall ----------
+   Every dashboard page opens on a band of the landing page's eucalyptus wall, lit from the
+   upper left, that meets the plaster floor at a horizon (a forest hairline). The active tab
+   is plaster and rises out of the floor. When a patient is leaning more, the wall warms
+   toward terracotta, as the landing room does on a lean. */
+@property --wall-tint { syntax: '<color>'; inherits: false; initial-value: #c9d3cb; }
+.dash-wall {
+  --wall-tint: var(--color-wall);
+  position: relative;
+  background:
+    radial-gradient(80% 140% at 10% -20%, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0) 60%),
+    linear-gradient(to bottom, var(--wall-tint) 35%, color-mix(in oklab, var(--wall-tint), var(--color-eucalyptus) 30%));
+  box-shadow: inset 0 -1px 0 rgb(31 45 39 / 0.22);
+  transition: --wall-tint 500ms ease-out;
+}
+.dash-wall.is-warm { --wall-tint: color-mix(in oklab, var(--color-wall), var(--color-terra) 9%); }
+/* the warmth is mostly a light, as on the landing stage: a terracotta glow from the upper right */
+.dash-wall::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 55% 120% at 72% 18%, rgb(180 83 47 / 0.2), rgb(180 83 47 / 0) 70%);
+  opacity: 0; transition: opacity 500ms ease-out;
+}
+.dash-wall.is-warm::before { opacity: 1; }
+/* leaning less: the same light, cool, in lake blue */
+.dash-wall.is-cool { --wall-tint: color-mix(in oklab, var(--color-wall), var(--color-lake) 12%); }
+.dash-wall::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 55% 120% at 72% 18%, rgb(104 158 204 / 0.42), rgb(104 158 204 / 0) 72%);
+  opacity: 0; transition: opacity 500ms ease-out;
+}
+.dash-wall.is-cool::after { opacity: 1; }
+.dash-wall { isolation: isolate; }
+.dash-wall::before, .dash-wall::after { z-index: 1; }
+.dash-wall > * { position: relative; z-index: 2; }
+/* the low-poly facets: under the light and the content */
+.dash-wall > .dash-facets {
+  position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
+  pointer-events: none;
+}
+.dash-facets path { stroke: rgb(255 255 255 / 0.16); stroke-width: 0.8; vector-effect: non-scaling-stroke; }
+@media (prefers-reduced-motion: reduce) { .dash-wall, .dash-wall::before, .dash-wall::after { transition: none; } }
+
+/*
+  Data entrance. Bars grow from their zero end, marks pop in, a newly chosen graph
+  rises in. One ease-out curve (quick start, long settle) so it reads as the data
+  arriving, not a bounce. `--delay` staggers siblings. All of it is off for
+  reduced motion.
+*/
+@keyframes grow-x { from { transform: scaleX(0); } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes pop-in { from { opacity: 0; transform: scale(0.3); } }
+.grow-x { transform-origin: left center; animation: grow-x 700ms cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms) both; }
+.rise-in { animation: rise-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.pop-in { transform-box: fill-box; transform-origin: center; animation: pop-in 380ms cubic-bezier(0.22, 1, 0.36, 1) var(--delay, 0ms) both; }
+/* Overview bars: slide to the new length when Show average / Show previous switches */
+.measure-bar { transition: width 550ms cubic-bezier(0.22, 1, 0.36, 1), filter 150ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .grow-x, .rise-in, .pop-in { animation: none; }
+  .measure-bar { transition: filter 150ms ease-out; }
 }

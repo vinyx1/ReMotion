@@ -4,6 +4,12 @@ export.py  —  turn the logger's CSV files into one JSON file for the web dashb
     python -m software.dashboard.export                 # data/raw + data/sample + data/fake -> software/web/public/sessions.json
     python -m software.dashboard.export --no-sample     # real recordings only (data/raw)
 
+Each session carries a "patient" id. The logger doesn't record who did a session
+yet, so the id comes from where the files are:
+    data/raw/              "recorded"   (real recordings)
+    data/fake/<id>/        <id>         (simulated patients, from fake_history.py)
+    data/sample/, data/fake/ (loose files)   "sim-a" (the first simulated patient)
+
 The web app (software/web/) only reads this file. All the data logic stays in
 Python (data.py, which is tested), so the web app never has to understand the
 CSV format or how reps are found in the samples.
@@ -27,8 +33,8 @@ FAKE_DIR = REPO_ROOT / "data" / "fake"         # made by software.dashboard.fake
 DEFAULT_OUT = REPO_ROOT / "software" / "web" / "public" / "sessions.json"
 
 
-def export_sessions(folders):
-    """Build the dictionary that becomes sessions.json."""
+def export_sessions(folders, patient=None):
+    """Build the dictionary that becomes sessions.json, tagging each session with `patient` if given."""
     all_reps = load_reps(folders)
     sessions = []
     if all_reps.empty:
@@ -64,7 +70,9 @@ def export_sessions(folders):
 
         s = summary.loc[label]
         sessions.append({
-            "id": f"{first['stamp']}-{int(first['session'])}",
+            # starts with the time stamp (the dashboard reads the date from it); the patient keeps ids unique
+            "id": f"{first['stamp']}-{int(first['session'])}" + (f"-{patient}" if patient else ""),
+            **({"patient": patient} if patient else {}),
             "label": label,
             "simulated": str(first["folder"]) != str(RAW_DIR),   # only data/raw is real
             "thresholdDeg": threshold,
@@ -82,14 +90,36 @@ def export_sessions(folders):
     return {"generated": datetime.now().isoformat(timespec="seconds"), "sessions": sessions}
 
 
+def patient_folders(include_fake=True):
+    """[(folders, patient id)] for every patient whose files are on disk."""
+    groups = [([str(RAW_DIR)], "recorded")]
+    if include_fake:
+        groups.append(([str(SAMPLE_DIR), str(FAKE_DIR)], "sim-a"))       # loose example files
+        if FAKE_DIR.exists():
+            for sub in sorted(p for p in FAKE_DIR.iterdir() if p.is_dir()):
+                if sub.name == "sim-a":
+                    groups[-1][0].append(str(sub))
+                else:
+                    groups.append(([str(sub)], sub.name))
+    return groups
+
+
+def export_groups(groups):
+    """Export each patient's folders on their own (so their sessions never merge) and combine them."""
+    sessions = []
+    for folders, patient in groups:
+        sessions += export_sessions(folders, patient)["sessions"]
+    sessions.sort(key=lambda x: x["id"])            # oldest first
+    return {"generated": datetime.now().isoformat(timespec="seconds"), "sessions": sessions}
+
+
 def main():
     parser = argparse.ArgumentParser(description="Export logged sessions to JSON for the web dashboard.")
     parser.add_argument("--no-sample", action="store_true", help="real recordings only: leave out data/sample and data/fake")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="output file")
     args = parser.parse_args()
 
-    folders = [str(RAW_DIR)] + ([] if args.no_sample else [str(SAMPLE_DIR), str(FAKE_DIR)])
-    data = export_sessions(folders)
+    data = export_groups(patient_folders(include_fake=not args.no_sample))
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(data, separators=(",", ":")))
     n_reps = sum(len(s["reps"]) for s in data["sessions"])

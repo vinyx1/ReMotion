@@ -5,9 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/** Where each target sits on the mat, as a fraction of comfortable arm reach. */
-export const TARGET_REACH: Record<string, string> = { GREEN: '40%', BLUE: '70%', RED: '100%' }
-
 /** Readable name for a firmware state. */
 export function phaseName(state: string): string {
   switch (state) {

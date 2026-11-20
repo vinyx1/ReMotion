@@ -74,7 +74,7 @@ These are the joins between people's work. Changing one side silently breaks som
 - If `arduino-cli` is available, compile every sketch for `arduino:renesas_uno:minima` and fix all errors.
 - Reference material: `hardware/ECE 198 Parts List.pdf`.
 - Circuit source of truth: KiCad project `hardware/kicad/` and its export `docs/imu-reach-tracker-schematic.pdf` ("IMU Reach Tracker", Group 19). Full specs, Digi-Key cart, wiring rules and bench test: `docs/parts-list.md`. Schematic review findings: `docs/schematic-review.md`. Open checks: `docs/confirmations.md`. Research notes: `docs/research/`.
-- Scope it like a hackathon: one exercise (seated reach), done reliably, is the finish line. Rule-based detection, not ML. Don't propose extra sensors unless they add something meaningful (build is about $150).
+- Scope it like a hackathon: the forward seated reach, done reliably, is the finish line for the demo. Three more exercises are in scope *after* it works (section 1, Exercises); don't start them before the forward reach is solid. Rule-based detection, not ML. Don't propose extra sensors unless they add something meaningful (build is about $150).
 
 ## 1. What we are building
 
@@ -83,6 +83,21 @@ A seated reaching-exercise device for stroke survivors and older adults that **d
 - **Client:** CCCARE (Centre for Community, Clinical & Applied Research Excellence, Waterloo). Course challenge: track and assess exercise quality, support at-home rehab.
 - **Problem:** clinical assessments score whether a reach was completed, not how. A patient who leans their trunk forward to compensate for limited arm movement looks the same as a recovered patient. Therapists have no objective way to monitor this between appointments.
 - **Device:** one IMU on the sternum measures trunk tilt; one IMU on the wrist measures arm movement; arcade buttons on a table mat time each reach. If the trunk tilts past a threshold during a reach, a buzzer sounds and the rep is flagged as compensated. All data streams to a laptop for logging and a therapist dashboard.
+
+### Exercises (scope)
+
+Same two IMUs and the same idea in every exercise: the arm does a task while the chest IMU watches the trunk for compensation. **Forward reach comes first** and is all the demo needs; the other three are next, after it works reliably. None needs new hardware.
+
+| # | Exercise | Patient does | "Rep done" signal | Compensation watched for | Status |
+|---|---|---|---|---|---|
+| 1 | **Forward reach** | Reach from HOME to the lit target in front, press it, return | Target **button press** | Trunk leans forward | **Building now** (sections 2 to 6) |
+| 2 | **Sideways reach** | Same as forward, but the **mat is turned 90°** along the table edge on the reaching side (HOME near the hand, targets stepping outward). Chair still faces the table: turning the chair instead would just make it a forward reach again | Target **button press** | Trunk leans sideways (the trunk angle is axis-independent, so this already works) | Planned |
+| 3 | **Hand to mouth** (drinking motion) | Lift the hand from HOME to the mouth and back | **Wrist IMU angle**: forearm tips up past a "hand at mouth" angle. No target button; LEDs only cue | Trunk/head bends down to meet the hand | Planned |
+| 4 | **Forearm rotation** (supination / pronation) | Turn the forearm palm-down to palm-up and back, elbow at the side | **Wrist gyro**: forearm has rotated past a target angle. No target button; LEDs only cue | Trunk tilts sideways / elbow swings out to fake the turn | Planned |
+
+Why buttons stay for the reaches but not for 3 and 4: the IMUs measure angles, not hand position, so only a press can confirm a reach got to its target (a short reach with a straight back would otherwise look clean). Hand to mouth and forearm rotation have angle goals the wrist IMU measures directly.
+
+Before 2 to 4 are built, decide together: how a session picks its exercise (e.g. a serial command, or holding START), how the exercise is recorded in the serial protocol and CSVs (a contract change, section 0), and each exercise's lean limit (10° is only a default for the forward reach; set the others from recorded clean and leaned reps). Cross-body reach is **not** in scope: its main compensation is trunk twisting, which needs gyro fusion (section 10).
 
 **Team:** Group 19, 4 people. The user is the project manager. Other roles: researcher, tester, designer.
 
