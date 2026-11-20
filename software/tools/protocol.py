@@ -10,7 +10,7 @@ Each line from the Arduino becomes one small Python object:
     "D,15230,REACHING,4.2,85.3,10.0"     -> Sample(...)
     "R,1,BLUE,412,1380,6.8,2,0"          -> Rep(...)
     "S,10,3"                             -> SessionEnd(...)
-    "E,chest IMU (0x69) not found"       -> DeviceError(...)
+    "E,chest IMU (0x68) not found"       -> DeviceError(...)
     "# calibration OK"                   -> Comment(...)
 
 parse_line() returns None for lines it can't understand (blank, cut off,

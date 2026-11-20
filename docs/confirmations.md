@@ -4,7 +4,7 @@ Check these off and write the answer next to each. Once they are answered, they 
 
 ## Blocks firmware
 
-- [ ] **Button count (ask Yousuf).** The schematic has 5 arcade buttons: HOME, GREEN, BLUE, RED, and an unlit yellow START on D6. The team says there are only 4. Was the yellow START dropped (then what starts and ends a session?), or is one of the four now START (then which target goes?). Until this is answered, the docs and firmware keep the 5-button schematic. Answer: ____
+- [x] **Button count (ask Yousuf).** The schematic has 5 arcade buttons: HOME, GREEN, BLUE, RED, and an unlit yellow START on D6. The team says there are only 4. Was the yellow START dropped (then what starts and ends a session?), or is one of the four now START (then which target goes?). Until this is answered, the docs and firmware keep the 5-button schematic. Answer: 5 buttons stay. Yellow START is on D2 (re-mapped 2026-11-19), HOME/GREEN/BLUE/RED on D3–D6.
 - [ ] **Buy the parts.** Digi-Key order and spare MPU-6050, see `docs/parts-list.md`. Answer: ____
 - [ ] **Soldering access.** Where will the team solder the header pins (course lab or campus makerspace)? Answer: ____
 - [x] **IMU regulator check.** Does each GY-521 have an on-board regulator (small 3-pin chip, often marked 662K)? Yes → VCC from 5V; no → VCC from 3V3. Answer: yes, the GY-521 boards take 3.3–5 V in through their regulator, so VCC stays on 5V as in the schematic.
@@ -15,10 +15,10 @@ Check these off and write the answer next to each. Once they are answered, they 
 
 Traced from a high-resolution render of `docs/imu-reach-tracker-schematic.pdf` on 2026-11-05.
 
-- [x] **Chest IMU (U1) AD0 goes to 3V3.** Verified.
+- [x] **Wrist IMU (U2) AD0 goes to 3V3.** Changed 2026-11-18: the addresses were swapped (wrist 0x69, chest 0x68) when the level shifter moved to the wrist board.
 - [x] **Level shifter (U3): HV to 5V, LV to 3V3**, B1/B2 to Arduino SDA/SCL, A1/A2 to both IMUs. Verified.
 - [x] **Buzzer diode (D1): cathode to 5V / buzzer +.** Verified.
-- [x] **Button-to-pin order:** SW1 Home → D2, SW2 Green → D3, SW3 Blue → D4, SW4 Red → D5, SW5 START (yellow, LED not wired) → D6. Verified.
+- [x] **Button-to-pin order:** SW5 START → D2, SW1 Home → D3, SW2 Green → D4, SW3 Blue → D5, SW4 Red → D6 (re-mapped 2026-11-19; button LEDs D10–D13, buzzer D9).
 - [ ] **Arcade button LEDs have no series resistor** (anode straight to 5V, cathode to the transistor). Fine only if the buttons' LEDs are 5 V with a built-in resistor; otherwise add ~150–220 Ω per LED. Answer: ____
 - [ ] **Add 10 kΩ base pull-downs** on Q1–Q5 to the schematic. Answer: ____
 - [ ] **Add connector symbols** for the table → chest cable, chest → wrist cable and the button leads, so the harness is documented for the final build. Answer: ____
@@ -26,7 +26,7 @@ Traced from a high-resolution render of `docs/imu-reach-tracker-schematic.pdf` o
 
 ## Blocks validation
 
-- [x] **Video-to-data sync.** Decided: press START with a result LED in camera frame (firmware logs a marker), plus a fixed rep script with rep numbers said aloud as a cross-check. Recorded in `AGENTS.md`.
+- [x] **Video-to-data sync.** Decided: press the calibrate button with the HOME button in camera frame (its LED blinks during calibration and the end-of-calibration beep is on the audio; firmware logs a marker), plus a fixed rep script with rep numbers said aloud as a cross-check. Recorded in `AGENTS.md`.
 - [x] **Labeling protocol.** Decided: the team labels the video themselves, ideally a teammate who didn't perform that session, from the video and not the script, without seeing the system's output. Recorded in `AGENTS.md`.
 - [ ] **Full-length I2C test.** With the Arduino on the table, the bus runs about 2 m (table → chest → wrist). Test it early at full length; drop to 50 kHz if a sensor drops out. Answer: ____
 - [ ] **Ask the client (Waterloo CCARE)** what real stroke compensation looks like, ideally with example videos, so scripted leaned reps resemble it. Answer: ____

@@ -25,6 +25,8 @@ Choices between options, with the reason. Date and name each one.
 
 - _2026-11-18 (vinyx1):_ Dropped Streamlit entirely. The dashboard is the React app in `software/web/`; `software/dashboard/` keeps only the tested Python data layer (`data.py`, `export.py`).
 - _2026-11-18 (vinyx1):_ Problems go in GitHub Issues (label `found-by-agent` when an agent found them); see `AGENTS.md` section 0.
+- _2026-11-18 (Yousuf-Hamoda):_ Level shifter moved to the wrist board; cable chain is mat → wrist → chest. Addresses swapped: wrist 0x69, chest 0x68. Arduino sits on the mat unsoldered. Perfboard layouts in `hardware/kicad/perfboard/BUILD.md`.
+- _2026-11-19 (Yousuf-Hamoda):_ Red/green result LEDs removed; the buzzer is the only feedback. Pins re-mapped: START D2, HOME D3, GREEN D4, BLUE D5, RED D6; button LEDs HOME D10, GREEN D11, BLUE D12, RED D13; buzzer D9. Keeps 5 buttons.
 
 ## Blocked / needs someone else
 

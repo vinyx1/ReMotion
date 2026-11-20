@@ -27,9 +27,9 @@ Each button LED (SW1–SW4) has its anode straight on 5V and its cathode on the 
 
 - **Power:** 5V feeds the shifter's HV side, both IMUs' VCC, the buzzer + and the button LED anodes. 3V3 feeds the shifter's LV side and the chest IMU's AD0.
 - **I2C:** Arduino SDA (A4) → B1 and SCL (A5) → B2; A1 → both IMUs' SDA, A2 → both IMUs' SCL. Both shifter grounds tied to the common GND.
-- **Addresses:** chest IMU (U1) AD0 on 3V3 → 0x69; wrist IMU (U2) AD0 unconnected → 0x68.
-- **Buttons:** SW1 Home → D2, SW2 Green → D3, SW3 Blue → D4, SW4 Red → D5, SW5 START → D6 (its LED pins are not connected); other side to GND, for `INPUT_PULLUP`.
+- **Addresses:** chest IMU (U1) AD0 on 3V3 → 0x69; wrist IMU (U2) AD0 unconnected → 0x68. (Superseded 2026-11-18: swapped to wrist (U2) 0x69, chest (U1) 0x68, with the shifter on the wrist board.)
+- **Buttons:** SW1 Home → D2, SW2 Green → D3, SW3 Blue → D4, SW4 Red → D5, SW5 START → D6 (its LED pins are not connected); other side to GND, for `INPUT_PULLUP`. (Superseded 2026-11-19: START D2, Home D3, Green D4, Blue D5, Red D6; button LEDs D10–D13; buzzer D9.)
 - **No short between SW1 and SW2:** the 5V junction and the D3 wire sit almost on the same row, but there's a clear gap at full zoom.
 - **Buzzer diode (D1):** cathode on the buzzer + / 5V side, the correct direction.
-- **Result LEDs (D2, D3):** pin → 1 kΩ → LED → GND, correct direction, labels match D12 (green) and D13 (red), about 3 mA each.
+- **Result LEDs (D2, D3):** removed 2026-11-19. The buzzer is the only feedback; Arduino D7/D8 are now the unused pins.
 - **Transistors (Q1–Q5):** base through 1 kΩ (R1–R5), emitter to GND, collector to the correct load label.

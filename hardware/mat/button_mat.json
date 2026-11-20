@@ -1,0 +1,857 @@
+[
+ {
+  "command": "document.units",
+  "params": {
+   "units": "in"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "deck_len",
+   "expression": "18 in",
+   "comment": "Box length: the reach direction. X is measured from the patient end"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "deck_wid",
+   "expression": "12 in",
+   "comment": "Box height, used as the mat's width. Y is from the right-hand long edge"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "skirt_h",
+   "expression": "2.5 in",
+   "comment": "Skirt height = clearance under the deck for the button switches"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "board_t",
+   "expression": "0.16 in",
+   "comment": "Cardboard thickness (single-wall corrugated, about 4 mm)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "reach_D",
+   "expression": "13 in",
+   "comment": "Design reach: HOME centre to RED centre"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "home_x",
+   "expression": "2 in",
+   "comment": "HOME centre from the patient end"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "col_y",
+   "expression": "8.75 in",
+   "comment": "Target column, in front of the right shoulder"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "green_x",
+   "expression": "home_x + 0.4 * reach_D",
+   "comment": "GREEN at 40% of the reach"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "blue_x",
+   "expression": "home_x + 0.7 * reach_D",
+   "comment": "BLUE at 70% of the reach"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "red_x",
+   "expression": "home_x + reach_D",
+   "comment": "RED at 100% of the reach"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "start_x",
+   "expression": "51 mm",
+   "comment": "START, at the patient end beside the zip ties (matches the real mat)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "start_y",
+   "expression": "109.85 mm",
+   "comment": ""
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "buzz_x",
+   "expression": "51 mm",
+   "comment": "Buzzer, taped on top of the deck (no hole)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "buzz_y",
+   "expression": "39.85 mm",
+   "comment": ""
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "board_z",
+   "expression": "40 mm",
+   "comment": "How far the Arduino and driver board sit below the deck top"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "pass_x",
+   "expression": "6.5 in",
+   "comment": "Wire pass-through up to the electronics"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "pass_y",
+   "expression": "1 in",
+   "comment": ""
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "tie_x",
+   "expression": "1 in",
+   "comment": "Zip-tie holes that anchor the wrist cable"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "tie_y1",
+   "expression": "5 in",
+   "comment": ""
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "tie_y2",
+   "expression": "4.5 in",
+   "comment": ""
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "btn_hole",
+   "expression": "28 mm",
+   "comment": "Arcade button hole (check against the button's nut thread)"
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "pass_hole",
+   "expression": "1 in",
+   "comment": ""
+  }
+ },
+ {
+  "command": "parameters.add",
+  "params": {
+   "name": "tie_hole",
+   "expression": "3 mm",
+   "comment": ""
+  }
+ },
+ {
+  "command": "solid.box",
+  "params": {
+   "length": "deck_len",
+   "width": "deck_wid",
+   "height": "skirt_h",
+   "corner": [
+    0,
+    0,
+    0
+   ],
+   "name": "Mat blank",
+   "body_name": "Mat"
+  }
+ },
+ {
+  "command": "solid.shell",
+  "params": {
+   "faces": [
+    [
+     100,
+     100,
+     0
+    ]
+   ],
+   "thickness": "board_t",
+   "direction": "inside",
+   "body": "Mat"
+  }
+ },
+ {
+  "command": "sketch.create",
+  "params": {
+   "plane": "XY",
+   "offset": "skirt_h",
+   "name": "Cut layout"
+  }
+ },
+ {
+  "command": "sketch.point",
+  "params": {
+   "point": [
+    50.8,
+    222.25
+   ],
+   "id": "HOME"
+  }
+ },
+ {
+  "command": "sketch.point",
+  "params": {
+   "point": [
+    182.88,
+    222.25
+   ],
+   "id": "GREEN"
+  }
+ },
+ {
+  "command": "sketch.point",
+  "params": {
+   "point": [
+    281.94,
+    222.25
+   ],
+   "id": "BLUE"
+  }
+ },
+ {
+  "command": "sketch.point",
+  "params": {
+   "point": [
+    381.0,
+    222.25
+   ],
+   "id": "RED"
+  }
+ },
+ {
+  "command": "sketch.point",
+  "params": {
+   "point": [
+    51.0,
+    109.85
+   ],
+   "id": "START"
+  }
+ },
+ {
+  "command": "sketch.point",
+  "params": {
+   "point": [
+    165.1,
+    25.4
+   ],
+   "id": "PASS"
+  }
+ },
+ {
+  "command": "sketch.point",
+  "params": {
+   "point": [
+    25.4,
+    127.0
+   ],
+   "id": "TIE1"
+  }
+ },
+ {
+  "command": "sketch.point",
+  "params": {
+   "point": [
+    25.4,
+    114.3
+   ],
+   "id": "TIE2"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "HOME"
+   ],
+   "type": "horizontal",
+   "value": "home_x"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "HOME"
+   ],
+   "type": "vertical",
+   "value": "col_y"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "GREEN"
+   ],
+   "type": "horizontal",
+   "value": "green_x"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "GREEN"
+   ],
+   "type": "vertical",
+   "value": "col_y"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "BLUE"
+   ],
+   "type": "horizontal",
+   "value": "blue_x"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "BLUE"
+   ],
+   "type": "vertical",
+   "value": "col_y"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "RED"
+   ],
+   "type": "horizontal",
+   "value": "red_x"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "RED"
+   ],
+   "type": "vertical",
+   "value": "col_y"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "START"
+   ],
+   "type": "horizontal",
+   "value": "start_x"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "START"
+   ],
+   "type": "vertical",
+   "value": "start_y"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "PASS"
+   ],
+   "type": "horizontal",
+   "value": "pass_x"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "PASS"
+   ],
+   "type": "vertical",
+   "value": "pass_y"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "TIE1"
+   ],
+   "type": "horizontal",
+   "value": "tie_x"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "TIE1"
+   ],
+   "type": "vertical",
+   "value": "tie_y1"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "TIE2"
+   ],
+   "type": "horizontal",
+   "value": "tie_x"
+  }
+ },
+ {
+  "command": "sketch.dimension",
+  "params": {
+   "entities": [
+    "origin",
+    "TIE2"
+   ],
+   "type": "vertical",
+   "value": "tie_y2"
+  }
+ },
+ {
+  "command": "sketch.finish",
+  "params": {}
+ },
+ {
+  "command": "solid.hole",
+  "params": {
+   "sketch": "Cut layout",
+   "points": [
+    "HOME",
+    "GREEN",
+    "BLUE",
+    "RED",
+    "START"
+   ],
+   "diameter": "btn_hole",
+   "targets": [
+    "Mat"
+   ],
+   "name": "Holes btn_hole"
+  }
+ },
+ {
+  "command": "solid.hole",
+  "params": {
+   "sketch": "Cut layout",
+   "points": [
+    "PASS"
+   ],
+   "diameter": "pass_hole",
+   "targets": [
+    "Mat"
+   ],
+   "name": "Holes pass_hole"
+  }
+ },
+ {
+  "command": "solid.hole",
+  "params": {
+   "sketch": "Cut layout",
+   "points": [
+    "TIE1",
+    "TIE2"
+   ],
+   "diameter": "tie_hole",
+   "targets": [
+    "Mat"
+   ],
+   "name": "Holes tie_hole"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "34 mm",
+   "height": "10 mm",
+   "base": [
+    "home_x",
+    "col_y",
+    "skirt_h"
+   ],
+   "operation": "new",
+   "name": "HOME button",
+   "body_name": "HOME button"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "btn_hole",
+   "height": "45 mm",
+   "base": [
+    "home_x",
+    "col_y",
+    "skirt_h - 45 mm"
+   ],
+   "operation": "new",
+   "name": "HOME switch",
+   "body_name": "HOME switch"
+  }
+ },
+ {
+  "command": "appearance.assign",
+  "params": {
+   "bodies": [
+    "HOME button",
+    "HOME switch"
+   ],
+   "color": "#f2f2f2"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "34 mm",
+   "height": "10 mm",
+   "base": [
+    "green_x",
+    "col_y",
+    "skirt_h"
+   ],
+   "operation": "new",
+   "name": "GREEN button",
+   "body_name": "GREEN button"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "btn_hole",
+   "height": "45 mm",
+   "base": [
+    "green_x",
+    "col_y",
+    "skirt_h - 45 mm"
+   ],
+   "operation": "new",
+   "name": "GREEN switch",
+   "body_name": "GREEN switch"
+  }
+ },
+ {
+  "command": "appearance.assign",
+  "params": {
+   "bodies": [
+    "GREEN button",
+    "GREEN switch"
+   ],
+   "color": "#2e9e44"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "34 mm",
+   "height": "10 mm",
+   "base": [
+    "blue_x",
+    "col_y",
+    "skirt_h"
+   ],
+   "operation": "new",
+   "name": "BLUE button",
+   "body_name": "BLUE button"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "btn_hole",
+   "height": "45 mm",
+   "base": [
+    "blue_x",
+    "col_y",
+    "skirt_h - 45 mm"
+   ],
+   "operation": "new",
+   "name": "BLUE switch",
+   "body_name": "BLUE switch"
+  }
+ },
+ {
+  "command": "appearance.assign",
+  "params": {
+   "bodies": [
+    "BLUE button",
+    "BLUE switch"
+   ],
+   "color": "#2f6fd6"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "34 mm",
+   "height": "10 mm",
+   "base": [
+    "red_x",
+    "col_y",
+    "skirt_h"
+   ],
+   "operation": "new",
+   "name": "RED button",
+   "body_name": "RED button"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "btn_hole",
+   "height": "45 mm",
+   "base": [
+    "red_x",
+    "col_y",
+    "skirt_h - 45 mm"
+   ],
+   "operation": "new",
+   "name": "RED switch",
+   "body_name": "RED switch"
+  }
+ },
+ {
+  "command": "appearance.assign",
+  "params": {
+   "bodies": [
+    "RED button",
+    "RED switch"
+   ],
+   "color": "#d63a2f"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "34 mm",
+   "height": "10 mm",
+   "base": [
+    "start_x",
+    "start_y",
+    "skirt_h"
+   ],
+   "operation": "new",
+   "name": "START button",
+   "body_name": "START button"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "btn_hole",
+   "height": "45 mm",
+   "base": [
+    "start_x",
+    "start_y",
+    "skirt_h - 45 mm"
+   ],
+   "operation": "new",
+   "name": "START switch",
+   "body_name": "START switch"
+  }
+ },
+ {
+  "command": "appearance.assign",
+  "params": {
+   "bodies": [
+    "START button",
+    "START switch"
+   ],
+   "color": "#f2c230"
+  }
+ },
+ {
+  "command": "solid.box",
+  "params": {
+   "length": "53.3 mm",
+   "width": "68.6 mm",
+   "height": "15 mm",
+   "corner": [
+    "2.25 in",
+    "0.2 in",
+    "skirt_h - board_z"
+   ],
+   "operation": "new",
+   "name": "Arduino Uno R4",
+   "body_name": "Arduino UNO R4 Minima"
+  }
+ },
+ {
+  "command": "appearance.assign",
+  "params": {
+   "bodies": [
+    "Arduino UNO R4 Minima"
+   ],
+   "color": "#00878f"
+  }
+ },
+ {
+  "command": "solid.box",
+  "params": {
+   "length": "70.0 mm",
+   "width": "50.0 mm",
+   "height": "15 mm",
+   "corner": [
+    "4.75 in",
+    "2.5 in",
+    "skirt_h - board_z"
+   ],
+   "operation": "new",
+   "name": "Driver Board",
+   "body_name": "Mat driver perfboard"
+  }
+ },
+ {
+  "command": "appearance.assign",
+  "params": {
+   "bodies": [
+    "Mat driver perfboard"
+   ],
+   "color": "#3a7d3a"
+  }
+ },
+ {
+  "command": "solid.cylinder",
+  "params": {
+   "diameter": "12 mm",
+   "height": "9.5 mm",
+   "base": [
+    "buzz_x",
+    "buzz_y",
+    "skirt_h"
+   ],
+   "operation": "new",
+   "name": "Buzzer",
+   "body_name": "Buzzer"
+  }
+ },
+ {
+  "command": "appearance.assign",
+  "params": {
+   "bodies": [
+    "Buzzer"
+   ],
+   "color": "#202020"
+  }
+ },
+ {
+  "command": "appearance.assign",
+  "params": {
+   "bodies": [
+    "Mat"
+   ],
+   "color": "#b8895a",
+   "opacity": 0.35
+  }
+ },
+ {
+  "command": "note.add",
+  "params": {
+   "anchor": [
+    -60,
+    222.2,
+    83.5
+   ],
+   "text": "PATIENT END\nPut this edge about 2 in from the table edge.\nRight shoulder directly behind HOME.",
+   "hidden": true
+  }
+ },
+ {
+  "command": "note.add",
+  "params": {
+   "anchor": [
+    441.0,
+    222.2,
+    83.5
+   ],
+   "text": "Reach line: HOME, GREEN (40%), BLUE (70%), RED (100% of reach_D)",
+   "hidden": true
+  }
+ },
+ {
+  "command": "note.add",
+  "params": {
+   "anchor": [
+    51.0,
+    -50,
+    83.5
+   ],
+   "text": "START (operator only) and the buzzer on top; Arduino and driver board taped under the deck.\nUSB-C leaves the right-hand edge; the wrist cable leaves the patient end.",
+   "hidden": true
+  }
+ }
+]

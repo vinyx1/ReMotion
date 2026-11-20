@@ -35,7 +35,7 @@ This way a therapist can see progress over time.
 | Adafruit 757 level shifter | Lets the 5 V Arduino talk safely to the 3.3 V sensors |
 | 5× 30 mm arcade buttons | HOME, three targets (green, blue, red), and START |
 | 5× 2N3904 transistors | Switch the button lights and buzzer, which need more current than an Arduino pin can give |
-| Buzzer + red/green LEDs | Instant feedback for the patient |
+| Buzzer | Instant feedback for the patient when they lean |
 
 ## Schematic
 
@@ -44,10 +44,10 @@ This way a therapist can see progress over time.
 Full-resolution PDF: [`docs/imu-reach-tracker-schematic.pdf`](docs/imu-reach-tracker-schematic.pdf). KiCad source: [`hardware/kicad/`](hardware/kicad/).
 
 **Reading the schematic:**
-- **Top left:** the five arcade buttons, each wired to an Arduino pin (D2–D6).
+- **Top left:** the five arcade buttons, each wired to an Arduino pin: START D2, then HOME, GREEN, BLUE, RED on D3–D6.
 - **Middle:** the Arduino, with the level shifter to its right.
-- **Top right:** the two motion sensors. The chest sensor's AD0 pin is tied to 3.3 V, which gives it address 0x69, so it doesn't clash with the wrist sensor at 0x68.
-- **Bottom:** the transistor switches for the four button lights and the buzzer, and the two result LEDs.
+- **Top right:** the two motion sensors. The wrist sensor's AD0 pin is tied to 3.3 V, which gives it address 0x69, so it doesn't clash with the chest sensor at 0x68. In the built device the level shifter sits on the wrist board, and the cable runs mat → wrist → chest (see `hardware/kicad/perfboard/BUILD.md`).
+- **Bottom:** the transistor switches for the four button lights and the buzzer.
 
 ## What's in this repo
 
