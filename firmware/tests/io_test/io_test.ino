@@ -1,5 +1,5 @@
 /*
-  io_test.ino  —  IMU Reach Tracker, ECE 198 Group 19
+  io_test.ino  —  ReMotion, ECE 198 Group 19
 
   PURPOSE
     Checks every button, LED and the buzzer WITHOUT the IMUs.

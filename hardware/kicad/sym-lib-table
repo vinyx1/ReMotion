@@ -1,4 +1,4 @@
 (sym_lib_table
   (version 7)
-  (lib (name "ECE198")(type "KiCad")(uri "${KIPRJMOD}/ECE198.kicad_sym")(options "")(descr "ECE 198 Group 19: every part in the IMU Reach Tracker"))
+  (lib (name "ECE198")(type "KiCad")(uri "${KIPRJMOD}/ECE198.kicad_sym")(options "")(descr "ECE 198 Group 19: every part of ReMotion"))
 )

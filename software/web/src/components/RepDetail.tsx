@@ -80,7 +80,7 @@ export function RepDetail({ session }: { session: Session }) {
       </div>
 
       {rep.trace ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card>
             <CardHeader title="Trunk lean" caption="Shaded: hand leaves HOME → target press. Dashed: the limit." />
             <TraceChart rep={rep} field="trunkDeg" unit="°" threshold={session.thresholdDeg} />

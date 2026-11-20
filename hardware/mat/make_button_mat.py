@@ -1,4 +1,4 @@
-"""Button mat for the IMU Reach Tracker, cut from an 18 x 11 x 12 in cardboard box.
+"""Button mat for ReMotion, cut from an 18 x 11 x 12 in cardboard box.
 
 Writes, from ONE parameter list:
   button_mat.json          SolidCraft script (parametric model: deck, holes, stand-in parts)
@@ -170,7 +170,7 @@ def frame(c, sheet, title, scale):
     c.setFont("Helvetica-Bold", 11)
     c.drawString(x + 6, rows[1] + 7, "REMOTION BUTTON MAT  (RIGHT-ARM REACH)")
     c.setFont("Helvetica", 7)
-    c.drawString(x + 6, rows[2] + 4.5, "IMU Reach Tracker  |  ECE 198 Group 19  |  client: CCCARE")
+    c.drawString(x + 6, rows[2] + 4.5, "ReMotion  |  ECE 198 Group 19  |  client: CCCARE")
     c.setFont("Helvetica-Bold", 8)
     c.drawString(x + 6, rows[3] + 14, title)
     c.setFont("Helvetica", 6.5)

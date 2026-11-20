@@ -1,6 +1,6 @@
 # Schematic review: `imu-reach-tracker-schematic.pdf`
 
-Reviewed 2026-11-05 from a high-resolution render of the PDF ("IMU Reach Tracker", Group 19). Every connection was traced. Overall the circuit is correct: one issue depends on which buttons were bought, and the rest are cleanups.
+Reviewed 2026-11-05 from a high-resolution render of the PDF ("ReMotion", Group 19). Every connection was traced. Overall the circuit is correct: one issue depends on which buttons were bought, and the rest are cleanups.
 
 ## Issue: arcade button LEDs have no current-limiting resistor
 

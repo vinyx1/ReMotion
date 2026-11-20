@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 from software.dashboard.data import (
-    load_reps, load_samples, rep_trace, session_threshold, summarize_sessions,
+    load_reps, load_samples, rep_trace, session_threshold, summarize_phases, summarize_sessions,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -51,6 +51,7 @@ def export_sessions(folders):
                 "peakDeg": float(r.peak_deg),
                 "bursts": int(r.bursts),
                 "compensated": bool(r.compensated),
+                "phase": r.phase or None,      # None for logs from before the firmware had blocks
                 # Samples from the cue to 0.5 s after the target press (null if not found)
                 "trace": None if trace is None else {
                     "reachEndS": round(float(reach_end_s), 3),
@@ -68,6 +69,15 @@ def export_sessions(folders):
             "simulated": str(first["folder"]) == str(SAMPLE_DIR),
             "thresholdDeg": threshold,
             "reps": rep_list,
+            # One entry per block, in session order; [] for logs from before blocks existed
+            "phases": [{
+                "phase": p.phase,
+                "reps": int(p.reps),
+                "compensated": int(p.compensated),
+                "pctCompensated": round(float(p.pct_compensated), 1),
+                "medianPeakDeg": round(float(p.median_peak_deg), 1),
+                "buzzer": bool(p.buzzer),
+            } for p in summarize_phases(reps).itertuples()],
             "summary": {
                 "reps": int(s["reps"]),
                 "compensated": int(s["compensated"]),

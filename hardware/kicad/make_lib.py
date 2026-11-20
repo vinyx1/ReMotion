@@ -1,4 +1,4 @@
-"""Builds ECE198.kicad_sym: every part in the IMU Reach Tracker in one KiCad library.
+"""Builds ECE198.kicad_sym: every part of ReMotion in one KiCad library.
 Run: python3 make_lib.py   (then: kicad-cli sym upgrade ECE198.kicad_sym to normalise)"""
 import re, os
 KI = "/usr/share/kicad/symbols"

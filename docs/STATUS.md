@@ -27,6 +27,7 @@ Choices between options, with the reason. Date and name each one.
 - _2026-11-18 (vinyx1):_ Problems go in GitHub Issues (label `found-by-agent` when an agent found them); see `AGENTS.md` section 0.
 - _2026-11-18 (Yousuf-Hamoda):_ Level shifter moved to the wrist board; cable chain is mat → wrist → chest. Addresses swapped: wrist 0x69, chest 0x68. Arduino sits on the mat unsoldered. Perfboard layouts in `hardware/kicad/perfboard/BUILD.md`.
 - _2026-11-19 (Yousuf-Hamoda):_ Red/green result LEDs removed; the buzzer is the only feedback. Pins re-mapped: START D2, HOME D3, GREEN D4, BLUE D5, RED D6; button LEDs HOME D10, GREEN D11, BLUE D12, RED D13; buzzer D9. Keeps 5 buttons.
+- _2026-11-20 (Yousuf-Hamoda):_ START now runs a whole session in blocks: PRACTICE 3 (no buzzer, not scored), BASELINE 15 (no buzzer), TRAINING 30 (buzzer), POST 15 (no buzzer), with a 30 s rest before TRAINING and POST. Targets are dealt from a balanced shuffled deck per block so BASELINE and POST ask for the same reaches. Feedback stays at every rep in TRAINING (faded feedback has mixed evidence for this kind of task). `R` lines gained a `phase` field; `P` sets block sizes (`P0,0,5,0` for the demo). The dashboard shows a before/after card. An immediate POST block shows short-term change only; a later session with `P0,15,0,0` tests retention.
 
 ## Blocked / needs someone else
 

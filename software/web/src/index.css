@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
 /*
-  Design tokens. One brand colour (ink navy) for structure; blue and orange are
-  reserved for meaning: clean rep / compensated rep. Everything else is neutral.
+  Colour system (built with the better-colors skill, 2026-11-20).
+
+  Tier 1, primitives: three ramps (hex, spaced in OKLCH), named by hue and step.
+  They live in :root, NOT @theme, so they make no utility classes and
+  components can't use them directly.
+    neutral  cool grey, hue 258, chroma <= 0.028: 80-90% of the UI
+    blue     hue 262: means CLEAN rep, nothing else
+    orange   hue 45:  means COMPENSATED rep, nothing else
+  Blue/orange stays the meaning pair because colour-blind viewers separate it
+  best (protan / deutan / tritan simulations). Clean and compensated are also
+  told apart by shape and label, never by colour alone. Interactive things
+  (selected tab, focus ring, Play) use near-black ink, so blue keeps one
+  meaning. The 3D target buttons (Figure3D.tsx) sit at least 23 degrees of hue
+  from both meaning colours.
+*/
+:root {
+  --neutral-50: #f5f7f9;
+  --neutral-100: #e9ebef;
+  --neutral-200: #dadee4;
+  --neutral-600: #606a78;
+  --neutral-700: #495362;
+  --neutral-800: #323b48;
+  --neutral-900: #1d2430;
+  --neutral-950: #10161f;
+
+  --blue-50: #eef4ff;
+  --blue-600: #2961ce;
+  --blue-700: #1e4eac;
+
+  --orange-50: #fff0ea;
+  --orange-500: #e87134;
+  --orange-700: #a4450c;
+}
+
+/*
+  Tier 2, semantic tokens: named by role; the only colours components use.
+  Measured (WCAG 2): ink-3 captions 5.48:1 on surface, 5.11 on paper, 4.59 on
+  line-2; badge text 6.94 (clean) / 5.50 (comp) on its soft background;
+  clean marks 5.68 and comp marks 3.07 on surface; on-brand 15.6 on brand.
 */
 @theme {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
 
-  --color-paper: #f4f5f7;      /* page background */
-  --color-surface: #ffffff;    /* cards */
-  --color-ink: #0f1a2a;        /* main text */
-  --color-ink-2: #4a5568;      /* secondary text */
-  --color-ink-3: #8a94a6;      /* captions, axes */
-  --color-line: #e2e6ec;       /* borders */
-  --color-line-2: #eef1f4;     /* gridlines, subtle fills */
-  --color-brand: #13243d;      /* header, primary buttons */
+  --color-paper: var(--neutral-50);        /* page background */
+  --color-surface: #ffffff;                /* cards */
+  --color-line-2: var(--neutral-100);      /* gridlines, subtle fills, separators */
+  --color-line: var(--neutral-200);        /* borders */
+  --color-ink-3: var(--neutral-600);       /* captions, axis labels (passes 4.5:1) */
+  --color-ink-2: var(--neutral-700);       /* secondary text */
+  --color-ink: var(--neutral-950);         /* main text */
+  --color-brand: var(--neutral-900);       /* accent: selected tab, focus ring, primary button */
+  --color-brand-hover: var(--neutral-800);
+  --color-on-brand: #ffffff;               /* text and icons on brand */
 
-  --color-clean: #2a78d6;
-  --color-clean-soft: #e8f1fc;
-  --color-comp: #eb6834;
-  --color-comp-soft: #fdeee6;
+  --color-clean: var(--blue-600);          /* clean-rep marks, lines and fills */
+  --color-clean-soft: var(--blue-50);      /* clean badge background */
+  --color-clean-text: var(--blue-700);     /* clean text, on white or clean-soft */
+
+  --color-comp: var(--orange-500);         /* compensated marks, lines and fills (not text) */
+  --color-comp-soft: var(--orange-50);
+  --color-comp-text: var(--orange-700);    /* compensated text, on white or comp-soft */
 }
 
 @layer base {

@@ -16,10 +16,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from software.tools.protocol import REP_COLUMNS, SAMPLE_COLUMNS, TARGETS
+from software.tools.protocol import PHASES, REP_COLUMNS, SAMPLE_COLUMNS, TARGETS
 
 SAMPLE_PERIOD_MS = 10          # firmware samples at 100 Hz
 DEFAULT_THRESHOLD_DEG = 10.0   # firmware default, used only if a session has no samples
+REQUIRED_REP_COLUMNS = ["session"] + [c for c in REP_COLUMNS if c != "phase"]  # older logs have no phase
 
 
 def session_label(stamp, session, sessions_in_file):
@@ -47,8 +48,10 @@ def load_reps(folders):
     for folder in folders:
         for path in sorted(Path(folder).glob("reps_*.csv")):
             reps = pd.read_csv(path)
-            if reps.empty or not set(["session"] + REP_COLUMNS) <= set(reps.columns):
+            if reps.empty or not set(REQUIRED_REP_COLUMNS) <= set(reps.columns):
                 continue                    # no reps recorded, or not one of our files
+            if "phase" not in reps.columns:
+                reps["phase"] = ""          # recorded before the firmware had blocks
             stamp = path.stem[len("reps_"):]
             sessions_in_file = reps["session"].nunique()
             reps["folder"] = str(folder)
@@ -61,6 +64,7 @@ def load_reps(folders):
         return pd.DataFrame(columns=["session"] + REP_COLUMNS + ["folder", "stamp", "session_label"])
 
     reps = pd.concat(tables, ignore_index=True)
+    reps["phase"] = reps["phase"].fillna("").astype(str)
     reps["compensated"] = reps["compensated"].astype(bool)
     reps["result"] = reps["compensated"].map({True: "Compensated", False: "Clean"})
     return reps
@@ -91,6 +95,29 @@ def summarize_sessions(reps):
     ).reset_index()
     summary["pct_compensated"] = 100 * summary["compensated"] / summary["reps"]
     return summary
+
+
+def summarize_phases(reps):
+    """
+    One row per block of ONE session, in session order (PRACTICE, BASELINE, TRAINING, POST):
+    reps, compensated, pct_compensated, median_peak_deg, buzzer (True for TRAINING).
+    Empty if the session was recorded before the firmware had blocks.
+    """
+    rows = []
+    for phase in PHASES:
+        block = reps[reps["phase"] == phase]
+        if block.empty:
+            continue
+        rows.append({
+            "phase": phase,
+            "reps": len(block),
+            "compensated": int(block["compensated"].sum()),
+            "pct_compensated": 100 * block["compensated"].mean(),
+            "median_peak_deg": float(block["peak_deg"].median()),
+            "buzzer": phase == "TRAINING",
+        })
+    return pd.DataFrame(rows, columns=["phase", "reps", "compensated", "pct_compensated",
+                                       "median_peak_deg", "buzzer"])
 
 
 def session_threshold(samples):

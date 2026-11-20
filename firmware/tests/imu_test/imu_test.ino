@@ -1,5 +1,5 @@
 /*
-  imu_test.ino  —  IMU Reach Tracker, ECE 198 Group 19
+  imu_test.ino  —  ReMotion, ECE 198 Group 19
 
   PURPOSE
     Bench test for both IMUs. Prints the live trunk angle (from the chest IMU)

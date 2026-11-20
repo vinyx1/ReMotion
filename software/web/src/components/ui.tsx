@@ -5,7 +5,7 @@ import { cn } from '../lib/utils'
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <section className={cn('rounded-xl border border-line bg-surface shadow-xs', className)}>
+    <section className={cn('min-w-0 rounded-xl border border-line bg-surface shadow-xs', className)}>
       {children}
     </section>
   )
@@ -26,12 +26,12 @@ export function CardHeader({ title, caption, right }: { title: string; caption?:
 /** Clean / compensated label. Icon + text + colour, so colour never carries the meaning alone. */
 export function ResultBadge({ compensated, className }: { compensated: boolean; className?: string }) {
   return compensated ? (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full bg-comp-soft px-2.5 py-1 text-xs font-medium text-[#a8431a]', className)}>
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full bg-comp-soft px-2.5 py-1 text-xs font-medium text-comp-text', className)}>
       <TriangleAlert className="size-3.5" aria-hidden />
       Compensated
     </span>
   ) : (
-    <span className={cn('inline-flex items-center gap-1.5 rounded-full bg-clean-soft px-2.5 py-1 text-xs font-medium text-[#1d5aa6]', className)}>
+    <span className={cn('inline-flex items-center gap-1.5 rounded-full bg-clean-soft px-2.5 py-1 text-xs font-medium text-clean-text', className)}>
       <CircleCheck className="size-3.5" aria-hidden />
       Clean
     </span>

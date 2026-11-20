@@ -8,16 +8,22 @@ import { Quaternion, Vector3 } from 'three'
 import { HOME_X, pose, SEAT_HEIGHT, SHOULDER_HALF_WIDTH, TABLE, TARGET_X, type V3 } from '../lib/figure'
 import type { Target } from '../types'
 
+// Scene-only colours. GREEN/BLUE/RED picture the physical arcade buttons and sit at least
+// 23 degrees of hue from the clean / compensated tokens, so a lit target never reads as a
+// result. Clean and compensated themselves come from the theme (index.css).
 const COLORS = {
-  clean: '#2a78d6',
-  comp: '#eb6834',
   arm: '#5b6577',
   furniture: '#d5dbe3',
   table: '#e9edf2',
   home: '#f8fafc',
-  GREEN: '#1baf7a',
-  BLUE: '#2a78d6',
-  RED: '#e34948',
+  GREEN: '#29ac68',
+  BLUE: '#179fd4',
+  RED: '#de394b',
+}
+
+/** A theme colour token's value, e.g. themeColor('--color-clean') -> '#2961ce'. */
+function themeColor(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 }
 
 const UP = new Vector3(0, 1, 0)
@@ -95,7 +101,8 @@ export function Figure3D({ trunkDeg, t, reachEndS, target, over }: {
   over: boolean          // trunk past the threshold right now
 }) {
   const p = useMemo(() => pose(trunkDeg, t, reachEndS, target), [trunkDeg, t, reachEndS, target])
-  const body = over ? COLORS.comp : COLORS.clean
+  const theme = useMemo(() => ({ clean: themeColor('--color-clean'), comp: themeColor('--color-comp') }), [])
+  const body = over ? theme.comp : theme.clean
 
   return (
     <Canvas
