@@ -1,5 +1,3 @@
-@property --room-wall { syntax: '<color>'; inherits: true; initial-value: #c9d3cb; }
-@property --room-floor { syntax: '<color>'; inherits: true; initial-value: #eef0ec; }
 
 /* Re:Motion landing page. Scoped to .lp so the dashboard is untouched. */
 
@@ -80,17 +78,20 @@ html.lp-root {
 .lp-story { position: relative; }
 .lp-stage {
   position: sticky; top: 0; height: 100svh; overflow: hidden;
-  /* the room: wall to a level horizon, plaster floor below it */
-  background: linear-gradient(to bottom, var(--room-wall) 0%, var(--room-wall) 78%, var(--room-floor) 78%, var(--room-floor) 100%);
+  /* paper: the 3D graph-paper room fades into this */
+  background: var(--color-plaster);
   touch-action: pan-y;
-  transition: --room-wall 500ms ease-out, --room-floor 500ms ease-out;
 }
-.lp-stage.is-flagged {
-  --room-wall: color-mix(in oklab, var(--color-wall) 91%, var(--color-terra) 9%);
-  --room-floor: color-mix(in oklab, var(--color-plaster) 94%, var(--color-terra) 6%);
+/* Drag area over the figure on the first screen. The 3D scene sets its box each frame; the
+   values here only place it for the 2D fallback. Grab cursor over it, grabbing while dragging. */
+.lp-hit {
+  position: absolute; z-index: 3;
+  left: 30%; top: 15%; width: 50%; height: 70%;
+  touch-action: pan-y;
+  cursor: grab;
 }
-.lp-stage.is-hero { cursor: grab; }
-.lp-stage.is-hero:active { cursor: grabbing; }
+.lp-hit.is-dragging { cursor: grabbing; }
+.lp-hit.is-off { pointer-events: none; }
 .lp-canvas { position: absolute; inset: 0; }
 .lp-stage::after {
   /* the lean, felt in the room: a warm glow from the figure while flagged */
@@ -109,46 +110,83 @@ html.lp-root {
   right: clamp(20px, 7vw, 120px); top: clamp(96px, 15vh, 150px);
   display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
 }
+/* the instrument: a plaster plate lifted off the wall by shadow, not outlined */
 .lp-readout {
-  display: grid; grid-template-columns: auto auto; column-gap: 20px; align-items: baseline;
-  min-width: 15.5rem;
+  display: flex; flex-direction: column;
+  width: 17rem;
   background: var(--color-plaster);
-  border: 1.5px solid var(--color-eucalyptus);
-  border-radius: 14px;
-  padding: 16px 20px 14px;
-  box-shadow: 0 2px 4px rgb(31 45 39 / 0.08), 0 14px 32px -18px rgb(31 45 39 / 0.5);
-  transition: border-color 220ms ease-out;
+  border: 1px solid transparent; /* forced-colors mode keeps an edge when shadows are dropped */
+  border-radius: 18px;
+  padding: 14px 18px 16px;
+  box-shadow:
+    0 0 0 1px rgb(31 45 39 / 0.1),
+    0 1px 2px rgb(31 45 39 / 0.06),
+    0 16px 36px -18px rgb(31 45 39 / 0.45);
   cursor: default;
+  -webkit-tap-highlight-color: transparent;
 }
-.lp-readout-label { font-weight: 700; font-size: 0.95rem; }
-.lp-readout-limit { justify-self: end; font-family: var(--font-readout); font-size: 0.95rem; color: var(--color-forest-2); }
-.lp-readout-value {
-  grid-column: 1 / -1;
-  font-family: var(--font-readout); font-variant-numeric: tabular-nums;
-  font-size: clamp(3rem, 5vw, 4.25rem); line-height: 1; letter-spacing: -0.02em;
-  margin: 6px 0 10px;
-  transition: color 220ms ease-out;
-}
-.lp-readout-unit { font-size: 0.6em; vertical-align: 0.55em; margin-left: 2px; }
+.lp-readout:focus-visible { outline: 3px solid var(--color-forest); outline-offset: 4px; }
+.lp-readout-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lp-readout-label { font-weight: 700; font-size: 0.9rem; color: var(--color-forest); white-space: nowrap; }
 .lp-readout-state {
-  grid-column: 1 / -1; display: inline-flex; align-items: center; gap: 8px;
-  font-weight: 700; color: var(--color-eucalyptus);
-  border-top: 1px solid var(--color-wall); padding-top: 10px;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-weight: 700; font-size: 0.78rem; line-height: 1;
+  padding: 5px 9px 5px 7px; border-radius: 999px;
+  color: var(--color-eucalyptus); background: rgb(79 111 95 / 0.1);
+  transition-property: color, background-color; transition-duration: 150ms; transition-timing-function: ease-out;
 }
-.lp-readout.is-flagged { border-color: var(--color-terra); }
-.lp-readout.is-flagged .lp-readout-value { color: var(--color-terra); }
-.lp-readout.is-flagged .lp-readout-state { color: var(--color-terra-deep); }
+.lp-readout-value {
+  font-family: var(--font-readout); font-variant-numeric: tabular-nums;
+  font-size: clamp(3.4rem, 5.4vw, 4.75rem); line-height: 0.95; letter-spacing: -0.03em;
+  margin: 12px 0 14px; color: var(--color-forest); align-self: flex-start; text-align: left;
+  transition-property: color; transition-duration: 150ms; transition-timing-function: ease-out;
+}
+.lp-readout-unit { font-size: 0.5em; vertical-align: 0.8em; margin-left: 3px; letter-spacing: 0; }
 
-.lp-sound {
-  display: inline-flex; align-items: center; gap: 8px;
-  background: transparent; border: 1px solid rgb(31 45 39 / 0.35); border-radius: 999px;
-  padding: 6px 14px; font: inherit; font-size: 0.9rem; color: var(--color-forest); cursor: pointer;
+/* the scale: 0 to 30 degrees, the zone past the limit hatched, a needle at the live angle */
+.lp-scale-track {
+  position: relative; height: 8px; border-radius: 999px;
+  background: rgb(79 111 95 / 0.16);
 }
-.lp-sound:hover { background: rgb(238 240 236 / 0.6); }
-.lp-sound-short { display: none; }
-.lp-sound[aria-pressed="true"] { background: var(--color-forest); color: var(--color-plaster); border-color: var(--color-forest); }
+.lp-scale-over {
+  position: absolute; inset-block: 0; right: 0; left: calc(var(--limit) * 100%);
+  border-radius: 0 999px 999px 0;
+  background: repeating-linear-gradient(135deg, rgb(31 45 39 / 0.22) 0 2px, transparent 2px 5px);
+  transition-property: background; transition-duration: 150ms;
+}
+.lp-scale-fill {
+  position: absolute; inset-block: 0; left: 0; width: calc(var(--lean) * 100%);
+  border-radius: 999px; background: var(--color-eucalyptus);
+  transition-property: background-color; transition-duration: 150ms; transition-timing-function: ease-out;
+}
+.lp-scale-limit {
+  position: absolute; top: -4px; bottom: -4px; left: calc(var(--limit) * 100%);
+  width: 2px; margin-left: -1px; border-radius: 1px; background: var(--color-forest); z-index: 1;
+}
+.lp-scale-needle {
+  position: absolute; top: -7px; bottom: -7px; left: calc(var(--lean) * 100%); z-index: 2;
+  width: 6px; margin-left: -3px; border-radius: 3px;
+  background: var(--color-forest);
+  box-shadow: 0 0 0 2px var(--color-plaster);
+  transition-property: background-color; transition-duration: 150ms; transition-timing-function: ease-out;
+}
+.lp-scale-ticks {
+  position: relative; display: flex; justify-content: space-between; margin-top: 9px;
+  font-family: var(--font-readout); font-size: 0.72rem; color: var(--color-forest-2); font-variant-numeric: tabular-nums;
+}
+.lp-scale-limit-label { position: absolute; left: calc(var(--limit) * 100%); transform: translateX(-50%); color: var(--color-forest); }
+
+.lp-readout.is-flagged .lp-readout-value { color: var(--color-terra); }
+.lp-readout.is-flagged .lp-readout-state { color: var(--color-terra-deep); background: rgb(180 83 47 / 0.12); }
+.lp-readout.is-flagged .lp-scale-needle, .lp-readout.is-flagged .lp-scale-fill { background: var(--color-terra); }
+.lp-readout.is-flagged .lp-scale-over { background: repeating-linear-gradient(135deg, rgb(180 83 47 / 0.5) 0 2px, transparent 2px 5px); }
+@media (prefers-reduced-motion: reduce) {
+  .lp-readout-state, .lp-readout-value, .lp-scale-needle, .lp-scale-over, .lp-scale-fill { transition: none; }
+}
 
 .lp-steps { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+/* every step sits in the pinned room, on top of each other; the scroll crossfades them */
+.lp-steps .lp-step { position: absolute; inset: 0; will-change: opacity, transform; }
 .lp-scroll {
   position: absolute; z-index: 5; left: 50%; bottom: 28px; transform: translateX(-50%);
   display: inline-flex; align-items: center; gap: 8px;
@@ -194,13 +232,13 @@ html.lp-root {
 .lp-trace figcaption { font-size: 0.95rem; color: var(--color-forest); margin-top: 8px; }
 
 @media (max-width: 760px) {
-  .lp-stage { background: linear-gradient(to bottom, var(--room-wall) 0%, var(--room-wall) 50%, var(--room-floor) 50%, var(--room-floor) 100%); }
   .lp-instrument { right: 16px; top: 78px; }
-  .lp-readout { min-width: 11rem; padding: 12px 14px 10px; }
-  .lp-readout-value { font-size: 2.6rem; }
-  .lp-sound { padding: 4px 12px; font-size: 0.85rem; }
-  .lp-sound-long { display: none; }
-  .lp-sound-short { display: inline; }
+  .lp-readout { width: 12.5rem; padding: 11px 13px 12px; border-radius: 16px; }
+  .lp-readout-value { font-size: 2.6rem; margin: 8px 0 10px; }
+  .lp-readout-state { font-size: 0.7rem; padding: 4px 7px 4px 5px; }
+  .lp-readout-label { font-size: 0.8rem; }
+  .lp-scale-limit-word { display: none; }
+  .lp-readout { width: 13.5rem; }
   .lp-scroll { display: none; }
   /* the scene owns the top half; text sits on the plaster floor below it */
   .lp-step > *, .lp-step-hero > * { max-width: none; }

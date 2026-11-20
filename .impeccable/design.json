@@ -1,45 +1,333 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-18T20:30:00-05:00",
+  "generatedAt": "2026-11-19T12:00:00-05:00",
   "title": "Design System: Re:Motion",
   "extensions": {
     "colorMeta": {
-      "plaster": { "role": "neutral", "displayName": "Plaster", "canonical": "oklch(95.2% 0.006 129)", "tonalRamp": ["oklch(15% 0.003 129)", "oklch(26% 0.004 129)", "oklch(37% 0.004 129)", "oklch(48% 0.005 129)", "oklch(59% 0.005 129)", "oklch(70% 0.005 129)", "oklch(82% 0.004 129)", "oklch(95% 0.003 129)"] },
-      "wall": { "role": "neutral", "displayName": "Eucalyptus Wall", "canonical": "oklch(85.7% 0.015 152)", "tonalRamp": ["oklch(15% 0.008 152)", "oklch(26% 0.010 152)", "oklch(37% 0.012 152)", "oklch(48% 0.014 152)", "oklch(59% 0.015 152)", "oklch(70% 0.012 152)", "oklch(82% 0.010 152)", "oklch(95% 0.008 152)"] },
-      "eucalyptus": { "role": "secondary", "displayName": "Eucalyptus", "canonical": "oklch(51.2% 0.045 163)", "tonalRamp": ["oklch(15% 0.022 163)", "oklch(26% 0.028 163)", "oklch(37% 0.035 163)", "oklch(48% 0.041 163)", "oklch(59% 0.043 163)", "oklch(70% 0.036 163)", "oklch(82% 0.030 163)", "oklch(95% 0.022 163)"] },
-      "forest": { "role": "primary", "displayName": "Deep Forest", "canonical": "oklch(28.2% 0.022 167)", "tonalRamp": ["oklch(15% 0.011 167)", "oklch(26% 0.014 167)", "oklch(37% 0.017 167)", "oklch(48% 0.020 167)", "oklch(59% 0.021 167)", "oklch(70% 0.018 167)", "oklch(82% 0.014 167)", "oklch(95% 0.011 167)"] },
-      "forest-deep": { "role": "primary", "displayName": "Forest Shadow", "canonical": "oklch(23.0% 0.020 167)", "tonalRamp": ["oklch(15% 0.010 167)", "oklch(26% 0.012 167)", "oklch(37% 0.015 167)", "oklch(48% 0.018 167)", "oklch(59% 0.019 167)", "oklch(70% 0.016 167)", "oklch(82% 0.013 167)", "oklch(95% 0.010 167)"] },
-      "forest-2": { "role": "neutral", "displayName": "Muted Ink", "canonical": "oklch(45.1% 0.024 164)", "tonalRamp": ["oklch(15% 0.012 164)", "oklch(26% 0.015 164)", "oklch(37% 0.018 164)", "oklch(48% 0.022 164)", "oklch(59% 0.022 164)", "oklch(70% 0.019 164)", "oklch(82% 0.016 164)", "oklch(95% 0.012 164)"] },
-      "terra": { "role": "tertiary", "displayName": "Terracotta (lean state)", "canonical": "oklch(55.8% 0.136 40)", "tonalRamp": ["oklch(15% 0.067 40)", "oklch(26% 0.086 40)", "oklch(37% 0.105 40)", "oklch(48% 0.124 40)", "oklch(59% 0.129 40)", "oklch(70% 0.110 40)", "oklch(82% 0.089 40)", "oklch(95% 0.067 40)"] },
-      "terra-deep": { "role": "tertiary", "displayName": "Terracotta Deep", "canonical": "oklch(49.6% 0.122 40)", "tonalRamp": ["oklch(15% 0.060 40)", "oklch(26% 0.077 40)", "oklch(37% 0.094 40)", "oklch(48% 0.111 40)", "oklch(59% 0.116 40)", "oklch(70% 0.099 40)", "oklch(82% 0.080 40)", "oklch(95% 0.060 40)"] },
-      "clay": { "role": "neutral", "displayName": "Clay", "canonical": "oklch(83.1% 0.019 75)", "tonalRamp": ["oklch(15% 0.009 75)", "oklch(26% 0.012 75)", "oklch(37% 0.015 75)", "oklch(48% 0.018 75)", "oklch(59% 0.018 75)", "oklch(70% 0.016 75)", "oklch(82% 0.013 75)", "oklch(95% 0.009 75)"] }
+      "plaster": {
+        "role": "neutral",
+        "displayName": "Plaster",
+        "canonical": "oklch(95.2% 0.006 129)",
+        "tonalRamp": [
+          "oklch(15% 0.003 129)",
+          "oklch(26% 0.004 129)",
+          "oklch(37% 0.004 129)",
+          "oklch(48% 0.005 129)",
+          "oklch(59% 0.005 129)",
+          "oklch(70% 0.005 129)",
+          "oklch(82% 0.004 129)",
+          "oklch(95% 0.003 129)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Panel Paper",
+        "canonical": "oklch(97.8% 0.004 122)",
+        "tonalRamp": [
+          "oklch(15% 0.003 122)",
+          "oklch(26% 0.004 122)",
+          "oklch(37% 0.005 122)",
+          "oklch(48% 0.006 122)",
+          "oklch(59% 0.006 122)",
+          "oklch(70% 0.005 122)",
+          "oklch(82% 0.004 122)",
+          "oklch(95% 0.003 122)"
+        ]
+      },
+      "wash": {
+        "role": "neutral",
+        "displayName": "Selection Wash",
+        "canonical": "oklch(92.5% 0.011 141)",
+        "tonalRamp": [
+          "oklch(15% 0.007 141)",
+          "oklch(26% 0.009 141)",
+          "oklch(37% 0.011 141)",
+          "oklch(48% 0.013 141)",
+          "oklch(59% 0.014 141)",
+          "oklch(70% 0.012 141)",
+          "oklch(82% 0.010 141)",
+          "oklch(95% 0.007 141)"
+        ]
+      },
+      "grid": {
+        "role": "neutral",
+        "displayName": "Gridline",
+        "canonical": "oklch(90.3% 0.011 141)",
+        "tonalRamp": [
+          "oklch(15% 0.007 141)",
+          "oklch(26% 0.009 141)",
+          "oklch(37% 0.011 141)",
+          "oklch(48% 0.013 141)",
+          "oklch(59% 0.014 141)",
+          "oklch(70% 0.012 141)",
+          "oklch(82% 0.010 141)",
+          "oklch(95% 0.007 141)"
+        ]
+      },
+      "wall": {
+        "role": "neutral",
+        "displayName": "Eucalyptus Wall",
+        "canonical": "oklch(85.7% 0.015 152)",
+        "tonalRamp": [
+          "oklch(15% 0.008 152)",
+          "oklch(26% 0.010 152)",
+          "oklch(37% 0.012 152)",
+          "oklch(48% 0.014 152)",
+          "oklch(59% 0.015 152)",
+          "oklch(70% 0.012 152)",
+          "oklch(82% 0.010 152)",
+          "oklch(95% 0.008 152)"
+        ]
+      },
+      "eucalyptus": {
+        "role": "secondary",
+        "displayName": "Eucalyptus",
+        "canonical": "oklch(51.2% 0.045 163)",
+        "tonalRamp": [
+          "oklch(15% 0.022 163)",
+          "oklch(26% 0.028 163)",
+          "oklch(37% 0.035 163)",
+          "oklch(48% 0.041 163)",
+          "oklch(59% 0.043 163)",
+          "oklch(70% 0.036 163)",
+          "oklch(82% 0.030 163)",
+          "oklch(95% 0.022 163)"
+        ]
+      },
+      "forest": {
+        "role": "primary",
+        "displayName": "Deep Forest",
+        "canonical": "oklch(28.2% 0.022 167)",
+        "tonalRamp": [
+          "oklch(15% 0.011 167)",
+          "oklch(26% 0.014 167)",
+          "oklch(37% 0.017 167)",
+          "oklch(48% 0.020 167)",
+          "oklch(59% 0.021 167)",
+          "oklch(70% 0.018 167)",
+          "oklch(82% 0.014 167)",
+          "oklch(95% 0.011 167)"
+        ]
+      },
+      "forest-deep": {
+        "role": "primary",
+        "displayName": "Forest Shadow",
+        "canonical": "oklch(23.0% 0.020 167)",
+        "tonalRamp": [
+          "oklch(15% 0.010 167)",
+          "oklch(26% 0.012 167)",
+          "oklch(37% 0.015 167)",
+          "oklch(48% 0.018 167)",
+          "oklch(59% 0.019 167)",
+          "oklch(70% 0.016 167)",
+          "oklch(82% 0.013 167)",
+          "oklch(95% 0.010 167)"
+        ]
+      },
+      "forest-2": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "oklch(45.1% 0.024 164)",
+        "tonalRamp": [
+          "oklch(15% 0.012 164)",
+          "oklch(26% 0.015 164)",
+          "oklch(37% 0.018 164)",
+          "oklch(48% 0.022 164)",
+          "oklch(59% 0.022 164)",
+          "oklch(70% 0.019 164)",
+          "oklch(82% 0.016 164)",
+          "oklch(95% 0.012 164)"
+        ]
+      },
+      "terra": {
+        "role": "tertiary",
+        "displayName": "Terracotta (lean state)",
+        "canonical": "oklch(55.8% 0.136 40)",
+        "tonalRamp": [
+          "oklch(15% 0.067 40)",
+          "oklch(26% 0.086 40)",
+          "oklch(37% 0.105 40)",
+          "oklch(48% 0.124 40)",
+          "oklch(59% 0.129 40)",
+          "oklch(70% 0.110 40)",
+          "oklch(82% 0.089 40)",
+          "oklch(95% 0.067 40)"
+        ]
+      },
+      "terra-deep": {
+        "role": "tertiary",
+        "displayName": "Terracotta Deep",
+        "canonical": "oklch(49.6% 0.122 40)",
+        "tonalRamp": [
+          "oklch(15% 0.060 40)",
+          "oklch(26% 0.077 40)",
+          "oklch(37% 0.094 40)",
+          "oklch(48% 0.111 40)",
+          "oklch(59% 0.116 40)",
+          "oklch(70% 0.099 40)",
+          "oklch(82% 0.080 40)",
+          "oklch(95% 0.060 40)"
+        ]
+      },
+      "clay": {
+        "role": "neutral",
+        "displayName": "Clay",
+        "canonical": "oklch(83.1% 0.019 75)",
+        "tonalRamp": [
+          "oklch(15% 0.009 75)",
+          "oklch(26% 0.012 75)",
+          "oklch(37% 0.015 75)",
+          "oklch(48% 0.018 75)",
+          "oklch(59% 0.018 75)",
+          "oklch(70% 0.016 75)",
+          "oklch(82% 0.013 75)",
+          "oklch(95% 0.009 75)"
+        ]
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Hero headline; the close headline is a sibling at clamp(2.6rem, 5.4vw, 5rem). Upright, weight 500." },
-      "headline": { "displayName": "Headline", "purpose": "Story step and section headings." },
-      "title": { "displayName": "Title", "purpose": "Study names in the evidence band." },
-      "body": { "displayName": "Body", "purpose": "Section copy, max 62ch; story steps 1.2rem at 34ch; lede clamp(1.15rem, 1.5vw, 1.35rem) at 40ch." },
-      "label": { "displayName": "Label", "purpose": "Readout label, spec terms, small headings in bands." },
-      "readout": { "displayName": "Readout", "purpose": "The live trunk angle. Tabular mono; degree sign 0.6em raised." },
-      "readout-small": { "displayName": "Readout Small", "purpose": "Limits, axis ticks, paper IDs (14-15px in SVG)." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headline; the close headline is a sibling at clamp(2.6rem, 5.4vw, 5rem). Upright, weight 500."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Story step and section headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Study names in the evidence band."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Section copy, max 62ch; story steps 1.2rem at 34ch; lede clamp(1.15rem, 1.5vw, 1.35rem) at 40ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Readout label, spec terms, small headings in bands."
+      },
+      "readout": {
+        "displayName": "Readout",
+        "purpose": "The live trunk angle. Tabular mono; degree sign 0.6em raised."
+      },
+      "readout-small": {
+        "displayName": "Readout Small",
+        "purpose": "Limits, axis ticks, paper IDs (14-15px in SVG)."
+      },
+      "dashboard-headline": {
+        "displayName": "Dashboard Headline",
+        "purpose": "Dashboard page headline, written from the data (\"Compensation fell from 64% to 10% of reps\"). Session name on Sessions runs at 1.75rem."
+      },
+      "panel-title": {
+        "displayName": "Panel Title",
+        "purpose": "Dashboard panel titles, with a 15px muted Atkinson caption."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "Buttons, select triggers, segments (14-15px, 600); session pickers 17px 700."
+      },
+      "dashboard-label": {
+        "displayName": "Dashboard Label",
+        "purpose": "Readout labels, table headers, result tags, change words (14px, 700)."
+      },
+      "readout-dashboard": {
+        "displayName": "Dashboard Readout",
+        "purpose": "Session-column readouts: 2.5rem at sm and xl, 2rem at lg, 1.45rem on phones."
+      },
+      "readout-md": {
+        "displayName": "Readout Strip",
+        "purpose": "Readout strips on Sessions and Rep detail."
+      },
+      "axis-tick": {
+        "displayName": "Axis Tick",
+        "purpose": "Chart and rep-strip ticks (12-13px), muted ink; the limit tick in forest."
+      }
     },
     "shadows": [
-      { "name": "button-lift", "value": "0 1px 2px rgb(31 45 39 / 0.18), 0 6px 18px -8px rgb(31 45 39 / 0.45)", "purpose": "The primary action." },
-      { "name": "plate-hang", "value": "0 2px 4px rgb(31 45 39 / 0.08), 0 14px 32px -18px rgb(31 45 39 / 0.5)", "purpose": "The readout plate mounted on the wall." },
-      { "name": "lean-glow", "value": "radial-gradient(ellipse 46% 60% at 68% 42%, rgb(180 83 47 / 0.17), rgb(180 83 47 / 0) 70%)", "purpose": "Stage overlay while flagged; mobile uses ellipse 70% 40% at 55% 32%, alpha 0.26." }
+      {
+        "name": "button-lift",
+        "value": "0 1px 2px rgb(31 45 39 / 0.18), 0 6px 18px -8px rgb(31 45 39 / 0.45)",
+        "purpose": "The primary action."
+      },
+      {
+        "name": "plate-hang",
+        "value": "0 2px 4px rgb(31 45 39 / 0.08), 0 14px 32px -18px rgb(31 45 39 / 0.5)",
+        "purpose": "The readout plate mounted on the wall."
+      },
+      {
+        "name": "lean-glow",
+        "value": "radial-gradient(ellipse 46% 60% at 68% 42%, rgb(180 83 47 / 0.17), rgb(180 83 47 / 0) 70%)",
+        "purpose": "Stage overlay while flagged; mobile uses ellipse 70% 40% at 55% 32%, alpha 0.26."
+      },
+      {
+        "name": "tooltip-lift",
+        "value": "0 2px 4px rgb(31 45 39 / 0.08), 0 10px 24px -14px rgb(31 45 39 / 0.5)",
+        "purpose": "Dashboard chart tooltips. The dashboard select menu uses plate-hang. Panels cast no shadow."
+      }
     ],
     "motion": [
-      { "name": "room-warm", "value": "--room-wall / --room-floor 500ms ease-out", "purpose": "Room tint toward terracotta (wall 9%, floor 6%, oklab mix) while flagged; registered @property colours." },
-      { "name": "glow-fade", "value": "opacity 360ms ease-out", "purpose": "Lean glow in and out." },
-      { "name": "readout-state", "value": "color / border-color 220ms ease-out", "purpose": "Readout value and border turning terra." },
-      { "name": "button-press", "value": "background-color 160ms ease-out, transform 160ms ease-out", "purpose": "Hover darken and 1px active nudge." },
-      { "name": "nav-settle", "value": "padding 200ms ease-out", "purpose": "Nav turning solid after the stage." },
-      { "name": "trunk-spring", "value": "spring k=90, damping=18", "purpose": "3D trunk follows input like a body, not a slider." },
-      { "name": "reduced-motion", "value": "transition: none; scroll-behavior: auto", "purpose": "Under prefers-reduced-motion; the scene still responds to direct input." }
+      {
+        "name": "room-warm",
+        "value": "--room-wall / --room-floor 500ms ease-out",
+        "purpose": "Room tint toward terracotta (wall 9%, floor 6%, oklab mix) while flagged; registered @property colours."
+      },
+      {
+        "name": "glow-fade",
+        "value": "opacity 360ms ease-out",
+        "purpose": "Lean glow in and out."
+      },
+      {
+        "name": "readout-state",
+        "value": "color / border-color 220ms ease-out",
+        "purpose": "Readout value and border turning terra."
+      },
+      {
+        "name": "button-press",
+        "value": "background-color 160ms ease-out, transform 160ms ease-out",
+        "purpose": "Hover darken and 1px active nudge."
+      },
+      {
+        "name": "nav-settle",
+        "value": "padding 200ms ease-out",
+        "purpose": "Nav turning solid after the stage."
+      },
+      {
+        "name": "trunk-spring",
+        "value": "spring k=90, damping=18",
+        "purpose": "3D trunk follows input like a body, not a slider."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "transition: none; scroll-behavior: auto",
+        "purpose": "Under prefers-reduced-motion; the scene still responds to direct input."
+      },
+      {
+        "name": "control-state",
+        "value": "color / background-color / border-color 150ms",
+        "purpose": "Dashboard tabs, segments, buttons and select triggers."
+      }
     ],
     "breakpoints": [
-      { "name": "compact", "value": "760px" },
-      { "name": "split", "value": "900px" }
+      {
+        "name": "compact",
+        "value": "760px"
+      },
+      {
+        "name": "split",
+        "value": "900px"
+      },
+      {
+        "name": "dashboard-sm",
+        "value": "640px"
+      },
+      {
+        "name": "dashboard-lg",
+        "value": "1024px"
+      },
+      {
+        "name": "dashboard-xl",
+        "value": "1280px"
+      }
     ]
   },
   "components": [
@@ -106,6 +394,86 @@
       "description": "Where real media hasn't landed yet: dashed eucalyptus frame, says what will go there.",
       "html": "<div class=\"ds-slot\">Photo of the soldered build, coming from the bench</div>",
       "css": ".ds-slot { aspect-ratio: 4 / 3; max-width: 320px; display: grid; place-items: center; text-align: center; padding: 16px; border: 1.5px dashed var(--color-eucalyptus, #4f6f5f); border-radius: 12px; background: #e4e8e2; color: var(--color-forest-2, #4a5a52); font-family: var(--font-text, system-ui); font-size: 0.98rem; }"
+    },
+    {
+      "name": "Dashboard Top Bar",
+      "kind": "nav",
+      "refersTo": "dashboard-top-bar",
+      "description": "Forest bar: wordmark, simulated tester, simulated chip and the session range in Mono.",
+      "html": "<header class=\"ds-topbar\"><a class=\"ds-topbar-mark\" href=\"#\">Re:Motion</a><p><b>Simulated tester</b><span>Seated forward reach</span></p><div class=\"ds-topbar-right\"><span class=\"ds-chip-sim\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2\"/><path d=\"M6.453 15h11.094\"/><path d=\"M8.5 2h7\"/></svg> Simulated data</span><span class=\"ds-topbar-range\">8 sessions · Oct 20 – Nov 17</span></div></header>",
+      "css": ".ds-topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; padding: 12px 32px; background: var(--color-forest, #1f2d27); color: var(--color-plaster, #eef0ec); font-family: var(--font-text, system-ui); } .ds-topbar p { margin: 0; font-size: 15px; } .ds-topbar p span { margin-left: 8px; opacity: 0.8; } .ds-topbar-mark { font-family: var(--font-display, Georgia, serif); font-size: 1.45rem; font-weight: 600; letter-spacing: -0.02em; color: inherit; text-decoration: none; border-radius: 6px; } .ds-topbar-mark:focus-visible { outline: 3px solid #eef0ec; outline-offset: 2px; } .ds-topbar-right { margin-left: auto; display: flex; align-items: center; gap: 12px; } .ds-chip-sim { display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgb(238 240 236 / 0.45); border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 600; } .ds-topbar-range { font-family: var(--font-readout, ui-monospace, monospace); font-variant-numeric: tabular-nums; font-size: 14px; }"
+    },
+    {
+      "name": "Dashboard Tabs",
+      "kind": "nav",
+      "refersTo": "dashboard-tab",
+      "description": "Progress / Sessions / Rep detail on a panel strip; the active tab carries a 3px forest underline.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><button role=\"tab\" aria-selected=\"true\">Progress</button><button role=\"tab\" aria-selected=\"false\">Sessions</button><button role=\"tab\" aria-selected=\"false\">Rep detail</button></div>",
+      "css": ".ds-tabs { display: flex; gap: 28px; padding: 0 32px; background: var(--color-panel, #f7f8f5); border-bottom: 1px solid var(--color-wall, #c9d3cb); font-family: var(--font-text, system-ui); } .ds-tabs button { margin-bottom: -1px; padding: 14px 0 12px; background: none; border: 0; border-bottom: 3px solid transparent; font: inherit; font-size: 15px; font-weight: 700; color: var(--color-forest-2, #4a5a52); cursor: pointer; transition: color 150ms; } .ds-tabs button:hover { color: #1f2d27; } .ds-tabs button[aria-selected=\"true\"] { color: var(--color-forest, #1f2d27); border-bottom-color: var(--color-forest, #1f2d27); } .ds-tabs button:focus-visible { outline: 3px solid var(--color-eucalyptus, #4f6f5f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Dashboard Panel",
+      "kind": "card",
+      "refersTo": "dashboard-panel",
+      "description": "Flat paper panel, dashboard only: panel fill, wall hairline, 12px radius, no shadow. Literata title with a muted caption.",
+      "html": "<section class=\"ds-panel\"><h2>Across all sessions</h2><p>8 sessions over 28 days. Select a session to open it.</p></section>",
+      "css": ".ds-panel { max-width: 34rem; padding: 24px; background: var(--color-panel, #f7f8f5); border: 1px solid var(--color-wall, #c9d3cb); border-radius: 12px; color: var(--color-forest, #1f2d27); font-family: var(--font-text, system-ui); } .ds-panel h2 { margin: 0; font-family: var(--font-display, Georgia, serif); font-size: 1.25rem; font-weight: 500; line-height: 1.25; } .ds-panel p { margin: 4px 0 0; font-size: 15px; color: var(--color-forest-2, #4a5a52); }"
+    },
+    {
+      "name": "Readout",
+      "kind": "custom",
+      "refersTo": "dashboard-readout",
+      "description": "Label, Mono value, Atkinson note. A compensated value takes terra.",
+      "html": "<dl class=\"ds-readouts\"><div><dt>Compensated</dt><dd class=\"ds-rv\">10%</dd><dd class=\"ds-rn\">1 of 10 reps</dd></div><div><dt>Peak lean</dt><dd class=\"ds-rv ds-rv-comp\">14.1°</dd><dd class=\"ds-rn\">limit 10°</dd></div></dl>",
+      "css": ".ds-readouts { display: grid; grid-template-columns: repeat(2, auto); justify-content: start; gap: 24px; margin: 0; color: var(--color-forest, #1f2d27); font-family: var(--font-text, system-ui); } .ds-readouts dt { font-size: 14px; font-weight: 700; color: var(--color-forest-2, #4a5a52); } .ds-readouts dd { margin: 0; } .ds-rv { margin-top: 4px !important; font-family: var(--font-readout, ui-monospace, monospace); font-variant-numeric: tabular-nums; font-size: 2.5rem; line-height: 1; letter-spacing: -0.02em; white-space: nowrap; } .ds-rv-comp { color: var(--color-terra, #b4532f); } .ds-rn { margin-top: 8px !important; font-size: 14px; color: var(--color-forest-2, #4a5a52); }"
+    },
+    {
+      "name": "Result Tag",
+      "kind": "chip",
+      "refersTo": "result-tag-clean",
+      "description": "Clean or compensated as an icon and a word, never colour alone.",
+      "html": "<span class=\"ds-tag ds-tag-clean\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg> Clean</span> <span class=\"ds-tag ds-tag-comp\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m15 9-6 6\"/><path d=\"m9 9 6 6\"/></svg> Compensated</span>",
+      "css": ".ds-tag { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-text, system-ui); font-size: 14px; font-weight: 700; white-space: nowrap; margin-right: 16px; } .ds-tag-clean { color: var(--color-eucalyptus, #4f6f5f); } .ds-tag-comp { color: var(--color-terra-deep, #9a4526); }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "button",
+      "refersTo": "segmented-option-pressed",
+      "description": "Mutually exclusive choices; pressed is forest. Full-width grid with short labels on phones.",
+      "html": "<div class=\"ds-seg\" role=\"group\" aria-label=\"Measure\"><button aria-pressed=\"true\">Compensated reps</button><button aria-pressed=\"false\">Clean-rep lean</button><button aria-pressed=\"false\">Reach time</button></div>",
+      "css": ".ds-seg { display: inline-grid; grid-auto-flow: column; padding: 2px; background: var(--color-panel, #f7f8f5); border: 1px solid var(--color-wall, #c9d3cb); border-radius: 8px; font-family: var(--font-text, system-ui); } .ds-seg button { height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; font: inherit; font-size: 14px; font-weight: 600; color: var(--color-forest-2, #4a5a52); cursor: pointer; white-space: nowrap; transition: background-color 150ms, color 150ms; } .ds-seg button:hover { background: var(--color-wash, #e2e8e1); color: #1f2d27; } .ds-seg button[aria-pressed=\"true\"] { background: var(--color-forest, #1f2d27); color: var(--color-plaster, #eef0ec); } .ds-seg button:focus-visible { outline: 3px solid var(--color-eucalyptus, #4f6f5f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Dashboard Buttons",
+      "kind": "button",
+      "refersTo": "dashboard-button",
+      "description": "40px controls: plain (panel, hairline, wash hover) and primary (forest).",
+      "html": "<button class=\"ds-dbtn ds-dbtn-primary\">Play</button> <button class=\"ds-dbtn\">Previous rep</button> <button class=\"ds-dbtn\" disabled>Next rep</button>",
+      "css": ".ds-dbtn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 1px solid var(--color-wall, #c9d3cb); border-radius: 8px; background: var(--color-panel, #f7f8f5); color: var(--color-forest, #1f2d27); font-family: var(--font-text, system-ui); font-size: 15px; font-weight: 600; cursor: pointer; transition: background-color 150ms; } .ds-dbtn:hover { background: var(--color-wash, #e2e8e1); } .ds-dbtn:active { transform: translateY(1px); } .ds-dbtn:disabled { opacity: 0.45; cursor: not-allowed; } .ds-dbtn-primary { border-color: transparent; background: var(--color-forest, #1f2d27); color: var(--color-plaster, #eef0ec); } .ds-dbtn-primary:hover { background: var(--color-forest-deep, #14201b); } .ds-dbtn:focus-visible { outline: 3px solid var(--color-eucalyptus, #4f6f5f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Change Column",
+      "kind": "custom",
+      "refersTo": "change-better",
+      "description": "Signed Mono delta, direction icon and words. Better eucalyptus, worse terra-deep, same muted ink.",
+      "html": "<div class=\"ds-change\"><div class=\"ds-ch ds-ch-better\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14\"/><path d=\"m19 12-7 7-7-7\"/></svg><span class=\"ds-ch-v\">−54 pts</span><span class=\"ds-ch-w\">fewer compensated</span></div><div class=\"ds-ch ds-ch-same\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/></svg><span class=\"ds-ch-v\">+0.04 s</span><span class=\"ds-ch-w\">about the same</span></div></div>",
+      "css": ".ds-change { display: flex; flex-direction: column; align-items: center; gap: 28px; width: 8.5rem; font-family: var(--font-text, system-ui); } .ds-ch { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; } .ds-ch-v { font-family: var(--font-readout, ui-monospace, monospace); font-variant-numeric: tabular-nums; font-size: 1.25rem; white-space: nowrap; } .ds-ch-w { font-size: 14px; font-weight: 700; } .ds-ch-better { color: var(--color-eucalyptus, #4f6f5f); } .ds-ch-worse { color: var(--color-terra-deep, #9a4526); } .ds-ch-same { color: var(--color-forest-2, #4a5a52); }"
+    },
+    {
+      "name": "Rep Strip",
+      "kind": "custom",
+      "refersTo": "dashboard-readout",
+      "description": "Each rep at its peak lean against the 6/5-dashed limit: open forest circle clean, filled terracotta diamond compensated; every mark is a button.",
+      "html": "<div class=\"ds-strip\"><div class=\"ds-strip-ticks\"><span style=\"top:12px\">15°</span><span class=\"ds-lim\" style=\"top:48px\">10°</span><span style=\"top:116px\">0°</span></div><div class=\"ds-strip-plot\"><div class=\"ds-grid\" style=\"top:12px\"></div><svg class=\"ds-limit\" style=\"top:46.5px\" width=\"100%\" height=\"3\" aria-hidden=\"true\"><line x1=\"0\" x2=\"100%\" y1=\"1.5\" y2=\"1.5\" stroke=\"#1f2d27\" stroke-width=\"1.5\" stroke-dasharray=\"6 5\"/></svg><div class=\"ds-grid\" style=\"top:116px\"></div><button style=\"left:4%;top:90px\" aria-label=\"Rep 1, clean\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><circle cx=\"8\" cy=\"8\" r=\"5\" fill=\"#f7f8f5\" stroke=\"#1f2d27\" stroke-width=\"1.8\"/></svg></button><button style=\"left:28%;top:30px\" aria-label=\"Rep 2, compensated\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\" style=\"overflow:visible\"><path d=\"M8,1.4L14.6,8L8,14.6L1.4,8Z\" fill=\"#b4532f\" stroke=\"#f7f8f5\" stroke-width=\"1.2\"/></svg></button><button style=\"left:52%;top:80px\" aria-label=\"Rep 3, clean\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><circle cx=\"8\" cy=\"8\" r=\"5\" fill=\"#f7f8f5\" stroke=\"#1f2d27\" stroke-width=\"1.8\"/></svg></button><button style=\"left:76%;top:96px\" aria-label=\"Rep 4, clean\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 16 16\"><circle cx=\"8\" cy=\"8\" r=\"5\" fill=\"#f7f8f5\" stroke=\"#1f2d27\" stroke-width=\"1.8\"/></svg></button></div></div>",
+      "css": ".ds-strip { display: flex; width: 100%; max-width: 30rem; height: 128px; background: var(--color-panel, #f7f8f5); } .ds-strip-ticks { position: relative; width: 40px; flex-shrink: 0; } .ds-strip-ticks span { position: absolute; right: 8px; transform: translateY(-50%); font-family: var(--font-readout, ui-monospace, monospace); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--color-forest-2, #4a5a52); } .ds-strip-ticks .ds-lim { color: var(--color-forest, #1f2d27); } .ds-strip-plot { position: relative; flex: 1; } .ds-grid { position: absolute; left: 0; right: 0; border-top: 1px solid var(--color-grid, #dbe1da); } .ds-limit { position: absolute; left: 0; } .ds-strip-plot button { position: absolute; display: grid; place-items: center; width: 28px; height: 28px; transform: translate(-50%, -50%); padding: 0; border: 0; border-radius: 999px; background: transparent; cursor: pointer; } .ds-strip-plot button:hover { background: rgb(79 111 95 / 0.15); } .ds-strip-plot button:focus-visible { outline: 3px solid var(--color-eucalyptus, #4f6f5f); outline-offset: 2px; }"
+    },
+    {
+      "name": "Chart Legend",
+      "kind": "custom",
+      "refersTo": "dashboard-readout",
+      "description": "The shared chart grammar in one line: clean circle, compensated diamond, the dashed limit with its Mono value.",
+      "html": "<div class=\"ds-legend\"><span><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" aria-hidden=\"true\"><circle cx=\"7\" cy=\"7\" r=\"5\" fill=\"none\" stroke=\"#1f2d27\" stroke-width=\"1.8\"/></svg>Clean rep</span><span><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" aria-hidden=\"true\"><path d=\"M7 0.5L13.5 7L7 13.5L0.5 7Z\" fill=\"#b4532f\"/></svg>Compensated rep</span><span><svg width=\"24\" height=\"14\" viewBox=\"0 0 24 14\" aria-hidden=\"true\"><line x1=\"0\" x2=\"24\" y1=\"7\" y2=\"7\" stroke=\"#1f2d27\" stroke-dasharray=\"6 5\" stroke-width=\"1.5\"/></svg>Limit <b>10°</b></span></div>",
+      "css": ".ds-legend { display: flex; flex-wrap: wrap; gap: 4px 20px; font-family: var(--font-text, system-ui); font-size: 14px; color: var(--color-forest-2, #4a5a52); } .ds-legend span { display: inline-flex; align-items: center; gap: 6px; } .ds-legend b { font-weight: 400; font-family: var(--font-readout, ui-monospace, monospace); font-variant-numeric: tabular-nums; }"
     }
   ],
   "narrative": {
@@ -117,16 +485,70 @@
       "Terracotta appears only as the flagged-lean state, never as decoration",
       "Every number is set in Atkinson Hyperlegible Mono with tabular figures",
       "Clean vs compensated is always an icon plus a label, never colour alone",
-      "Forest-drenched and wall-drenched full-width passages rather than cards"
+      "Forest-drenched and wall-drenched full-width passages rather than cards",
+      "The therapist dashboard is Rehab Studio at working density: forest top bar, flat paper panels, one shared rep mark and one dashed limit in every chart"
     ],
     "rules": [
-      { "name": "The Terracotta Is a State Rule", "body": "Terracotta appears only while something is past the limit, or as the mark of a rep that was. A surface at rest has no terracotta on it.", "section": "colors" },
-      { "name": "The Stage Ink Rule", "body": "Copy over the stage (wall or the painted room) is always forest. Muted ink appears only on plaster.", "section": "colors" },
-      { "name": "The Small Terracotta Rule", "body": "Terracotta text below large size uses terra-deep. Plain terra is for large readouts, glows and marks.", "section": "colors" },
-      { "name": "The Warm Room Rule", "body": "The flagged state tints the room itself, not just a badge. The wall mixes in 9% terra and the floor 6% (in oklab), through the registered `--room-wall` / `--room-floor` properties over 500ms ease-out. The 3D lights warm with it: sky, ground and key light lerp toward warm values.", "section": "colors" },
-      { "name": "The Measured Number Rule", "body": "Any number the device measures, or any limit it applies (angles, limits, percentages on axes, chart ticks), is set in Atkinson Hyperlegible Mono with tabular figures.", "section": "typography" },
-      { "name": "The Upright Display Rule", "body": "Literata headlines are always roman, never italic, at weight 500.", "section": "typography" },
-      { "name": "The Forest-Tinted Shadow Rule", "body": "Shadows are tinted with forest (rgb 31 45 39), never neutral black, and only the instrument and the primary action cast them.", "section": "elevation" }
+      {
+        "name": "The Terracotta Is a State Rule",
+        "body": "Terracotta appears only while something is past the limit, or as the mark of a rep that was. A surface at rest has no terracotta on it.",
+        "section": "colors"
+      },
+      {
+        "name": "The Stage Ink Rule",
+        "body": "Copy over the stage (wall or the painted room) is always forest. Muted ink appears only on plaster.",
+        "section": "colors"
+      },
+      {
+        "name": "The Small Terracotta Rule",
+        "body": "Terracotta text below large size uses terra-deep. Plain terra is for large readouts, glows and marks.",
+        "section": "colors"
+      },
+      {
+        "name": "The Warm Room Rule",
+        "body": "The flagged state tints the room itself, not just a badge. The wall mixes in 9% terra and the floor 6% (in oklab), through the registered `--room-wall` / `--room-floor` properties over 500ms ease-out. The 3D lights warm with it: sky, ground and key light lerp toward warm values.",
+        "section": "colors"
+      },
+      {
+        "name": "The Measured Number Rule",
+        "body": "Any number the device measures, or any limit it applies (angles, limits, percentages on axes, chart ticks), is set in Atkinson Hyperlegible Mono with tabular figures.",
+        "section": "typography"
+      },
+      {
+        "name": "The Upright Display Rule",
+        "body": "Literata headlines are always roman, never italic, at weight 500.",
+        "section": "typography"
+      },
+      {
+        "name": "The Forest-Tinted Shadow Rule",
+        "body": "Shadows are tinted with forest (rgb 31 45 39), never neutral black, and only the instrument and the primary action cast them.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Measured Terracotta Rule",
+        "body": "On the dashboard, terracotta appears in exactly these places: the filled diamond of a compensated rep, the compensated-share bar in the sessions table (it encodes that share, so it is a mark; decision 2026-11-19), compensated values (terra for large readouts such as a compensated rep's peak lean or the replay's live angle past the limit; terra-deep for small text such as a compensated row's peak lean), the replay playhead dot while past the limit, and the 3D replay trunk while past the limit. Nothing at rest is terracotta.",
+        "section": "colors"
+      },
+      {
+        "name": "The Direction In Words Rule",
+        "body": "A change between sessions is a signed Mono delta, a direction icon (ArrowDown, ArrowUp, or Minus when about the same) and words (\"fewer compensated\", \"less lean\", \"slower\"). Better is eucalyptus, worse is terra-deep, about the same is forest-2. Colour never carries the direction alone.",
+        "section": "colors"
+      },
+      {
+        "name": "The Flat Panel Exception",
+        "body": "On the dashboard only, content sits in panels: panel fill, a 1px wall hairline, 12px radius, no shadow, 20px padding (24px from sm on the Progress panels), or none for tables, which clip to the radius. This is the one place the \"avoid cards\" stance yields, and it yields to flat paper, not lifted cards. Tables inside panels divide rows with wall hairlines at 70% alpha.",
+        "section": "elevation"
+      },
+      {
+        "name": "The One Mark Rule",
+        "body": "A rep is drawn the same way in every chart, strip and table cell by one shared mark: a clean rep is an open circle (panel fill, 1.8px forest stroke), a compensated rep a filled terracotta diamond (with a thin panel edge). Shape tells clean from compensated before colour does.",
+        "section": "components"
+      },
+      {
+        "name": "The One Limit Rule",
+        "body": "The limit is a 1.5px forest line dashed 6/5 in every plot: the rep strip, the per-target scatter, the trend's lean view and the trunk trace. The legend's swatch uses the same dash.",
+        "section": "components"
+      }
     ],
     "dos": [
       "Do keep terracotta behind the flagged state: readout value and border in terra, the state line in terra-deep, the room tint at 9% (wall) and 6% (floor) terra, the glow at 0.17 alpha.",

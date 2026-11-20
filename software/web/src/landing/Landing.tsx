@@ -11,9 +11,9 @@ import '@fontsource-variable/atkinson-hyperlegible-next'
 import '@fontsource-variable/atkinson-hyperlegible-mono'
 import './landing.css'
 
-import { ArrowDown, ArrowRight, CircleCheck, CircleX, Timer, Volume2, VolumeX } from 'lucide-react'
+import { ArrowDown, ArrowRight } from 'lucide-react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { SessionsFile } from '../types'
+import type { SessionsFile, Target } from '../types'
 import { FallbackFigure } from './FallbackFigure'
 import { LIMIT_DEG, type SceneInput } from './lean'
 
@@ -47,49 +47,29 @@ const ease = (x: number) => {
   return t * t * (3 - 2 * t)
 }
 
-// ---------- the buzzer (opt-in sound, the firmware's 2400 Hz tone) ----------
-
-function useBuzzer(enabled: boolean, flagged: boolean) {
-  const ctx = useRef<AudioContext | null>(null)
-  useEffect(() => {
-    if (!enabled || !flagged) return
-    ctx.current ??= new AudioContext()
-    const ac = ctx.current
-    const osc = ac.createOscillator()
-    const gain = ac.createGain()
-    osc.type = 'square'
-    osc.frequency.value = 2400
-    gain.gain.value = 0
-    osc.connect(gain).connect(ac.destination)
-    osc.start()
-    // beep-beep: 120 ms on, 120 ms off, quietly
-    let on = false
-    const id = window.setInterval(() => {
-      on = !on
-      gain.gain.setTargetAtTime(on ? 0.035 : 0, ac.currentTime, 0.004)
-    }, 120)
-    return () => {
-      window.clearInterval(id)
-      gain.gain.setTargetAtTime(0, ac.currentTime, 0.004)
-      osc.stop(ac.currentTime + 0.05)
-    }
-  }, [enabled, flagged])
-}
-
 // ---------- the story: one sticky room, five steps ----------
 
 const STEPS = 5 // hero, calibrate, clean, lean, data
 
-function Readout({ valueRef, flagged, deg, onKey, label, calibrating }: {
+/*
+  The instrument on the wall: the trunk angle as a big number, with a scale under it
+  (0 to 30 degrees, the limit marked, a needle at the live angle) so the number
+  always reads against the limit. The needle moves through the --lean custom
+  property, set every frame by onMeasure without a React render.
+*/
+const SCALE_MAX = 30
+
+function Readout({ valueRef, plateRef, flagged, deg, onKey, label }: {
   valueRef: React.RefObject<HTMLSpanElement | null>
+  plateRef: React.RefObject<HTMLDivElement | null>
   flagged: boolean
   deg: number
   onKey: (e: React.KeyboardEvent) => void
   label: string
-  calibrating: boolean
 }) {
   return (
     <div
+      ref={plateRef}
       role="slider"
       tabIndex={0}
       aria-label="Trunk lean"
@@ -99,17 +79,29 @@ function Readout({ valueRef, flagged, deg, onKey, label, calibrating }: {
       aria-valuetext={`${deg.toFixed(1)} degrees, ${flagged ? 'past the 10 degree limit, compensated' : 'within the limit'}`}
       onKeyDown={onKey}
       className={`lp-readout ${flagged ? 'is-flagged' : ''}`}
+      style={{ '--lean': 0, '--limit': LIMIT_DEG / SCALE_MAX } as React.CSSProperties}
     >
-      <span className="lp-readout-label">Trunk lean</span>
+      <div className="lp-readout-head">
+        <span className="lp-readout-label">Trunk lean</span>
+        <span className="lp-readout-state">{flagged ? 'Compensated' : label}</span>
+      </div>
       <span className="lp-readout-value">
         <span ref={valueRef}>0.0</span>
         <span className="lp-readout-unit">°</span>
       </span>
-      <span className="lp-readout-limit">limit {LIMIT_DEG}°</span>
-      <span className="lp-readout-state">
-        {flagged ? <CircleX aria-hidden className="size-5" /> : calibrating ? <Timer aria-hidden className="size-5" /> : <CircleCheck aria-hidden className="size-5" />}
-        {flagged ? 'Compensated' : label}
-      </span>
+      <div className="lp-scale" aria-hidden>
+        <div className="lp-scale-track">
+          <span className="lp-scale-over" />
+          <span className="lp-scale-fill" />
+          <span className="lp-scale-limit" />
+          <span className="lp-scale-needle" />
+        </div>
+        <div className="lp-scale-ticks">
+          <span>0°</span>
+          <span className="lp-scale-limit-label"><span className="lp-scale-limit-word">limit </span>{LIMIT_DEG}°</span>
+          <span>{SCALE_MAX}°</span>
+        </div>
+      </div>
     </div>
   )
 }
@@ -144,18 +136,113 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
   const webgl = useMemo(() => hasWebGL(), [])
   const section = useRef<HTMLElement>(null)
   const valueRef = useRef<HTMLSpanElement>(null)
-  const input = useRef<SceneInput>({ trunkDeg: 0, reach: 0, target: 'RED', homeLit: false, calibrating: false, shot: 'hero' })
+  const plateRef = useRef<HTMLDivElement>(null)
+  const input = useRef<SceneInput>({ trunkDeg: 0, reach: 0, target: 'RED', homeLit: false, calibrating: false, camera: 0 })
   const [step, setStep] = useState(0)
+  const stepEls = useRef<(HTMLDivElement | null)[]>([])
   const stepRef = useRef(0)
   const [flagged, setFlagged] = useState(false)
   const [deg, setDeg] = useState(0)
-  const [sound, setSound] = useState(false)
   const dragDeg = useRef(0)
   const touched = useRef(false)
   const lastDeg = useRef(-1)
   const lastFlag = useRef(false)
 
-  useBuzzer(sound, flagged)
+  // One scroll gesture = one step. Inside the story, a wheel notch, a trackpad swipe, a touch
+  // swipe or Page Down / arrow keys glide to the next step (or back) and the momentum that
+  // follows is swallowed, so a swipe can never skip a step. Past the last step the page
+  // scrolls normally again; scrolling back up re-enters the steps.
+  useEffect(() => {
+    const el = section.current
+    if (!el) return
+    let animating = false
+    let lastWheel = 0
+    let raf = 0
+    const vh = () => window.innerHeight
+    const top = () => el.offsetTop
+    const last = STEPS - 1
+    const at = () => (window.scrollY - top()) / vh()             // 0 = hero, 1 = calibrate, ...
+    const inStory = () => window.scrollY >= top() - 2 && at() <= last + 0.02
+    const glide = (to: number) => {
+      const from = window.scrollY, dest = top() + to * vh()
+      if (Math.abs(dest - from) < 2) return
+      if (reducedMotion) { window.scrollTo({ top: dest, behavior: 'instant' }); return }
+      animating = true
+      const t0 = performance.now(), dur = 850
+      const ease = (u: number) => (u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2)
+      const frame = (now: number) => {
+        const u = Math.min(1, (now - t0) / dur)
+        window.scrollTo({ top: from + (dest - from) * ease(u), behavior: 'instant' })
+        if (u < 1) raf = requestAnimationFrame(frame)
+        else animating = false
+      }
+      raf = requestAnimationFrame(frame)
+    }
+    /** Step by `dir`; returns false when the page should scroll normally instead. */
+    const step = (dir: 1 | -1) => {
+      if (!inStory()) return false
+      const now = Math.round(at())
+      if (dir > 0 && at() >= last - 0.02) return false            // leaving the story downward
+      if (dir < 0 && at() <= 0.02) return false                    // already at the top
+      glide(dir > 0 ? Math.min(last, Math.floor(at() + 0.02) + 1) : Math.max(0, Math.ceil(at() - 0.02) - 1))
+      return now >= 0
+    }
+    // A gesture is one stream of wheel events; it ends after 200 ms of quiet. It fires one step
+    // on its first event that has a real direction (trackpads often open with a zero-delta event),
+    // and the rest of it, momentum included, is swallowed. A fresh swipe during leftover momentum
+    // shows up as a jump in speed and counts as a new gesture.
+    let fired = false, prevAbs = 0
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return
+      const t = performance.now()
+      const abs = Math.abs(e.deltaY)
+      if (t - lastWheel > 200) fired = false
+      else if (fired && !animating && abs > prevAbs * 1.8 + 4) fired = false
+      lastWheel = t
+      prevAbs = abs
+      if (!inStory()) return
+      const dir = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0
+      // let the page scroll normally out of the bottom of the story, and at the very top
+      if (dir > 0 && at() >= last - 0.02) return
+      if (dir < 0 && at() <= 0.02) return
+      e.preventDefault()
+      if (fired || animating || dir === 0 || abs < 2) return
+      fired = true
+      step(dir)
+    }
+    let touchY: number | null = null, touchX = 0
+    const onTouchStart = (e: TouchEvent) => { touchY = e.touches[0].clientY; touchX = e.touches[0].clientX }
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchY === null || !inStory()) return
+      const dy = touchY - e.touches[0].clientY, dx = touchX - e.touches[0].clientX
+      if (Math.abs(dy) < Math.abs(dx)) return                     // sideways: the hero's drag-to-lean
+      const dir = dy > 0 ? 1 : -1
+      if ((dir > 0 && at() >= last - 0.02) || (dir < 0 && at() <= 0.02)) return
+      e.preventDefault()
+      if (!animating && Math.abs(dy) > 36) { step(dir); touchY = null }
+    }
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement
+      if (t.closest('input,textarea,select,[role="slider"],[contenteditable="true"]')) return
+      const dir = ['ArrowDown', 'PageDown', ' '].includes(e.key) && !e.shiftKey ? 1
+        : ['ArrowUp', 'PageUp'].includes(e.key) || (e.key === ' ' && e.shiftKey) ? -1 : 0
+      if (!dir || !inStory()) return
+      if ((dir > 0 && at() >= last - 0.02) || (dir < 0 && at() <= 0.02)) return
+      e.preventDefault()
+      if (!animating) step(dir as 1 | -1)
+    }
+    window.addEventListener('wheel', onWheel, { passive: false })
+    window.addEventListener('touchstart', onTouchStart, { passive: true })
+    window.addEventListener('touchmove', onTouchMove, { passive: false })
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('wheel', onWheel)
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('keydown', onKey)
+      cancelAnimationFrame(raf)
+    }
+  }, [reducedMotion])
 
   // Scroll position -> which step, and how far through it.
   useEffect(() => {
@@ -170,38 +257,48 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
       // scene switches half a screen early and peaks while its text is centred.
       const p = clamp(-r.top / vh + 0.5, 0, STEPS - 0.001)
       const s = Math.floor(p)
-      const f = p - s
       setStep(s)
       stepRef.current = s
       const inp = input.current
+      inp.camera = clamp(p - 0.5, 0, STEPS - 1)
+      // The text is pinned with the room and crossfades: one step at a time, never under the nav.
+      stepEls.current.forEach((el, i) => {
+        if (!el) return
+        const d = p - (i + 0.5)
+        const o = clamp(1 - (Math.abs(d) - 0.26) / 0.34, 0, 1)
+        el.style.opacity = String(o)
+        el.style.visibility = o > 0.01 ? 'visible' : 'hidden'
+        el.style.transform = reducedMotion ? '' : `translateY(${(-d * 48).toFixed(1)}px)`
+      })
       inp.calibrating = s === 1
-      if (s === 0) {
-        inp.shot = 'hero'
-        inp.trunkDeg = dragDeg.current
-        inp.reach = clamp(dragDeg.current / 14, 0, 1)
-        inp.target = 'RED'
-        inp.homeLit = false
-      } else if (s === 1) {
-        // close on the chest sensor while HOME blinks
-        inp.shot = 'chest'
-        inp.trunkDeg = 0; inp.reach = 0; inp.target = null; inp.homeLit = true
-      } else if (s === 2) {
-        // close on the mat: the green target lights, the arm does the work
-        const g = ease(f / 0.5)
-        inp.shot = 'mat'
-        inp.target = 'GREEN'; inp.homeLit = false
-        inp.reach = g; inp.trunkDeg = 2.8 * g
-      } else if (s === 3) {
-        // pull back for the lean
-        const g = ease(f / 0.5)
-        inp.shot = 'wide'
-        inp.target = 'RED'; inp.homeLit = false
-        inp.reach = g; inp.trunkDeg = 14.1 * g
+      // The figure follows the scroll continuously, like the camera: each step has a pose at its
+      // centre and the scroll blends between neighbours, so nothing snaps at a boundary. Between
+      // two reaches the arm plays a whole rep: back to HOME, then out to the next target, with
+      // the lit button changing while the hand is home.
+      const c = clamp(p - 0.5, 0, STEPS - 1)
+      const i = Math.min(Math.floor(c), STEPS - 2)
+      const t = c - i
+      const sm = (x: number) => { const y = clamp(x, 0, 1); return y * y * (3 - 2 * y) }
+      const heroDeg = dragDeg.current, heroReach = clamp(dragDeg.current / 14, 0, 1)
+      // pose at each step's centre: [trunk degrees, reach, lit target]
+      const POSE: [number, number, Target | null][] = [
+        [heroDeg, heroReach, 'RED'], [0, 0, null], [2.8, 1, 'GREEN'], [14.1, 1, 'RED'], [14.1, 1, 'RED'],
+      ]
+      const [d0, r0, g0] = POSE[i], [d1, r1, g1] = POSE[i + 1]
+      inp.trunkDeg = d0 + (d1 - d0) * sm(t)
+      if (g0 !== g1 && r0 > 0 && r1 > 0) {
+        // reach to reach with a different target: home at the midpoint, the light swaps there.
+        // The trunk follows the arm: upright as the hand comes home, leaning as it reaches out.
+        inp.reach = t < 0.5 ? r0 * (1 - sm(t / 0.5)) : r1 * sm((t - 0.5) / 0.5)
+        inp.target = t < 0.5 ? g0 : g1
+        inp.trunkDeg = t < 0.5 ? d0 * (1 - sm(t / 0.5)) : d1 * sm((t - 0.5) / 0.5)
       } else {
-        // hold the flagged rep while it becomes data
-        inp.shot = 'wide'
-        inp.target = 'RED'; inp.homeLit = false; inp.reach = 1; inp.trunkDeg = 14.1
+        inp.reach = r0 + (r1 - r0) * sm(t)
+        // swap the light at whichever end the hand is home
+        inp.target = r1 > r0 ? g1 : r0 > r1 ? (t < 0.98 ? g0 : g1) : (t < 0.5 ? g0 : g1)
       }
+      // HOME blinks around calibration, fading out of it as the reach starts
+      inp.homeLit = (i === 0 && t > 0.6) || (i === 1 && t < 0.35)
     }
     const on = () => { if (!raf) raf = requestAnimationFrame(tick) }
     tick()
@@ -212,7 +309,7 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
       window.removeEventListener('resize', on)
       cancelAnimationFrame(raf)
     }
-  }, [])
+  }, [reducedMotion])
 
   // An idle demonstration on the first screen, until the visitor takes over.
   useEffect(() => {
@@ -222,7 +319,9 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
     const loop = (now: number) => {
       if (touched.current) return
       const t = (now - start) / 1000
-      if (t > 0) {
+      // only while the page rests on the first screen: once a scroll starts, the scroll owns the
+      // pose (two writers fighting each frame is what flickered between steps)
+      if (t > 0 && input.current.camera < 0.005) {
         const phase = t % 5.5 // lean over 1.6 s, hold, return, rest
         const v = phase < 1.6 ? ease(phase / 1.6) : phase < 2.8 ? 1 : phase < 4 ? 1 - ease((phase - 2.8) / 1.2) : 0
         dragDeg.current = 14.1 * v
@@ -243,11 +342,14 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
     input.current.reach = clamp(dragDeg.current / 14, 0, 1)
   }, [])
 
-  // Drag anywhere on the first screen to lean the trunk; let go and they sit back up.
+  // Drag on the figure (the hit area over him) to lean the trunk; let go and they sit back up.
+  const hitArea = useRef<HTMLDivElement>(null)
   const drag = useRef<{ x: number; d: number } | null>(null)
+  const [dragging, setDragging] = useState(false)
   const onPointerDown = (e: React.PointerEvent) => {
-    if (step !== 0 || (e.target as HTMLElement).closest('a,button,[role="slider"]')) return
+    if (step !== 0) return
     drag.current = { x: e.clientX, d: dragDeg.current }
+    setDragging(true)
     ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }
   const onPointerMove = (e: React.PointerEvent) => {
@@ -257,6 +359,7 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
   const onPointerUp = () => {
     if (!drag.current) return
     drag.current = null
+    setDragging(false)
     setLean(0)
   }
   const onKey = (e: React.KeyboardEvent) => {
@@ -271,6 +374,7 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
     if (rounded !== lastDeg.current) {
       lastDeg.current = rounded
       if (valueRef.current) valueRef.current.textContent = rounded.toFixed(1).padStart(4, '\u2007')
+      plateRef.current?.style.setProperty('--lean', String(clamp(rounded, 0, SCALE_MAX) / SCALE_MAX))
       setDeg((prev) => (Math.abs(prev - rounded) >= 0.5 || rounded === 0 ? rounded : prev)) // aria value, coarse
     }
     if (f !== lastFlag.current) { lastFlag.current = f; setFlagged(f) }
@@ -282,66 +386,72 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
     <section ref={section} id="how" className="lp-story" style={{ height: `${STEPS * 100}svh` }} aria-label="How Re:Motion works">
       <div
         className={`lp-stage ${flagged ? 'is-flagged' : ''} ${step === 0 ? 'is-hero' : ''}`}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
       >
         <div className="lp-canvas" aria-hidden>
           {webgl ? (
             <Suspense fallback={null}>
-              <LeanScene input={input} onMeasure={onMeasure} reducedMotion={reducedMotion} />
+              <LeanScene input={input} onMeasure={onMeasure} reducedMotion={reducedMotion} hitArea={hitArea} />
             </Suspense>
           ) : (
             <FallbackFigure input={input} onMeasure={onMeasure} />
           )}
         </div>
+        {/* the drag area: only over the figure, kept in place by the 3D scene */}
+        <div
+          ref={hitArea}
+          className={`lp-hit ${step === 0 ? '' : 'is-off'} ${dragging ? 'is-dragging' : ''}`}
+          aria-hidden
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        />
         <div className="lp-instrument">
-          <Readout valueRef={valueRef} flagged={flagged} deg={deg} onKey={onKey} label={stateLabel} calibrating={step === 1} />
-          <button
-            type="button"
-            className="lp-sound"
-            aria-pressed={sound}
-            onClick={() => setSound((s) => !s)}
-          >
-            {sound ? <Volume2 aria-hidden className="size-4" /> : <VolumeX aria-hidden className="size-4" />}
-            <span className="lp-sound-long">{sound ? 'Buzzer sound on' : 'Buzzer sound off'}</span>
-            <span className="lp-sound-short">{sound ? 'Sound on' : 'Sound off'}</span>
-          </button>
+          <Readout valueRef={valueRef} plateRef={plateRef} flagged={flagged} deg={deg} onKey={onKey} label={stateLabel} />
         </div>
-        <a href="#calibrate" className={`lp-scroll ${step === 0 ? '' : 'is-hidden'}`} tabIndex={step === 0 ? 0 : -1}>
+        <a
+          href="#calibrate"
+          className={`lp-scroll ${step === 0 ? '' : 'is-hidden'}`}
+          tabIndex={step === 0 ? 0 : -1}
+          onClick={(e) => {
+            const el = section.current
+            if (!el) return
+            e.preventDefault()
+            window.scrollTo({ top: el.offsetTop + window.innerHeight, behavior: reducedMotion ? 'auto' : 'smooth' })
+          }}
+        >
           <ArrowDown aria-hidden className="size-4" /> Scroll to watch a session
         </a>
-      </div>
-
-      <div className="lp-steps">
-        <div className="lp-step lp-step-hero">
-          <h1 className="lp-h1">Relearning to reach, the right way.</h1>
-          <p className="lp-lede">
-            Rehab scores check whether a reach was completed. Re:Motion’s two sensors notice when the trunk leans in to do the arm’s work.
-          </p>
-          <div className="lp-actions">
-            <a className="lp-btn" href="/dashboard">Open the dashboard <ArrowRight aria-hidden className="size-5" /></a>
-            <span className="lp-cue">{reducedMotion ? 'Drag the figure, or focus the readout and use the arrow keys, to lean.' : 'Drag the figure to lean it.'}</span>
+        <div className="lp-steps">
+          <div className="lp-step lp-step-hero" ref={(el) => { stepEls.current[0] = el }}>
+            <h1 className="lp-h1">Relearning to reach, the right way.</h1>
+            <p className="lp-lede">
+              Rehab scores check whether a reach was completed. Re:Motion’s two sensors notice when the trunk leans in to do the arm’s work.
+            </p>
+            <div className="lp-actions">
+              <a className="lp-btn" href="/dashboard">Open the dashboard <ArrowRight aria-hidden className="size-5" /></a>
+              <span className="lp-cue">{reducedMotion ? 'Drag the figure, or focus the readout and use the arrow keys, to lean.' : 'Drag the figure to lean it.'}</span>
+            </div>
+          </div>
+          <div className="lp-step" id="calibrate" ref={(el) => { stepEls.current[1] = el }}>
+            <h2 className="lp-h2">Three seconds of sitting still.</h2>
+            <p>The HOME button blinks while the chest sensor learns what upright means for this person, in this harness, today. Every angle after that is measured from here.</p>
+          </div>
+          <div className="lp-step" ref={(el) => { stepEls.current[2] = el }}>
+            <h2 className="lp-h2">A clean reach.</h2>
+            <p>The green target lights. The arm does the work and the trunk barely moves, under 3°. A green light on the table says the rep was clean.</p>
+          </div>
+          <div className="lp-step" ref={(el) => { stepEls.current[3] = el }}>
+            <h2 className="lp-h2">The lean.</h2>
+            <p>Red, at arm’s length. The trunk tips forward to make up the distance. Past {LIMIT_DEG}° for 200 ms, the buzzer sounds while it happens, and the rep is marked compensated.</p>
+          </div>
+          <div className="lp-step" ref={(el) => { stepEls.current[4] = el }}>
+            <h2 className="lp-h2">Every rep becomes data.</h2>
+            <TraceFigure />
           </div>
         </div>
-        <div className="lp-step" id="calibrate">
-          <h2 className="lp-h2">Three seconds of sitting still.</h2>
-          <p>The HOME button blinks while the chest sensor learns what upright means for this person, in this harness, today. Every angle after that is measured from here.</p>
-        </div>
-        <div className="lp-step">
-          <h2 className="lp-h2">A clean reach.</h2>
-          <p>The green target lights. The arm does the work and the trunk barely moves, under 3°. A green light on the table says the rep was clean.</p>
-        </div>
-        <div className="lp-step">
-          <h2 className="lp-h2">The lean.</h2>
-          <p>Red, at arm’s length. The trunk tips forward to make up the distance. Past {LIMIT_DEG}° for 200 ms, the buzzer sounds while it happens, and the rep is marked compensated.</p>
-        </div>
-        <div className="lp-step">
-          <h2 className="lp-h2">Every rep becomes data.</h2>
-          <TraceFigure />
-        </div>
       </div>
+
     </section>
   )
 }
@@ -543,7 +653,7 @@ export default function Landing() {
           <a href="#how">How it works</a>
           <a href="#evidence">Evidence</a>
           <a href="#hardware">Hardware</a>
-          <a className="lp-nav-btn" href="/dashboard">Dashboard</a>
+          <a className="lp-nav-btn" href="/dashboard">Demo</a>
         </nav>
       </header>
       <main id="main">

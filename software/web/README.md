@@ -18,7 +18,7 @@ http://localhost:5173/dashboard  the therapist dashboard
 
 ```bash
 # from the repo root, with the Python venv active
-python -m software.dashboard.fake_history      # optional: 8 fake sessions over 3 weeks, in data/fake/
+python -m software.dashboard.fake_history      # optional: three simulated patients' sessions, in data/fake/<id>/
 python -m software.dashboard.export            # add --no-sample for real recordings only
 
 cd software/web
@@ -27,6 +27,22 @@ npm run dev
 ```
 
 Run the export again after every new recording, then reload the page.
+
+### The "Generate summary" button (optional)
+
+The Overview's **Generate summary** button asks Claude (`claude-opus-5-5`, low effort) for a
+few plain sentences about the patient's sessions. It goes through `POST /api/summary`, served by
+the dev and preview servers (`server/summary.ts`), so the API key never reaches the browser.
+Give the server credentials before starting it:
+
+```bash
+export ANTHROPIC_API_KEY=...    # or: ant auth login
+npm run dev
+```
+
+Only the figures the Overview shows are sent (per-session counts, percentages, lean and reach
+times, by-target counts). The static `npm run build` output has no server, so the button only
+reports that it needs `npm run dev` or `npm run preview`.
 
 ## Where things are
 
@@ -37,6 +53,7 @@ Run the export again after every new recording, then reload the page.
 | `src/landing/LeanScene.tsx` | The landing page's 3D room; the visitor leans the figure (same 10° / 200 ms rule as the firmware) |
 | `src/landing/landing.css` | Landing page styles (Rehab Studio tokens live in `src/index.css`) |
 | `src/App.tsx` | Dashboard page: header, headline numbers, tabs |
+| `server/summary.ts` | `POST /api/summary` for the dev/preview server: writes the Overview summary with Claude |
 | `src/components/Replay.tsx` | Clean vs compensated replay on one shared clock |
 | `src/components/Figure3D.tsx` | The 3D seated figure (fixed camera) |
 | `src/lib/figure.ts` | Figure geometry: real trunk tilt and timing, illustrative arm |
