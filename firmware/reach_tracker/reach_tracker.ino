@@ -1,13 +1,22 @@
 /*
-  reach_tracker.ino  —  IMU Reach Tracker, ECE 198 Group 19
+  reach_tracker.ino  —  ReMotion, ECE 198 Group 19
 
   Seated reaching exercise that detects TRUNK-LEAN COMPENSATION.
     - Chest IMU (0x68) measures how far the trunk tilts from upright.
     - Wrist IMU (0x69) measures how fast the arm is rotating.
     - Arcade buttons on the mat time each reach (HOME -> lit target).
-    - Buzzer sounds while the patient leans too far during a reach.
     - Each rep is labelled clean / compensated in the R line (no result LEDs).
     - Everything streams over USB serial for the logger and dashboard.
+
+  ONE PRESS OF START RUNS A WHOLE SESSION, in four blocks (PLAN below):
+    PRACTICE   3 reps, buzzer off. Learn the task; left out of the results.
+    BASELINE  15 reps, buzzer off. How much the patient leans on their own.
+    TRAINING  30 reps, buzzer ON while leaning. Teaches them to stay upright.
+    POST      15 reps, buzzer off. Did it stick without the buzzer?
+  Lean is measured and labelled the same way in every block; only the buzzer
+  changes. BASELINE vs POST is the result. Targets are dealt from a shuffled
+  deck so every block has the same number of GREEN, BLUE and RED reaches.
+  A 30 s rest comes before TRAINING and before POST.
 
   Board: Arduino UNO R4 Minima   (FQBN arduino:renesas_uno:minima)
   Libraries: Wire, Adafruit MPU6050 (+ Adafruit Unified Sensor, Adafruit BusIO)
@@ -19,24 +28,30 @@
                  If they moved too much -> CALIB_FAILED.
     CALIB_FAILED HOME LED blinks fast, 2 low beeps. Press START to retry.
     WAIT_HOME    HOME LED on. Patient rests hand on HOME. After 1 s held,
-                 a random target lights up -> CUED.
+                 the next target from the block's deck lights up -> CUED.
     CUED         Target LED on. Waiting for the hand to leave HOME.
                  (reaction time = cue -> leaving HOME)
-    REACHING     Hand has left HOME. Lean is monitored, buzzer if leaning.
+    REACHING     Hand has left HOME. Lean is monitored (buzzer if leaning,
+                 TRAINING block only).
                  Pressing the lit target ends the rep -> RETURNING.
                  (reach time = leaving HOME -> target press)
                  Wrong targets are ignored. 15 s timeout aborts the rep.
-    RETURNING    Waiting for the hand to come back to HOME -> WAIT_HOME.
-    Pressing START in any active state ends the session (prints S line).
+    RETURNING    Waiting for the hand to come back to HOME -> WAIT_HOME,
+                 or to REST / the next block / the end when a block is done.
+    REST         Pause between blocks. HOME LED blinks slowly. 2 beeps when
+                 the next block starts. 3 beeps when the whole session is done.
+    Pressing START in any active state ends the session early (prints S line).
 
   SERIAL PROTOCOL (115200 baud) — see docs/PROTOCOL.md. Do not change it
   without updating the logger and dashboard too.
     # comment
     D,t_ms,state,trunk_deg,wrist_dps,threshold      every sample (100 Hz)
-    R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated
+    R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase
     S,reps,compensated_reps
     E,message
-  Commands from the laptop:  T12 (threshold = 12 deg),  D0 / D1 (sample stream off/on)
+  Commands from the laptop:  T12 (threshold = 12 deg),  D0 / D1 (sample stream off/on),
+                             P3,15,30,15 (reps per block; e.g. P0,0,5,0 for a short demo)
+  T and P are only accepted between sessions, so a session's blocks are comparable.
 */
 
 #include <Wire.h>
@@ -44,7 +59,7 @@
 #include <Adafruit_Sensor.h>
 
 // =====================================================================
-//  PINS  (match the KiCad schematic "IMU Reach Tracker")
+//  PINS  (match the KiCad schematic "ReMotion")
 // =====================================================================
 // Buttons: one tab to the pin, other tab to GND. INPUT_PULLUP, LOW = pressed.
 const uint8_t PIN_BTN_START = 2;   // SW5 yellow, beside the Arduino
@@ -91,11 +106,13 @@ const float    BURST_EXIT_DPS     = 30.0;    // end of a burst (hysteresis)
 // Rep timing
 const uint32_t HOME_HOLD_MS       = 1000;    // hold HOME this long before a target lights
 const uint32_t REACH_TIMEOUT_MS   = 15000;   // give up on a rep after this long
+const uint32_t REST_MS            = 30000;   // rest before TRAINING and before POST
 const uint32_t DEBOUNCE_MS        = 20;      // arcade microswitches bounce
 
 // LEDs and buzzer
 const uint32_t CALIB_BLINK_MS     = 250;     // HOME LED blink while calibrating
 const uint32_t FAIL_BLINK_MS      = 80;      // fast HOME blink after a failed calibration
+const uint32_t REST_BLINK_MS      = 1000;    // slow HOME blink during a rest
 const uint16_t BEEP_HZ            = 2400;    // normal beep / lean alarm
 const uint16_t LOW_BEEP_HZ        = 600;     // error beeps
 const bool     BUZZER_USE_TONE    = true;    // tone() works for active and passive buzzers.
@@ -104,10 +121,20 @@ const bool     BUZZER_USE_TONE    = true;    // tone() works for active and pass
 const float RAD_TO_DEGREES = 57.29578;
 
 // =====================================================================
+//  SESSION PLAN: the blocks START runs, in order
+// =====================================================================
+enum Phase { PRACTICE, BASELINE, TRAINING, POST, NUM_PHASES };
+const char* PHASE_NAMES[NUM_PHASES] = { "PRACTICE", "BASELINE", "TRAINING", "POST" };
+uint8_t phaseReps[NUM_PHASES]       = { 3, 15, 30, 15 };        // change with P<a>,<b>,<c>,<d>
+const bool PHASE_BUZZER[NUM_PHASES] = { false, false, true, false };  // lean alarm on?
+const bool PHASE_REST_FIRST[NUM_PHASES] = { false, false, true, true }; // REST_MS pause before it
+const uint8_t MAX_PHASE_REPS = 60;
+
+// =====================================================================
 //  STATE
 // =====================================================================
-enum State { IDLE, CALIBRATING, CALIB_FAILED, WAIT_HOME, CUED, REACHING, RETURNING };
-const char* STATE_NAMES[] = { "IDLE", "CALIBRATING", "CALIB_FAILED", "WAIT_HOME", "CUED", "REACHING", "RETURNING" };
+enum State { IDLE, CALIBRATING, CALIB_FAILED, WAIT_HOME, CUED, REACHING, RETURNING, REST };
+const char* STATE_NAMES[] = { "IDLE", "CALIBRATING", "CALIB_FAILED", "WAIT_HOME", "CUED", "REACHING", "RETURNING", "REST" };
 State state = IDLE;
 uint32_t stateStartMs = 0;            // when we entered the current state
 
@@ -134,6 +161,10 @@ uint16_t calCount;
 uint16_t repCount = 0;
 uint16_t compensatedCount = 0;
 uint8_t  target = 0;                  // index into targets[] for the current rep
+uint8_t  phase = PRACTICE;            // block we are in
+uint8_t  phaseRepCount = 0;           // reps finished in this block
+uint8_t  deck[MAX_PHASE_REPS];        // this block's targets, shuffled
+uint8_t  deckPos = 0;                 // next card (only moves on a finished rep)
 uint32_t cueMs = 0;                   // target lit
 uint32_t leftHomeMs = 0;              // hand left HOME
 float    peakDeg = 0;                 // biggest trunkDeg during this reach
@@ -141,7 +172,7 @@ uint16_t bursts = 0;                  // wrist bursts during this reach
 bool     sustainMet = false;          // leaned past threshold for >= LEAN_SUSTAIN_MS this reach
 bool     overThreshold = false;       // trunkDeg is currently above threshold
 uint32_t overStartMs = 0;             // when it went above threshold
-bool     leanAlarm = false;           // buzzer should sound for leaning
+bool     leanAlarm = false;           // leaning past the threshold right now (REACHING)
 
 // =====================================================================
 //  BUTTONS (debounced)
@@ -237,7 +268,7 @@ void updateBuzzer(uint32_t now) {
     }
     return;
   }
-  setBuzzer(leanAlarm ? BEEP_HZ : 0);
+  setBuzzer(leanAlarm && PHASE_BUZZER[phase] ? BEEP_HZ : 0);   // feedback only in TRAINING
 }
 
 // =====================================================================
@@ -384,6 +415,44 @@ void enterState(State s, uint32_t now) {
   stateStartMs = now;
 }
 
+// Deal this block's targets: equal numbers of GREEN, BLUE, RED, then shuffle
+// (Fisher-Yates), so every block asks for the same mix of near and far reaches.
+void shuffleDeck(uint8_t n) {
+  for (uint8_t i = 0; i < n; i++) deck[i] = i % 3;
+  for (uint8_t i = n; i > 1; i--) {
+    uint8_t j = random(i);
+    uint8_t tmp = deck[i - 1]; deck[i - 1] = deck[j]; deck[j] = tmp;
+  }
+  deckPos = 0;
+}
+
+// Begin block p: 2 beeps, a comment for the log, then the first rep.
+void startPhase(uint8_t p, uint32_t now) {
+  phase = p;
+  phaseRepCount = 0;
+  shuffleDeck(phaseReps[p]);
+  playBeeps(2, BEEP_HZ, 120, 120);
+  Serial.print("# ");
+  Serial.print(PHASE_NAMES[p]);
+  Serial.print(" block: ");
+  Serial.print(phaseReps[p]);
+  Serial.println(PHASE_BUZZER[p] ? " reps, buzzer ON when leaning" : " reps, buzzer off");
+  Serial.println("# put your hand on HOME");
+  digitalWrite(PIN_LED_HOME, HIGH);
+  enterState(WAIT_HOME, now);
+}
+
+// The block after `from` that has reps, or NUM_PHASES if there is none.
+uint8_t nextPhaseAfter(int from) {
+  for (int p = from + 1; p < NUM_PHASES; p++) {
+    if (phaseReps[p] > 0) return p;
+  }
+  return NUM_PHASES;
+}
+
+// Move on after a finished block: rest, start the next block, or finish.
+void finishPhase(uint32_t now);
+
 void endSession(uint32_t now) {
   Serial.print("S,");
   Serial.print(repCount);
@@ -393,6 +462,26 @@ void endSession(uint32_t now) {
   allLedsOff();
   leanAlarm = false;
   enterState(IDLE, now);
+}
+
+void finishPhase(uint32_t now) {
+  uint8_t next = nextPhaseAfter(phase);
+  if (next == NUM_PHASES) {                       // that was the last block
+    playBeeps(3, BEEP_HZ, 200, 150);              // 3 beeps = session complete
+    Serial.println("# all blocks done");
+    endSession(now);
+  } else if (PHASE_REST_FIRST[next]) {
+    phase = next;                                 // the block we are resting before
+    allLedsOff();
+    Serial.print("# rest ");
+    Serial.print(REST_MS / 1000);
+    Serial.print(" s before the ");
+    Serial.print(PHASE_NAMES[next]);
+    Serial.println(" block");
+    enterState(REST, now);
+  } else {
+    startPhase(next, now);
+  }
 }
 
 void startCalibration(uint32_t now) {
@@ -424,10 +513,8 @@ void runStateMachine(uint32_t now) {
       blinkLed(PIN_LED_HOME, CALIB_BLINK_MS, now);
       if (now - stateStartMs >= CALIB_MS) {
         if (finishCalibration()) {
-          playBeeps(1, BEEP_HZ, 150, 0);          // short "ready" beep
-          Serial.println("# session started: put your hand on HOME");
-          digitalWrite(PIN_LED_HOME, HIGH);
-          enterState(WAIT_HOME, now);
+          Serial.println("# session started");
+          startPhase(nextPhaseAfter(-1), now);    // first block that has reps
         } else {
           playBeeps(2, LOW_BEEP_HZ, 300, 200);    // 2 low beeps = redo
           Serial.println("# press START to calibrate again");
@@ -448,7 +535,7 @@ void runStateMachine(uint32_t now) {
       if (!btnHome.down) {
         stateStartMs = now;                       // not on HOME: restart the 1 s hold timer
       } else if (now - stateStartMs >= HOME_HOLD_MS) {
-        target = random(3);                       // pick GREEN, BLUE or RED
+        target = deck[deckPos];                   // next target from this block's deck
         digitalWrite(PIN_LED_HOME, LOW);
         setTargetLeds(target);
         cueMs = now;
@@ -480,9 +567,11 @@ void runStateMachine(uint32_t now) {
         bool compensated = (peakDeg > thresholdDeg) && sustainMet;
 
         repCount++;
+        phaseRepCount++;
+        deckPos++;                                // an aborted rep keeps its card
         if (compensated) compensatedCount++;
 
-        // R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated
+        // R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase
         Serial.print("R,");
         Serial.print(repCount);            Serial.print(",");
         Serial.print(targets[target].name); Serial.print(",");
@@ -490,7 +579,8 @@ void runStateMachine(uint32_t now) {
         Serial.print(reachMs);             Serial.print(",");
         Serial.print(peakDeg, 1);          Serial.print(",");
         Serial.print(bursts);              Serial.print(",");
-        Serial.println(compensated ? 1 : 0);
+        Serial.print(compensated ? 1 : 0); Serial.print(",");
+        Serial.println(PHASE_NAMES[phase]);
 
         setTargetLeds(-1);
         leanAlarm = false;
@@ -505,22 +595,70 @@ void runStateMachine(uint32_t now) {
       break;
 
     case RETURNING:
-      // Wait for the hand back on HOME.
+      // Wait for the hand back on HOME, then the next rep or the next block.
       if (btnHome.down) {
-        enterState(WAIT_HOME, now);               // starts the 1 s hold
+        if (phaseRepCount >= phaseReps[phase]) finishPhase(now);
+        else enterState(WAIT_HOME, now);          // starts the 1 s hold
       }
+      break;
+
+    case REST:
+      // Pause between blocks. `phase` is already the block that comes next.
+      blinkLed(PIN_LED_HOME, REST_BLINK_MS, now);
+      if (now - stateStartMs >= REST_MS) startPhase(phase, now);
       break;
   }
 }
 
 // =====================================================================
-//  SERIAL COMMANDS:  T<deg>  D0  D1
+//  SERIAL COMMANDS:  T<deg>  D0  D1  P<a>,<b>,<c>,<d>
 // =====================================================================
-char cmdBuf[16];
+char cmdBuf[24];
+
+bool sessionRunning() {
+  return state != IDLE && state != CALIB_FAILED;
+}
+
+// P3,15,30,15 -> reps for PRACTICE, BASELINE, TRAINING, POST. Returns false if invalid.
+bool parsePlan(const char* text) {
+  uint8_t newReps[NUM_PHASES];
+  uint16_t total = 0;
+  for (uint8_t p = 0; p < NUM_PHASES; p++) {
+    char* end;
+    long n = strtol(text, &end, 10);
+    if (end == text || n < 0 || n > MAX_PHASE_REPS) return false;
+    newReps[p] = n;
+    total += n;
+    text = end;
+    if (p < NUM_PHASES - 1) {
+      if (*text != ',') return false;
+      text++;
+    }
+  }
+  if (*text != '\0' || total == 0) return false;
+  for (uint8_t p = 0; p < NUM_PHASES; p++) phaseReps[p] = newReps[p];
+  return true;
+}
+
+void printPlan() {
+  Serial.print("# plan:");
+  for (uint8_t p = 0; p < NUM_PHASES; p++) {
+    Serial.print(" ");
+    Serial.print(PHASE_NAMES[p]);
+    Serial.print(" ");
+    Serial.print(phaseReps[p]);
+  }
+  Serial.println();
+}
 uint8_t cmdLen = 0;
 
 void handleCommand(const char* cmd) {
-  if (cmd[0] == 'T' || cmd[0] == 't') {
+  if ((cmd[0] == 'T' || cmd[0] == 't' || cmd[0] == 'P' || cmd[0] == 'p') && sessionRunning()) {
+    Serial.println("E,threshold and plan can only change between sessions");
+  } else if (cmd[0] == 'P' || cmd[0] == 'p') {
+    if (parsePlan(cmd + 1)) printPlan();
+    else Serial.println("E,plan must be 4 numbers 0-60, not all 0 (e.g. P3,15,30,15)");
+  } else if (cmd[0] == 'T' || cmd[0] == 't') {
     float value = atof(cmd + 1);
     if (value >= MIN_THRESHOLD_DEG && value <= MAX_THRESHOLD_DEG) {
       thresholdDeg = value;
@@ -585,7 +723,7 @@ void setup() {
 
   randomSeed(analogRead(A0) ^ micros());     // A0 is unconnected (floating) = some noise
 
-  Serial.println("# IMU Reach Tracker, ECE 198 Group 19");
+  Serial.println("# ReMotion, ECE 198 Group 19");
 
   // IMU missing: 3 low beeps, repeat until both are found.
   // (delay() is OK here: this is start-up, not the sampling loop.)
@@ -599,7 +737,8 @@ void setup() {
 
   Serial.println("# both IMUs found. Press START to begin a session.");
   Serial.println("# D,t_ms,state,trunk_deg,wrist_dps,threshold");
-  Serial.println("# R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated");
+  Serial.println("# R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase");
+  printPlan();
   Serial.println("# S,reps,compensated_reps");
   lastSampleUs = micros();
   enterState(IDLE, millis());

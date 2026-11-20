@@ -1,4 +1,4 @@
-# IMU Reach Tracker (Re:Motion)
+# ReMotion
 
 **ECE 198, University of Waterloo, Group 19**
 
@@ -39,7 +39,7 @@ This way a therapist can see progress over time.
 
 ## Schematic
 
-![IMU Reach Tracker schematic](docs/images/schematic.png)
+![ReMotion schematic](docs/images/schematic.png)
 
 Full-resolution PDF: [`docs/imu-reach-tracker-schematic.pdf`](docs/imu-reach-tracker-schematic.pdf). KiCad source: [`hardware/kicad/`](hardware/kicad/).
 
@@ -69,13 +69,14 @@ Full-resolution PDF: [`docs/imu-reach-tracker-schematic.pdf`](docs/imu-reach-tra
 **Arduino**
 1. Install the Arduino IDE, the **Arduino UNO R4 Boards** package, and the **Adafruit MPU6050** library.
 2. Open `firmware/reach_tracker/reach_tracker.ino` and upload it to the board.
-3. Press the yellow START button to begin a session.
+3. Press the yellow START button. The whole session then runs by itself (about 7 minutes): calibration, 3 practice reps, 15 baseline reps without the buzzer, 30 training reps with it, and 15 more without it to see whether the change held. 3 beeps mean it's done.
 
 **Laptop: record a session**
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python -m software.tools.logger
+python -m software.tools.logger --plan 0,0,5,0   # short demo: 5 reps with the buzzer
 ```
 
 **Laptop: view the dashboard**

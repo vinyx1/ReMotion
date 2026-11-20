@@ -36,7 +36,7 @@ function Stat({ label, value, note, tone }: { label: string; value: string; note
   return (
     <div className="px-5 py-4">
       <p className="text-xs font-medium text-ink-3">{label}</p>
-      <p className={`mt-1.5 font-mono text-[28px] leading-none font-medium tabular-nums ${tone === 'comp' ? 'text-comp' : 'text-ink'}`}>
+      <p className={`mt-1.5 font-mono text-[28px] leading-none font-medium tabular-nums ${tone === 'comp' ? 'text-comp-text' : 'text-ink'}`}>
         {value}
       </p>
       {note && <p className="mt-2 text-xs text-ink-3">{note}</p>}
@@ -114,17 +114,17 @@ export default function App() {
           <div className="flex items-center gap-3">
             <Logo />
             <div>
-              <p className="text-[15px] leading-tight font-semibold">IMU Reach Tracker</p>
+              <p className="text-[15px] leading-tight font-semibold">ReMotion</p>
               <p className="text-xs leading-tight text-ink-3">ECE 198 · Group 19</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-3 sm:w-auto">
             {session.simulated ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-comp/30 bg-comp-soft px-2.5 py-1 text-xs font-medium text-[#a8431a]">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-line-2 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-ink-2">
                 <FlaskConical className="size-3.5" aria-hidden /> Simulated data
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-clean/30 bg-clean-soft px-2.5 py-1 text-xs font-medium text-[#1d5aa6]">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-line-2 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-ink-2">
                 <Radio className="size-3.5" aria-hidden /> Recorded session
               </span>
             )}
@@ -133,7 +133,7 @@ export default function App() {
               value={session.id}
               onChange={setSessionId}
               options={[...sessions].reverse().map((s) => ({ value: s.id, label: s.label }))}
-              className="w-56"
+              className="min-w-0 flex-1 sm:w-56 sm:flex-none"
             />
           </div>
         </div>
@@ -154,12 +154,12 @@ export default function App() {
         <Headline session={session} />
 
         <Tabs.Root value={tab} onValueChange={setTab}>
-          <Tabs.List aria-label="Dashboard views" className="flex gap-1 border-b border-line">
+          <Tabs.List aria-label="Dashboard views" className="flex gap-1 overflow-x-auto border-b border-line">
             {TABS.map((t) => (
               <Tabs.Trigger
                 key={t.value}
                 value={t.value}
-                className="relative -mb-px border-b-2 border-transparent px-3 pt-1 pb-3 text-sm font-medium text-ink-3 hover:text-ink-2 focus-visible:outline-2 focus-visible:outline-brand data-[state=active]:border-brand data-[state=active]:text-ink"
+                className="relative -mb-px shrink-0 border-b-2 border-transparent px-3 pt-1 pb-3 text-sm font-medium whitespace-nowrap text-ink-3 hover:text-ink-2 focus-visible:outline-2 focus-visible:outline-brand data-[state=active]:border-brand data-[state=active]:text-ink"
               >
                 {t.label}
               </Tabs.Trigger>

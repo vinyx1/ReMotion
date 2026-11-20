@@ -1,5 +1,5 @@
 /*
-  i2c_scanner.ino  —  IMU Reach Tracker, ECE 198 Group 19
+  i2c_scanner.ino  —  ReMotion, ECE 198 Group 19
 
   PURPOSE
     First bring-up test. Scans the I2C bus every 3 seconds and prints every

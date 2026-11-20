@@ -110,9 +110,9 @@ function ReplayPanel({ rep, reps, onPick, t, domain, yMax, threshold, kind }: {
 
   return (
     <Card className="overflow-hidden">
-      <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3">
         <div className="flex items-center gap-3">
-          <h3 className="text-[15px] font-semibold">{kind === 'clean' ? 'Clean reach' : 'Compensated reach'}</h3>
+          <h3 className="text-[15px] font-semibold whitespace-nowrap">{kind === 'clean' ? 'Clean reach' : 'Compensated reach'}</h3>
           <ResultBadge compensated={rep.compensated} />
         </div>
         <Select
@@ -120,18 +120,21 @@ function ReplayPanel({ rep, reps, onPick, t, domain, yMax, threshold, kind }: {
           value={String(rep.rep)}
           onChange={(v) => onPick(Number(v))}
           options={reps.map((r) => ({ value: String(r.rep), label: `Rep ${r.rep} · ${r.target} · ${r.peakDeg.toFixed(1)}°` }))}
-          className="w-52"
+          className="w-full sm:w-52"
         />
       </header>
 
-      <div className="relative aspect-[16/10] bg-surface">
-        <Figure3D trunkDeg={trunk} t={t} reachEndS={trace.reachEndS} target={rep.target} over={over} />
-        <div className="pointer-events-none absolute top-4 left-5">
+      <div className="relative bg-surface">
+        {/* Readout sits above the figure on phones and over its empty corner from sm up */}
+        <div className="px-5 pt-4 sm:pointer-events-none sm:absolute sm:top-4 sm:left-5 sm:p-0">
           <p className="text-xs font-medium text-ink-3">Trunk lean</p>
-          <p className={`font-mono text-4xl font-medium tabular-nums ${over ? 'text-comp' : 'text-ink'}`}>
+          <p className={`font-mono text-4xl font-medium tabular-nums ${over ? 'text-comp-text' : 'text-ink'}`}>
             {trunk.toFixed(1)}°
           </p>
           <p className="mt-1 font-mono text-xs text-ink-3 tabular-nums">peak {peak.toFixed(1)}° · limit {threshold}°</p>
+        </div>
+        <div className="aspect-[16/10]">
+          <Figure3D trunkDeg={trunk} t={t} reachEndS={trace.reachEndS} target={rep.target} over={over} />
         </div>
         <p className="pointer-events-none absolute top-4 right-5 rounded-full border border-line bg-surface/90 px-2.5 py-1 text-xs font-medium text-ink-2">
           {phase}
@@ -185,7 +188,7 @@ export function Replay({ session }: { session: Session }) {
         <button
           type="button"
           onClick={clock.toggle}
-          className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-medium text-white hover:bg-brand/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:scale-[0.98]"
+          className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand px-4 text-sm font-medium text-on-brand hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand active:scale-[0.98]"
         >
           {clock.playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
           {clock.playing ? 'Pause' : 'Play both'}
@@ -226,7 +229,7 @@ export function Replay({ session }: { session: Session }) {
         </span>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ReplayPanel rep={a} reps={clean} onPick={pick(setCleanN)} t={t} domain={[start, end]} yMax={yMax} threshold={session.thresholdDeg} kind="clean" />
         <ReplayPanel rep={b} reps={comp} onPick={pick(setCompN)} t={t} domain={[start, end]} yMax={yMax} threshold={session.thresholdDeg} kind="comp" />
       </div>

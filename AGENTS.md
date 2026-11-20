@@ -1,4 +1,4 @@
-# AGENTS.md — IMU Reach Tracker (ECE 198, UWaterloo, Group 19)
+# AGENTS.md — ReMotion (ECE 198, UWaterloo, Group 19)
 
 **This file is the single source of truth** for humans and AI agents. `CLAUDE.md` imports it; Codex, Cursor and Copilot read it directly. If you change how the project works, change it **here**, not in a second file or a group chat.
 
@@ -73,7 +73,7 @@ These are the joins between people's work. Changing one side silently breaks som
 - Code must be readable for 1st-year engineering students: clear constants at the top, comments explaining each state.
 - If `arduino-cli` is available, compile every sketch for `arduino:renesas_uno:minima` and fix all errors.
 - Reference material: `hardware/ECE 198 Parts List.pdf`.
-- Circuit source of truth: KiCad project `hardware/kicad/` and its export `docs/imu-reach-tracker-schematic.pdf` ("IMU Reach Tracker", Group 19). Full specs, Digi-Key cart, wiring rules and bench test: `docs/parts-list.md`. Schematic review findings: `docs/schematic-review.md`. Open checks: `docs/confirmations.md`. Research notes: `docs/research/`.
+- Circuit source of truth: KiCad project `hardware/kicad/` and its export `docs/imu-reach-tracker-schematic.pdf` ("ReMotion", Group 19). Full specs, Digi-Key cart, wiring rules and bench test: `docs/parts-list.md`. Schematic review findings: `docs/schematic-review.md`. Open checks: `docs/confirmations.md`. Research notes: `docs/research/`.
 - Scope it like a hackathon: one exercise (seated reach), done reliably, is the finish line. Rule-based detection, not ML. Don't propose extra sensors unless they add something meaningful (build is about $150).
 
 ## 1. What we are building
@@ -99,7 +99,7 @@ Rough plan: (1) wiring + firmware streaming at 100 Hz, ship a sample CSV early s
 **Team split:** hardware/firmware · signal processing · dashboard/storage · mounting/testing.
 
 ### Demo plan
-A judge straps on the chest and wrist sensors, the team measures their arm and places the mat, they press START, sit upright for 3 s, do ~5 reaches, hear the beep when leaning, then see the dashboard. Rehearse it, and keep a pre-recorded session as a fallback if the wiring fails.
+A judge straps on the chest and wrist sensors, the team measures their arm and places the mat, they press START, sit upright for 3 s, do ~5 reaches, hear the beep when leaning, then see the dashboard. For the demo, run the logger with `--plan 0,0,5,0` (5 TRAINING reps, buzzer on). Rehearse it, and keep a pre-recorded session as a fallback if the wiring fails.
 
 ## 2. Session procedure (how a patient uses it)
 
@@ -110,11 +110,11 @@ A judge straps on the chest and wrist sensors, the team measures their arm and p
    - **BLUE** target: ~70%
    - **RED** target: ~100% of comfortable seated reach (reachable WITHOUT leaning)
 3. Operator presses **START** (yellow arcade button, beside the Arduino, not on the mat).
-4. Calibration: patient sits upright and still for 3 s. HOME LED blinks during calibration; short beep when done.
-5. Patient rests the reaching hand on HOME. After HOME is held for 1 s, a random target's LED lights up.
+4. Calibration: patient sits upright and still for 3 s. HOME LED blinks during calibration; 2 short beeps start each block.
+5. Patient rests the reaching hand on HOME. After HOME is held for 1 s, the next target's LED lights up (each block deals equal numbers of GREEN, BLUE and RED from a shuffled deck).
 6. Patient lifts off HOME, reaches, presses the lit target, returns to HOME. ONE hand does everything.
 7. During the reach, if trunk angle exceeds the threshold, the buzzer sounds. The buzzer is the only feedback (no result LEDs); each rep's clean/compensated label goes to the laptop in the `R` line.
-8. Repeat (~10 reps). Operator presses START again to end the session.
+8. The session runs in blocks with no operator input (`docs/PROTOCOL.md`, Session blocks): PRACTICE 3 reps (buzzer off, not scored), BASELINE 15 (off), 30 s rest, TRAINING 30 (buzzer on), 30 s rest, POST 15 (off). Lean is judged the same in every block; only the buzzer changes. BASELINE vs POST is the result. 3 beeps when done (about 7 minutes). START ends it early.
 
 Timing captured per rep:
 - **Reaction time:** cue → leaving HOME
@@ -227,8 +227,10 @@ The yellow START button's LED is optional; leave it unconnected unless the user 
 ### State machine
 ```
 IDLE -> CALIBRATING -> WAIT_HOME -> CUED -> REACHING -> RETURNING -> WAIT_HOME ...
+                                                            (block done) -> REST -> next block ... -> IDLE
 ```
-- START in any active state ends the session (emit `S,` line) and returns to IDLE.
+- After the last block the session ends by itself (emit `S,` line). START in any active state ends it early.
+- Buzzer: lean alarm only in the TRAINING block. `T` and `P` are refused mid-session.
 - Reach timeout (e.g. 15 s) aborts the rep and returns to WAIT_HOME.
 - Debounce all buttons (arcade microswitches bounce).
 - Sample at **100 Hz** using `micros()` timing, not `delay()`.
@@ -244,7 +246,7 @@ IDLE -> CALIBRATING -> WAIT_HOME -> CUED -> REACHING -> RETURNING -> WAIT_HOME .
 ```
 # comment lines start with '#'
 D,t_ms,state,trunk_deg,wrist_dps,threshold      (every sample, 100 Hz; toggle with a constant)
-R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated
+R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase
 S,reps,compensated_reps
 E,message                                       (errors)
 ```
@@ -252,6 +254,7 @@ E,message                                       (errors)
 Commands accepted from the laptop:
 - `T<deg>` — set threshold (e.g. `T12`)
 - `D0` / `D1` — disable / enable sample (`D`) streaming
+- `P<a>,<b>,<c>,<d>` — reps per block (PRACTICE, BASELINE, TRAINING, POST), e.g. `P3,15,30,15`
 
 **Do not change this format without updating the logger and dashboard together.**
 

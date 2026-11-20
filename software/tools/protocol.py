@@ -1,5 +1,5 @@
 """
-protocol.py  —  read and write the IMU Reach Tracker serial protocol.
+protocol.py  —  read and write the ReMotion serial protocol.
 
 This is the ONE place that knows the line format in docs/PROTOCOL.md.
 The logger, the fake-session generator, the dashboard and the analysis
@@ -8,7 +8,7 @@ code all import from here, so a protocol change only has to be made once.
 Each line from the Arduino becomes one small Python object:
 
     "D,15230,REACHING,4.2,85.3,10.0"     -> Sample(...)
-    "R,1,BLUE,412,1380,6.8,2,0"          -> Rep(...)
+    "R,1,BLUE,412,1380,6.8,2,0,BASELINE" -> Rep(...)
     "S,10,3"                             -> SessionEnd(...)
     "E,chest IMU (0x68) not found"       -> DeviceError(...)
     "# calibration OK"                   -> Comment(...)
@@ -20,8 +20,13 @@ garbled), so a bad line never crashes the logger.
 from dataclasses import dataclass, field
 
 # Firmware states, in the order they appear in reach_tracker.ino
-STATES = ("IDLE", "CALIBRATING", "CALIB_FAILED", "WAIT_HOME", "CUED", "REACHING", "RETURNING")
+STATES = ("IDLE", "CALIBRATING", "CALIB_FAILED", "WAIT_HOME", "CUED", "REACHING", "RETURNING", "REST")
 TARGETS = ("GREEN", "BLUE", "RED")
+
+# Blocks of a session, in order (reach_tracker.ino runs them back to back after START).
+# The buzzer only sounds in TRAINING; lean is measured the same way in every block.
+PHASES = ("PRACTICE", "BASELINE", "TRAINING", "POST")
+DEFAULT_PLAN = (3, 15, 30, 15)     # reps per phase, same as the firmware
 
 
 @dataclass
@@ -45,6 +50,7 @@ class Rep:
     peak_deg: float      # biggest trunk lean during the reach
     bursts: int          # wrist movement bursts during the reach (fewer = smoother)
     compensated: bool    # True if the lean stayed past the threshold for >= 200 ms
+    phase: str = ""      # one of PHASES; "" in logs from before phases existed
 
 
 @dataclass
@@ -68,7 +74,7 @@ class Comment:
 
 # Column names for the CSV files the logger writes (same order as the dataclasses)
 SAMPLE_COLUMNS = ["t_ms", "state", "trunk_deg", "wrist_dps", "threshold"]
-REP_COLUMNS = ["rep", "target", "react_ms", "reach_ms", "peak_deg", "bursts", "compensated"]
+REP_COLUMNS = ["rep", "target", "react_ms", "reach_ms", "peak_deg", "bursts", "compensated", "phase"]
 
 
 def parse_line(line):
@@ -104,6 +110,7 @@ def parse_line(line):
                 peak_deg=float(fields[5]),
                 bursts=int(fields[6]),
                 compensated=fields[7] == "1",
+                phase=fields[8] if len(fields) >= 9 else "",   # older firmware sent 8 fields
             )
         if kind == "S" and len(fields) >= 3:
             return SessionEnd(reps=int(fields[1]), compensated_reps=int(fields[2]))
@@ -122,8 +129,9 @@ def format_sample(s):
 
 
 def format_rep(r):
-    return (f"R,{r.rep},{r.target},{r.react_ms},{r.reach_ms},"
+    line = (f"R,{r.rep},{r.target},{r.react_ms},{r.reach_ms},"
             f"{r.peak_deg:.1f},{r.bursts},{1 if r.compensated else 0}")
+    return f"{line},{r.phase}" if r.phase else line
 
 
 def format_session_end(s):
@@ -137,6 +145,14 @@ def threshold_command(degrees):
     if not 1 <= degrees <= 60:
         raise ValueError("threshold must be between 1 and 60 degrees")
     return f"T{degrees:.1f}"
+
+
+def plan_command(plan):
+    """Command that sets reps per phase, e.g. plan_command((3, 15, 30, 15)) -> 'P3,15,30,15'."""
+    plan = tuple(int(n) for n in plan)
+    if len(plan) != len(PHASES) or not all(0 <= n <= 60 for n in plan) or sum(plan) == 0:
+        raise ValueError(f"plan needs {len(PHASES)} numbers from 0 to 60 ({', '.join(PHASES)}), not all 0")
+    return "P" + ",".join(str(n) for n in plan)
 
 
 STREAM_ON = "D1"

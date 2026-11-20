@@ -5,7 +5,7 @@
 	(uuid "ca1245ff-b51e-4e86-b082-b5bffd122fd3")
 	(paper "A3")
 	(title_block
-		(title "IMU Reach Tracker")
+		(title "ReMotion")
 		(company "ECE 198 Group 19")
 	)
 	(lib_symbols
