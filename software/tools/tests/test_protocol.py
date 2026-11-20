@@ -12,7 +12,7 @@ def test_parses_the_examples_in_protocol_md():
     assert parse_line("R,1,BLUE,412,1380,6.8,2,0") == Rep(1, "BLUE", 412, 1380, 6.8, 2, False)
     assert parse_line("R,2,RED,390,1650,14.1,3,1").compensated is True
     assert parse_line("S,2,1") == SessionEnd(2, 1)
-    assert parse_line("E,chest IMU (0x69) not found") == DeviceError("chest IMU (0x69) not found")
+    assert parse_line("E,chest IMU (0x68) not found") == DeviceError("chest IMU (0x68) not found")
     assert parse_line("# session started") == Comment("session started")
 
 

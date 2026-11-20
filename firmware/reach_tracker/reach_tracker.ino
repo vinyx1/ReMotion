@@ -2,11 +2,11 @@
   reach_tracker.ino  —  IMU Reach Tracker, ECE 198 Group 19
 
   Seated reaching exercise that detects TRUNK-LEAN COMPENSATION.
-    - Chest IMU (0x69) measures how far the trunk tilts from upright.
-    - Wrist IMU (0x68) measures how fast the arm is rotating.
+    - Chest IMU (0x68) measures how far the trunk tilts from upright.
+    - Wrist IMU (0x69) measures how fast the arm is rotating.
     - Arcade buttons on the mat time each reach (HOME -> lit target).
     - Buzzer sounds while the patient leans too far during a reach.
-    - After each reach: result GREEN LED = clean rep, RED LED = compensated.
+    - Each rep is labelled clean / compensated in the R line (no result LEDs).
     - Everything streams over USB serial for the logger and dashboard.
 
   Board: Arduino UNO R4 Minima   (FQBN arduino:renesas_uno:minima)
@@ -26,8 +26,7 @@
                  Pressing the lit target ends the rep -> RETURNING.
                  (reach time = leaving HOME -> target press)
                  Wrong targets are ignored. 15 s timeout aborts the rep.
-    RETURNING    Result LED shows clean/compensated. Waiting for the hand
-                 to come back to HOME -> WAIT_HOME.
+    RETURNING    Waiting for the hand to come back to HOME -> WAIT_HOME.
     Pressing START in any active state ends the session (prints S line).
 
   SERIAL PROTOCOL (115200 baud) — see docs/PROTOCOL.md. Do not change it
@@ -48,26 +47,22 @@
 //  PINS  (match the KiCad schematic "IMU Reach Tracker")
 // =====================================================================
 // Buttons: one tab to the pin, other tab to GND. INPUT_PULLUP, LOW = pressed.
-const uint8_t PIN_BTN_HOME  = 2;   // SW1 white
-const uint8_t PIN_BTN_GREEN = 3;   // SW2 target ~40% reach
-const uint8_t PIN_BTN_BLUE  = 4;   // SW3 target ~70% reach
-const uint8_t PIN_BTN_RED   = 5;   // SW4 target ~100% reach
-const uint8_t PIN_BTN_START = 6;   // SW5 yellow, beside the Arduino
+const uint8_t PIN_BTN_START = 2;   // SW5 yellow, beside the Arduino
+const uint8_t PIN_BTN_HOME  = 3;   // SW1 white
+const uint8_t PIN_BTN_GREEN = 4;   // SW2 target ~40% reach
+const uint8_t PIN_BTN_BLUE  = 5;   // SW3 target ~70% reach
+const uint8_t PIN_BTN_RED   = 6;   // SW4 target ~100% reach
 
 // Outputs through 2N3904 low-side switches (pin HIGH = on)
-const uint8_t PIN_LED_HOME  = 7;   // Q1
-const uint8_t PIN_LED_GREEN = 8;   // Q2
-const uint8_t PIN_LED_BLUE  = 9;   // Q3
-const uint8_t PIN_LED_RED   = 10;  // Q4
-const uint8_t PIN_BUZZER    = 11;  // Q5
-
-// Result LEDs, driven directly through 1k (about 3 mA)
-const uint8_t PIN_RESULT_CLEAN = 12;  // green 5 mm
-const uint8_t PIN_RESULT_COMP  = 13;  // red 5 mm (also the board's built-in LED)
+const uint8_t PIN_BUZZER    = 9;   // Q5
+const uint8_t PIN_LED_HOME  = 10;  // Q1
+const uint8_t PIN_LED_GREEN = 11;  // Q2
+const uint8_t PIN_LED_BLUE  = 12;  // Q3
+const uint8_t PIN_LED_RED   = 13;  // Q4 (the board's built-in LED follows it)
 
 // IMU I2C addresses
-const uint8_t ADDR_WRIST = 0x68;   // AD0 unconnected
-const uint8_t ADDR_CHEST = 0x69;   // AD0 tied to 3.3V
+const uint8_t ADDR_WRIST = 0x69;   // AD0 tied to 3.3V on the wrist board
+const uint8_t ADDR_CHEST = 0x68;   // AD0 unconnected
 
 // =====================================================================
 //  SETTINGS  (change these to tune the device)
@@ -252,15 +247,9 @@ void setTargetLeds(int litIndex) {           // -1 = all targets off
   for (uint8_t i = 0; i < 3; i++) digitalWrite(targets[i].ledPin, (int)i == litIndex ? HIGH : LOW);
 }
 
-void setResultLeds(bool clean, bool compensated) {
-  digitalWrite(PIN_RESULT_CLEAN, clean ? HIGH : LOW);
-  digitalWrite(PIN_RESULT_COMP,  compensated ? HIGH : LOW);
-}
-
 void allLedsOff() {
   digitalWrite(PIN_LED_HOME, LOW);
   setTargetLeds(-1);
-  setResultLeds(false, false);
 }
 
 // Blink an LED at a given period without delay()
@@ -282,8 +271,8 @@ bool startImus() {
   bool chestOk = chest.begin(ADDR_CHEST, &Wire);
   bool wristOk = wrist.begin(ADDR_WRIST, &Wire);
   Wire.setClock(I2C_CLOCK_HZ);               // begin() may reset the clock, so set it after
-  if (!chestOk) Serial.println("E,chest IMU (0x69) not found");
-  if (!wristOk) Serial.println("E,wrist IMU (0x68) not found");
+  if (!chestOk) Serial.println("E,chest IMU (0x68) not found");
+  if (!wristOk) Serial.println("E,wrist IMU (0x69) not found");
   if (chestOk) configureImu(chest);
   if (wristOk) configureImu(wrist);
   return chestOk && wristOk;
@@ -461,7 +450,6 @@ void runStateMachine(uint32_t now) {
       } else if (now - stateStartMs >= HOME_HOLD_MS) {
         target = random(3);                       // pick GREEN, BLUE or RED
         digitalWrite(PIN_LED_HOME, LOW);
-        setResultLeds(false, false);              // clear the last rep's result
         setTargetLeds(target);
         cueMs = now;
         enterState(CUED, now);
@@ -505,7 +493,6 @@ void runStateMachine(uint32_t now) {
         Serial.println(compensated ? 1 : 0);
 
         setTargetLeds(-1);
-        setResultLeds(!compensated, compensated);
         leanAlarm = false;
         enterState(RETURNING, now);
       } else if (now - stateStartMs >= REACH_TIMEOUT_MS) {
@@ -518,7 +505,7 @@ void runStateMachine(uint32_t now) {
       break;
 
     case RETURNING:
-      // Result LED stays on. Wait for the hand back on HOME.
+      // Wait for the hand back on HOME.
       if (btnHome.down) {
         enterState(WAIT_HOME, now);               // starts the 1 s hold
       }
@@ -584,7 +571,7 @@ void printSample(uint32_t now) {
 void setup() {
   // Outputs first, all off, so nothing buzzes or lights during start-up
   const uint8_t outputs[] = { PIN_LED_HOME, PIN_LED_GREEN, PIN_LED_BLUE, PIN_LED_RED,
-                              PIN_BUZZER, PIN_RESULT_CLEAN, PIN_RESULT_COMP };
+                              PIN_BUZZER };
   for (uint8_t i = 0; i < sizeof(outputs); i++) {
     pinMode(outputs[i], OUTPUT);
     digitalWrite(outputs[i], LOW);

@@ -26,7 +26,7 @@
   HOW TO USE
     1. Flash, open Serial Monitor / Plotter at 115200.
     2. Hold the chest IMU still in its "upright" position.
-    3. Press START (D6) or send the letter 'c' to calibrate (3 s, keep still).
+    3. Press START (D2) or send the letter 'c' to calibrate (3 s, keep still).
     4. Tilt the chest IMU: trunk_deg should follow the tilt angle in degrees.
        Spin the wrist IMU: wrist_dps should jump up.
 
@@ -42,9 +42,9 @@
 #include <Adafruit_Sensor.h>
 
 // ---------------- Pins / addresses ----------------
-const uint8_t PIN_BTN_START = 6;      // SW5, LOW = pressed
-const uint8_t ADDR_WRIST = 0x68;      // AD0 unconnected
-const uint8_t ADDR_CHEST = 0x69;      // AD0 tied to 3.3V
+const uint8_t PIN_BTN_START = 2;      // SW5, LOW = pressed
+const uint8_t ADDR_WRIST = 0x69;      // AD0 tied to 3.3V on the wrist board
+const uint8_t ADDR_CHEST = 0x68;      // AD0 unconnected
 
 // ---------------- Settings ----------------
 const uint32_t I2C_CLOCK_HZ     = 100000;   // 100 kHz for long cables
@@ -95,8 +95,8 @@ void setup() {
   bool wristOk = wrist.begin(ADDR_WRIST, &Wire);
   Wire.setClock(I2C_CLOCK_HZ);
 
-  if (!chestOk) Serial.println("E,chest IMU (0x69) not found - run i2c_scanner");
-  if (!wristOk) Serial.println("E,wrist IMU (0x68) not found - run i2c_scanner");
+  if (!chestOk) Serial.println("E,chest IMU (0x68) not found - run i2c_scanner");
+  if (!wristOk) Serial.println("E,wrist IMU (0x69) not found - run i2c_scanner");
   while (!chestOk || !wristOk) { }   // stop here; fix wiring and press reset
 
   // Same sensor settings as the main sketch
