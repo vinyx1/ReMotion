@@ -37,4 +37,5 @@ dependencies {
     implementation("com.github.mik3y:usb-serial-for-android:3.12.0")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }

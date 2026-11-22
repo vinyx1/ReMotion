@@ -8,7 +8,7 @@ Changing this format means updating `firmware/reach_tracker`, `software/tools/pr
 
 | Prefix | Fields | When |
 |---|---|---|
-| `#` | free text | Comments and status. Ignore when parsing. |
+| `#` | free text | Comments and status. Ignore when parsing. One is meant for apps: `# target GREEN` when a target lights (the phone app shows which one to reach for). |
 | `D` | `t_ms,state,trunk_deg,wrist_dps,threshold` | Every sample (100 Hz) while streaming is on |
 | `R` | `rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase` | After each completed rep |
 | `S` | `reps,compensated_reps` | When the session ends (all blocks done, or START / `X` early) |

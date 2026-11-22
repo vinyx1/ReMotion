@@ -560,6 +560,8 @@ void runStateMachine(uint32_t now) {
         digitalWrite(PIN_LED_HOME, LOW);
         setTargetLeds(target);
         cueMs = now;
+        Serial.print("# target ");                // which light is on, for the phone app's "Reach for the GREEN button"
+        Serial.println(targets[target].name);
         enterState(CUED, now);
       }
       break;

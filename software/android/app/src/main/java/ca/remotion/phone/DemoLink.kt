@@ -1,5 +1,6 @@
 package ca.remotion.phone
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,15 +20,17 @@ import kotlin.random.Random
   is called (the app's "Add rep" button). Each rep is clean or leaned at random and plays
   out in real time like the firmware's: WAIT_HOME (1 s hold) -> CUED -> REACHING -> R line
   -> RETURNING. Whether it counts as leaned follows the firmware's rule (past the limit for
-  at least 200 ms), measured on the made-up trunk angle. Blocks follow the plan (P) without
-  the 30 s rests.
+  at least 200 ms), measured on the made-up trunk angle. Blocks follow the plan (P), with
+  5 s rests where the firmware rests 30 s.
 */
-class DemoLink : DeviceLink {
+class DemoLink(
+    // Everything runs on one thread, so the fields below need no locking. (Tests pass a virtual clock.)
+    dispatcher: CoroutineDispatcher = Dispatchers.Default.limitedParallelism(1),
+    private val random: Random = Random(System.nanoTime()),
+) : DeviceLink {
     override val name = "Demo device"
 
-    // Everything runs on one thread, so the fields below need no locking.
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
-    private val random = Random(System.nanoTime())
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private lateinit var emit: (String) -> Unit
 
     private var streaming = true
@@ -143,6 +146,7 @@ class DemoLink : DeviceLink {
 
         // Hand rests on HOME for 1 s, then the target lights
         repeat((HOME_HOLD_MS / SAMPLE_MS).toInt()) { trunk = noise(0.4f); wrist = noise(2f); delay(SAMPLE_MS) }
+        emit("# target $target")              // the firmware says which light is on
         state = "CUED"
         repeat(reactMs / SAMPLE_MS.toInt()) { trunk = noise(0.4f); wrist = noise(4f); delay(SAMPLE_MS) }
 
@@ -189,7 +193,13 @@ class DemoLink : DeviceLink {
             emit("# all blocks done")
             endSession()
         } else {
-            emit("# rest skipped in demo mode")
+            // the firmware rests 30 s before TRAINING and POST; the demo, a few seconds
+            if (REST_BEFORE[next]) {
+                emit("# rest ${DEMO_REST_MS / 1000} s before the ${PHASES[next]} block")
+                block = next
+                state = "REST"
+                delay(DEMO_REST_MS)
+            }
             startBlock(next)
         }
     }
@@ -214,6 +224,8 @@ class DemoLink : DeviceLink {
         const val BURST_EXIT_DPS = 30f
         val PHASES = listOf("PRACTICE", "BASELINE", "TRAINING", "POST")
         val BUZZER = listOf(false, false, true, false)
+        val REST_BEFORE = listOf(false, false, true, true)
+        const val DEMO_REST_MS = 5000L
         val TARGETS = listOf("GREEN", "BLUE", "RED")
     }
 }
