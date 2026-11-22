@@ -311,6 +311,7 @@ ReMotion/                             # repo root (GitHub: vinyx1/ReMotion)
       fake_history.py                 # a few weeks of fake sessions -> data/fake/ (for building the dashboard)
       tests/                          # pytest
     web/                              # React app: landing page at /, dashboard at /dashboard (see software/web/README.md)
+    android/                          # Android phone app (Kotlin): runs a session over USB-C instead of a laptop (see software/android/README.md)
     analysis/                         # (planned) offline Python / notebooks (SPARC, validation, tuning)
   data/
     raw/                              # real logs, git-ignored
