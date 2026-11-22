@@ -1,6 +1,8 @@
 package ca.remotion.phone
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,16 +52,24 @@ fun MainScreen(vm: MainViewModel) {
     val past by vm.past.collectAsStateWithLifecycle()
     val finished by vm.finished.collectAsStateWithLifecycle()
     var settings by rememberSaveable { mutableStateOf(false) }
+    var intro by rememberSaveable { mutableStateOf(true) }      // once per launch, not on rotation
+    Crossfade(intro, animationSpec = tween(260), label = "intro") { opening ->
+        if (opening) Intro(onDone = { intro = false }) else App(s, past, finished, vm, settings) { settings = it }
+    }
+}
+
+@Composable
+private fun App(s: UiState, past: List<PastSession>, finished: PastSession?, vm: MainViewModel, settings: Boolean, setSettings: (Boolean) -> Unit) {
     Surface(Modifier.fillMaxSize(), color = Plaster) {
         if (settings) {
-            BackHandler { settings = false }
-            SettingsScreen(s, vm, onClose = { settings = false })
+            BackHandler { setSettings(false) }
+            SettingsScreen(s, vm, onClose = { setSettings(false) })
         } else {
             PatientApp(s, past, finished, PatientActions(
                 onConnect = { vm.connectUsb() },
                 onEnd = { vm.send(Protocol.STOP) },
                 onDone = vm::dismissFinished,
-                onSettings = { settings = true },
+                onSettings = { setSettings(true) },
                 onAddReach = vm::addDemoRep,
             ))
         }

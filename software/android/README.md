@@ -9,6 +9,7 @@ Made for the patient (possibly elderly) with the phone propped up sideways on th
 - **Feedback on leaning only in the training block:** the coach warms and says "Sit back against the chair", and the scoreboard shows the last reach as Upright or Leaned (icon and word). Baseline and post show only the count ("Your results come at the end"), so they still measure the patient without feedback.
 - **Between sessions:** "Good morning, Vincent", this week's practice days, and last time in plain words ("Last time you stayed upright in 3 of 4 reaches. Up from 0 of 3 the time before."). Kept on the phone in `history.json` (`History.kt`); the full record is on the dashboard.
 - **After a session:** "Well done" with reaches upright and leaned, then Done back to the start.
+- Opening: Android's launch screen shows the app icon's figure at rest; the app picks it up at the same place and the arm reaches for the target, back upright, then the wordmark rises in (`Intro.kt`, about a second; skipped when the phone's animations are off).
 - Landscape only, and the screen stays on while the app is open. Fonts are the dashboard's (Literata, Atkinson Hyperlegible), bundled in `res/font` (SIL Open Font License).
 - The coach names the lit target from the firmware's `# target GREEN` line (firmware from 2026-11-22 on); older firmware gets "Reach for the button that lights up".
 

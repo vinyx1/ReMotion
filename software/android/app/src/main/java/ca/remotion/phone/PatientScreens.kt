@@ -344,9 +344,9 @@ fun PrimaryButton(label: String, onClick: () -> Unit, modifier: Modifier = Modif
     Button(
         onClick = onClick, shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Forest, contentColor = Plaster),
-        contentPadding = PaddingValues(horizontal = 28.dp, vertical = 14.dp),
+        contentPadding = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
         modifier = modifier.heightIn(min = 56.dp),
-    ) { Text(label, fontSize = 19.sp, fontWeight = FontWeight.Bold) }
+    ) { Text(label, style = LabelStyle.copy(fontSize = 19.sp, lineHeight = 26.sp)) }
 }
 
 /** A circle with a tick (upright) or a cross (leaned): never colour alone. */
