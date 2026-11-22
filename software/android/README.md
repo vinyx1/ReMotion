@@ -43,9 +43,16 @@ export PATH="$ANDROID_HOME/platform-tools:$PATH"
 From `software/android/`, with the phone connected (`adb devices` lists it):
 
 ```
-./gradlew installDebug          # build and install on the phone
-./gradlew testDebugUnitTest     # parser tests
+./gradlew installRelease        # build and install the optimised app on the phone (use this one)
+./gradlew installDebug          # the debug build, for Android Studio's debugger; Compose runs much slower in it
+./gradlew testDebugUnitTest     # parser and demo-device tests
 ```
+
+The release build is shrunk and optimised by R8 (2 MB instead of 14 MB) and signed with the debug key, so it installs over a debug build and keeps the phone's history; a Play Store release would need a real signing key. `proguard-rules.pro` keeps the USB drivers, which usb-serial-for-android finds by reflection.
+
+**Motion** (`Motion.kt`): Material's fade-through between screens (home, session, done, settings), a crossfade when the coach says something new or a count changes, a 150 ms fade for the lit button and the warm wall. Nothing slides, so text never moves under an older reader's eyes. All of it follows the phone's Remove animations setting.
+
+**Speed:** the 100 samples a second only change the screen state when the device's state or the leaning changes, so the screen redraws on events, not on every reading; the warm wall and the lit buttons are read while drawing. On the emulator, janky frames during a session went from 9% to under 4% (99th percentile 36 ms to 22 ms) with this and the release build; cold start is about 0.2 to 0.5 s.
 
 Or open `software/android/` in Android Studio and press Run.
 

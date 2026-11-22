@@ -38,7 +38,6 @@ data class UiState(
     val upload: Uploader.Status? = null,
     /** Something to tell the person (why a connection failed, what to do next). */
     val message: String? = null,
-    val latest: Sample? = null,
     val state: String = "",
     val phase: String = "",
     val reps: Int = 0,
@@ -210,7 +209,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (msg is SessionEnd) endOfSession()
         _ui.update { s ->
             val next = when (msg) {
-                is Sample -> s.copy(latest = msg, state = msg.state, leaning = leaning(msg, s))
+                // 100 samples a second: the state only changes (and the screen only redraws) when
+                // the device's state or the leaning does, not with every reading
+                is Sample -> s.copy(state = msg.state, leaning = leaning(msg, s))
                 is Rep -> s.copy(reps = msg.rep, phase = msg.phase,
                     leaned = (if (msg.rep == 1) 0 else s.leaned) + if (msg.compensated) 1 else 0,
                     blockDone = s.blockDone + 1, blockUpright = s.blockUpright + if (msg.compensated) 0 else 1,

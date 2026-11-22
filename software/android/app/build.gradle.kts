@@ -21,6 +21,18 @@ android {
     buildFeatures {
         compose = true
     }
+
+    buildTypes {
+        // The build to put on a phone: Compose runs much faster optimised than in a debug build.
+        // Signed with the debug key so `./gradlew installRelease` works with no keystore set up
+        // (fine for the team's phones; a store release would need a real key).
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
 }
 
 dependencies {
