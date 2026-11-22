@@ -1,5 +1,6 @@
 package ca.remotion.phone
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -25,7 +26,9 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,6 +41,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -72,21 +76,39 @@ import java.time.LocalTime
 
 private val FirstName = MainViewModel.PATIENT_NAME.substringBefore(' ')
 
+/** Which screen the patient is on. Done carries its session so it can still be drawn while fading out. */
+private sealed interface Screen {
+    data class Done(val done: PastSession) : Screen
+    data object PlugIn : Screen
+    data object Session : Screen
+    data object Home : Screen
+}
+
 @Composable
 fun PatientApp(s: UiState, past: List<PastSession>, finished: PastSession?, actions: PatientActions) {
     val warm = s.sessionRunning && s.feedback && s.leaning
-    val wall by animateColorAsState(if (warm) WarmWall else Wall, tween(300), label = "wall")
+    val wall by animateColorAsState(if (warm) WarmWall else Wall, tween(STATE_MS * 2), label = "wall")
+    val screen = when {
+        finished != null -> Screen.Done(finished)
+        s.connected == null -> Screen.PlugIn
+        s.sessionRunning -> Screen.Session
+        else -> Screen.Home
+    }
     Row(Modifier.fillMaxSize().background(Plaster)) {
         Column(
-            Modifier.weight(2f).fillMaxHeight().background(wall)
+            Modifier.weight(2f).fillMaxHeight().drawBehind { drawRect(wall) }       // read while drawing: no recomposition per frame
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical))
                 .padding(start = 32.dp, end = 28.dp, top = 24.dp, bottom = 20.dp),
         ) {
-            when {
-                finished != null -> DoneCoach(finished, actions.onDone)
-                s.connected == null -> PlugInCoach(s.message, actions.onConnect)
-                s.sessionRunning -> SessionCoach(s, warm)
-                else -> HomeCoach(s)
+            AnimatedContent(screen, transitionSpec = { fadeThrough() }, contentKey = { it::class }, label = "coach") { shown ->
+                Column(Modifier.fillMaxSize()) {
+                    when (shown) {
+                        is Screen.Done -> DoneCoach(shown.done, actions.onDone)
+                        Screen.PlugIn -> PlugInCoach(s.message, actions.onConnect)
+                        Screen.Session -> SessionCoach(s, warm)
+                        Screen.Home -> HomeCoach(s)
+                    }
+                }
             }
         }
         Column(
@@ -99,10 +121,15 @@ fun PatientApp(s: UiState, past: List<PastSession>, finished: PastSession?, acti
                     Text("Settings", fontSize = 15.sp, color = Forest2)
                 }
             }
-            when {
-                finished != null -> DoneScore(finished, past)
-                s.sessionRunning -> SessionScore(s, actions)
-                else -> WeekScore(past)
+            AnimatedContent(if (screen == Screen.PlugIn) Screen.Home else screen,         // the week shows on both
+                transitionSpec = { fadeThrough() }, contentKey = { it::class }, label = "score") { shown ->
+                Column(Modifier.fillMaxSize()) {
+                    when (shown) {
+                        is Screen.Done -> DoneScore(shown.done, past)
+                        Screen.Session -> SessionScore(s, actions)
+                        else -> WeekScore(past)
+                    }
+                }
             }
         }
     }
@@ -157,32 +184,47 @@ private fun ColumnScope.PlugInCoach(message: String?, onConnect: () -> Unit) {
     PrimaryButton(if (message == null) "Connect" else "Try again", onConnect)
 }
 
-@Composable
-private fun ColumnScope.SessionCoach(s: UiState, warm: Boolean) {
-    if (warm) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ResultIcon(upright = false, size = 44.dp)
-            Spacer(Modifier.width(14.dp))
-            Text("Sit back against the chair", style = CoachStyle, color = Forest, maxLines = 2,
-                modifier = Modifier.semantics { heading(); liveRegion = LiveRegionMode.Assertive })
-        }
-        Text("You’re leaning forward. Let your arm do the reaching.", style = CoachSubStyle, color = Forest,
-            modifier = Modifier.padding(top = 12.dp))
-    } else when (s.state) {
-        "CALIBRATING" -> Instruction("Sit up straight and stay still", "The device is learning how you sit upright. It takes 3 seconds.")
-        "WAIT_HOME" -> Instruction("Put your hand on the white button", "Keep it there until a light comes on.")
-        "CUED", "REACHING" -> Instruction(
+/** What the coach is saying. restEndsAt is set while resting, for the countdown. */
+private data class Say(val headline: String, val sub: String? = null, val warning: Boolean = false,
+                       val restEndsAt: Long = 0, val next: String = "")
+
+private fun say(s: UiState, warm: Boolean): Say = when {
+    warm -> Say("Sit back against the chair", "You’re leaning forward. Let your arm do the reaching.", warning = true)
+    else -> when (s.state) {
+        "CALIBRATING" -> Say("Sit up straight and stay still", "The device is learning how you sit upright. It takes 3 seconds.")
+        "WAIT_HOME" -> Say("Put your hand on the white button", "Keep it there until a light comes on.")
+        "CUED", "REACHING" -> Say(
             if (s.target.isEmpty()) "Reach for the button that lights up" else "Reach for the ${s.target.lowercase()} button",
             if (s.feedback) "The buzzer sounds if you lean forward." else "Keep your back against the chair.",
         )
-        "RETURNING" -> Instruction("Bring your hand back to the white button")
-        "REST" -> {
-            val left by produceState(secondsLeft(s.restEndsAt), s.restEndsAt) {
-                while (value > 0) { delay(1000); value = secondsLeft(s.restEndsAt) }
+        "RETURNING" -> Say("Bring your hand back to the white button")
+        "REST" -> Say("Rest for a moment", restEndsAt = s.restEndsAt, next = s.nextBlock)
+        else -> Say("Getting ready")
+    }
+}
+
+@Composable
+private fun ColumnScope.SessionCoach(s: UiState, warm: Boolean) {
+    // a new instruction crossfades in; the same one (CUED then REACHING) stays put
+    AnimatedContent(say(s, warm), transitionSpec = { swap() }, contentKey = { it.headline }, label = "instruction") { said ->
+        Column {
+            if (said.warning) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ResultIcon(upright = false, size = 44.dp)
+                    Spacer(Modifier.width(14.dp))
+                    Text(said.headline, style = CoachStyle, color = Forest, maxLines = 2,
+                        modifier = Modifier.semantics { heading(); liveRegion = LiveRegionMode.Assertive })
+                }
+                Text(said.sub!!, style = CoachSubStyle, color = Forest, modifier = Modifier.padding(top = 12.dp))
+            } else if (said.restEndsAt > 0) {
+                val left by produceState(secondsLeft(said.restEndsAt), said.restEndsAt) {
+                    while (value > 0) { delay(1000); value = secondsLeft(said.restEndsAt) }
+                }
+                Instruction(said.headline, "Next: ${blockName(said.next).lowercase()}" + if (left > 0) ", in $left seconds." else ".")
+            } else {
+                Instruction(said.headline, said.sub)
             }
-            Instruction("Rest for a moment", "Next: ${blockName(s.nextBlock).lowercase()}" + if (left > 0) ", in $left seconds." else ".")
         }
-        else -> Instruction("Getting ready")
     }
     Spacer(Modifier.weight(1f))
     if (s.state != "CALIBRATING" && s.state != "REST") Mat(s)
@@ -218,11 +260,15 @@ private fun Mat(s: UiState) {
 
 @Composable
 private fun MatButton(name: String, color: Color, lit: Boolean) {
+    // the light comes on and goes off like the real one: a quick fade, not a jump
+    val fill by animateColorAsState(if (lit) color else Wall, tween(STATE_MS), label = "fill")
+    val ring by animateColorAsState(if (lit) Forest else Color.Transparent, tween(STATE_MS), label = "ring")
+    val edge by animateColorAsState(if (lit) Forest else Forest2.copy(alpha = 0.55f), tween(STATE_MS), label = "edge")
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
-            Modifier.size(46.dp).border(if (lit) 2.5.dp else 0.dp, if (lit) Forest else Color.Transparent, CircleShape).padding(5.dp)
-                .clip(CircleShape).background(if (lit) color else Wall)
-                .border(if (lit) 2.dp else 1.5.dp, if (lit) Forest else Forest2.copy(alpha = 0.55f), CircleShape),
+            Modifier.size(46.dp).border(2.5.dp, ring, CircleShape).padding(5.dp)
+                .clip(CircleShape).drawBehind { drawRect(fill) }
+                .border(if (lit) 2.dp else 1.5.dp, edge, CircleShape),
         )
         Text(name, style = LabelStyle.copy(fontSize = 15.sp, fontWeight = if (lit) FontWeight.Bold else FontWeight.Normal),
             color = Forest, modifier = Modifier.padding(top = 4.dp))
@@ -272,42 +318,54 @@ private fun ColumnScope.WeekScore(past: List<PastSession>) {
 
 @Composable
 private fun ColumnScope.SessionScore(s: UiState, actions: PatientActions) {
+    // the buttons stay at the bottom; with large system text the rest scrolls rather than pushing them off
+    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
     Text(blockName(s.phase), style = LabelStyle.copy(fontSize = 20.sp), color = Forest)
     Text(if (s.state == "REST") "Finished. Well done." else blockLine(s.phase), style = BodyStyle.copy(fontSize = 16.sp), color = Forest2)
     if (s.blockSize > 0) {
         val now = (s.blockDone + if (s.state in listOf("WAIT_HOME", "CUED", "REACHING")) 1 else 0).coerceIn(1, s.blockSize)
-        Text(
-            buildAnnotatedString {
-                append("$now")
-                withStyle(SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Normal, color = Forest2)) { append(" of ${s.blockSize} reaches") }
-            },
-            style = NumberStyle, color = Forest, modifier = Modifier.padding(top = 8.dp).semantics { contentDescription = "Reach $now of ${s.blockSize}" },
-        )
+        AnimatedContent(now to s.blockSize, transitionSpec = { swap() }, label = "count") { (n, of) ->
+            Text(
+                buildAnnotatedString {
+                    append("$n")
+                    withStyle(SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Normal, color = Forest2)) { append(" of $of reaches") }
+                },
+                style = NumberStyle, color = Forest, modifier = Modifier.padding(top = 8.dp).semantics { contentDescription = "Reach $n of $of" },
+            )
+        }
     }
     Spacer(Modifier.height(10.dp))
-    if (s.feedback && s.lastRep?.phase == "TRAINING") {
-        val up = !s.lastRep.compensated
-        Row(
-            Modifier.fillMaxWidth().shadow(6.dp, RoundedCornerShape(14.dp), ambientColor = Forest, spotColor = Forest)
-                .clip(RoundedCornerShape(14.dp)).background(Panel).padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ResultIcon(upright = up, size = 30.dp)
-            Column(Modifier.padding(start = 10.dp)) {
-                Text(if (up) "Upright" else "Leaned", style = LabelStyle.copy(fontSize = 19.sp), color = if (up) Forest else TerraDeep)
-                Text("Last reach · ${s.blockUpright} of ${s.blockDone} upright", style = BodyStyle.copy(fontSize = 15.sp, fontFeatureSettings = "tnum"), color = Forest)
-            }
-        }
-    } else if (s.phase == "BASELINE" || s.phase == "POST") {
+    val shownRep = s.lastRep.takeIf { s.feedback && it?.phase == "TRAINING" }
+    AnimatedContent(shownRep, transitionSpec = { swap() }, contentKey = { it?.rep }, label = "last reach") { rep ->
+        if (rep != null) LastReach(rep, s.blockUpright, s.blockDone)
+    }
+    if (shownRep == null && (s.phase == "BASELINE" || s.phase == "POST")) {
         Text("Your results come at the end.", style = BodyStyle.copy(fontSize = 16.sp), color = Forest2)
     }
-    Spacer(Modifier.weight(1f))
+    }
     if (s.demo) TextButton(onClick = actions.onAddReach, enabled = s.state == "WAIT_HOME", modifier = Modifier.fillMaxWidth()) {
         Text("Add a reach (demo)", fontSize = 16.sp)
     }
     if (s.oldFirmware) Text("To stop, press the yellow button.", style = BodyStyle.copy(fontSize = 16.sp), color = Forest)
     else OutlinedButton(onClick = actions.onEnd, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
         Text("End session", fontSize = 17.sp, color = Forest)
+    }
+}
+
+/** The last reach of the training block: icon and word, never colour alone. */
+@Composable
+private fun LastReach(rep: Rep, upright: Int, done: Int) {
+    val up = !rep.compensated
+    Row(
+        Modifier.fillMaxWidth().shadow(6.dp, RoundedCornerShape(14.dp), ambientColor = Forest, spotColor = Forest)
+            .clip(RoundedCornerShape(14.dp)).background(Panel).padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        ResultIcon(upright = up, size = 30.dp)
+        Column(Modifier.padding(start = 10.dp)) {
+            Text(if (up) "Upright" else "Leaned", style = LabelStyle.copy(fontSize = 19.sp), color = if (up) Forest else TerraDeep)
+            Text("Last reach · ${of(upright, done)} upright", style = BodyStyle.copy(fontSize = 15.sp, fontFeatureSettings = "tnum"), color = Forest)
+        }
     }
 }
 

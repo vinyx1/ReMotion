@@ -1,6 +1,7 @@
 package ca.remotion.phone
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -60,18 +61,20 @@ fun MainScreen(vm: MainViewModel) {
 
 @Composable
 private fun App(s: UiState, past: List<PastSession>, finished: PastSession?, vm: MainViewModel, settings: Boolean, setSettings: (Boolean) -> Unit) {
-    Surface(Modifier.fillMaxSize(), color = Plaster) {
-        if (settings) {
-            BackHandler { setSettings(false) }
-            SettingsScreen(s, vm, onClose = { setSettings(false) })
-        } else {
-            PatientApp(s, past, finished, PatientActions(
-                onConnect = { vm.connectUsb() },
-                onEnd = { vm.send(Protocol.STOP) },
-                onDone = vm::dismissFinished,
-                onSettings = { setSettings(true) },
-                onAddReach = vm::addDemoRep,
-            ))
+    if (settings) BackHandler { setSettings(false) }
+    AnimatedContent(settings, transitionSpec = { fadeThrough() }, label = "settings") { open ->
+        Surface(Modifier.fillMaxSize(), color = Plaster) {
+            if (open) {
+                SettingsScreen(s, vm, onClose = { setSettings(false) })
+            } else {
+                PatientApp(s, past, finished, PatientActions(
+                    onConnect = { vm.connectUsb() },
+                    onEnd = { vm.send(Protocol.STOP) },
+                    onDone = vm::dismissFinished,
+                    onSettings = { setSettings(true) },
+                    onAddReach = vm::addDemoRep,
+                ))
+            }
         }
     }
 }
@@ -119,7 +122,7 @@ private fun SettingsScreen(s: UiState, vm: MainViewModel, onClose: () -> Unit) {
                     Text("Full: 3 · 15 · 30 · 15")
                 }
                 OutlinedButton(onClick = { vm.setPlan(listOf(0, 0, 5, 0)) }, enabled = s.connected != null && !s.sessionRunning) {
-                    Text("Short: 5 with the buzzer")
+                    Text("Short: 5 reaches")
                 }
             }
             Text("Reaches per block: warm-up, on your own, with the buzzer, on your own again. Only between sessions.",
