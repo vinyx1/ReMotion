@@ -95,6 +95,7 @@ def fake_rep(dev, rep_number, target, phase, leaned):
     wobbles = rng.choice([0, 0, 1, 2])        # extra small corrections near the target
 
     dev.hold("WAIT_HOME", 1000)               # hand rests on HOME for 1 s
+    dev.comment(f"target {target}")           # firmware announces the lit target
     dev.hold("CUED", react_ms)                # target lit, person reacting
 
     # REACHING: trunk tilts in a bump, wrist rotates in a bump plus wobbles

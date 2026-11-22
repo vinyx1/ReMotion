@@ -1,0 +1,26 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "literata",
+        "createdAt": "2026-11-22T06:51:26.733Z",
+        "reason": "agent: DESIGN.md declares these as 'Literata Variable' / 'Atkinson Hyperlegible Next/Mono Variable'; the static Google Fonts names are the same families"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "atkinson hyperlegible next",
+        "createdAt": "2026-11-22T06:51:26.749Z",
+        "reason": "agent: DESIGN.md declares these as 'Literata Variable' / 'Atkinson Hyperlegible Next/Mono Variable'; the static Google Fonts names are the same families"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "atkinson hyperlegible mono",
+        "createdAt": "2026-11-22T06:51:26.766Z",
+        "reason": "agent: DESIGN.md declares these as 'Literata Variable' / 'Atkinson Hyperlegible Next/Mono Variable'; the static Google Fonts names are the same families"
+      }
+    ]
+  }
+}

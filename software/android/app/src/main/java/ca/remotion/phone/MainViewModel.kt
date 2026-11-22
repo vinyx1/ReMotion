@@ -48,8 +48,27 @@ data class UiState(
     val oldFirmware: Boolean = false,
     val showSamples: Boolean = false,
     val log: List<LogLine> = emptyList(),
+
+    // ---- the session as the patient follows it ----
+    /** The target that's lit ("GREEN"), from the firmware's "# target" line; "" before the first cue. */
+    val target: String = "",
+    /** Reaches in the current block, and how many are done / were upright. */
+    val blockSize: Int = 0,
+    val blockDone: Int = 0,
+    val blockUpright: Int = 0,
+    /** The last finished reach of this session. */
+    val lastRep: Rep? = null,
+    /** Every reach of this session so far. */
+    val sessionReps: List<Rep> = emptyList(),
+    /** While resting between blocks: when the rest ends (phone clock, ms) and which block comes next. */
+    val restEndsAt: Long = 0,
+    val nextBlock: String = "",
+    /** The trunk has been past the limit for 200 ms during a reach (the firmware's rule). */
+    val leaning: Boolean = false,
 ) {
     val sessionRunning get() = state.isNotEmpty() && state !in Protocol.IDLE_STATES
+    /** Feedback on leaning only in the training block: baseline and post measure the patient without it. */
+    val feedback get() = phase == "TRAINING"
 }
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
@@ -58,6 +77,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val ui: StateFlow<UiState> = _ui.asStateFlow()
 
     private var link: DeviceLink? = null
+    private val history = History(app)
+    private val _past = MutableStateFlow(history.load())
+    /** Sessions done on this phone, oldest first (the week, "last time"). */
+    val past: StateFlow<List<PastSession>> = _past.asStateFlow()
+    private val _finished = MutableStateFlow<PastSession?>(null)
+    /** The session that just ended, until the patient taps Done. */
+    val finished: StateFlow<PastSession?> = _finished.asStateFlow()
+    @Volatile private var overSinceMs = -1L        // sample time the trunk went past the limit
     @Volatile private var uploader: Uploader? = null
     private val prefs = app.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private val ids = AtomicLong()
@@ -84,12 +111,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         ContextCompat.registerReceiver(app, usbEvents, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
-    /** Find the device on USB, ask for permission if needed, then open it. */
-    fun connectUsb() {
+    /** Find the device on USB, ask for permission if needed, then open it. Quiet: say nothing if it isn't there. */
+    fun connectUsb(quiet: Boolean = false) {
         if (link != null) return
         val driver = findDriver()
-            ?: return say("No device found. Plug the ReMotion device into this phone's USB-C port. " +
-                "If nothing happens, try a USB-C OTG adapter with the USB-A cable.")
+            ?: return if (quiet) Unit else say("The phone can't find the device. Check the cable is pushed in at both ends. " +
+                "If it still isn't found, try the USB-A cable with the small adapter.")
         if (!usb.hasPermission(driver.device)) {
             val app = getApplication<Application>()
             val flags = if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0
@@ -167,6 +194,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Reaches per block, sent to the device (only between sessions). */
+    fun setPlan(plan: List<Int>) = send("P" + plan.joinToString(","))
+
+    fun dismissFinished() { _finished.value = null }
+
     fun setShowSamples(show: Boolean) = _ui.update { s ->
         s.copy(showSamples = show, log = if (show) s.log else s.log.filter { it.kind != LogLine.Kind.SAMPLE })
     }
@@ -175,12 +207,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun onLine(line: String) {
         uploader?.add(line)
         val msg = Protocol.parse(line)
+        if (msg is SessionEnd) endOfSession()
         _ui.update { s ->
             val next = when (msg) {
-                is Sample -> s.copy(latest = msg, state = msg.state)
+                is Sample -> s.copy(latest = msg, state = msg.state, leaning = leaning(msg, s))
                 is Rep -> s.copy(reps = msg.rep, phase = msg.phase,
-                    leaned = (if (msg.rep == 1) 0 else s.leaned) + if (msg.compensated) 1 else 0)
-                is SessionEnd -> s.copy(reps = msg.reps, leaned = msg.compensatedReps, phase = "")
+                    leaned = (if (msg.rep == 1) 0 else s.leaned) + if (msg.compensated) 1 else 0,
+                    blockDone = s.blockDone + 1, blockUpright = s.blockUpright + if (msg.compensated) 0 else 1,
+                    lastRep = msg, sessionReps = s.sessionReps + msg, leaning = false)
+                is SessionEnd -> s.copy(reps = msg.reps, leaned = msg.compensatedReps, phase = "", target = "",
+                    blockSize = 0, blockDone = 0, blockUpright = 0, lastRep = null, sessionReps = emptyList(),
+                    restEndsAt = 0, leaning = false)
                 is Status -> s.copy(state = msg.state, phase = msg.phase, reps = msg.reps,
                     leaned = msg.compensatedReps, streaming = msg.streaming)
                 is DeviceError -> {
@@ -191,15 +228,53 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     msg.text == "sample stream off" -> s.copy(streaming = false)
                     msg.text == "sample stream on" -> s.copy(streaming = true)
                     // a new session: last session's numbers no longer apply
-                    msg.text.startsWith("calibrating") -> s.copy(reps = 0, leaned = 0, phase = "")
-                    // "# BASELINE block: 15 reps, ..." (and "# rest 30 s before the POST block")
-                    else -> BLOCK.find(msg.text)?.let { s.copy(phase = it.groupValues[1]) } ?: s
+                    msg.text.startsWith("calibrating") -> s.copy(reps = 0, leaned = 0, phase = "", target = "",
+                        blockSize = 0, blockDone = 0, blockUpright = 0, lastRep = null, sessionReps = emptyList(), restEndsAt = 0)
+                    msg.text.startsWith("target ") -> s.copy(target = msg.text.removePrefix("target ").trim())
+                    // "# BASELINE block: 15 reps, buzzer off"
+                    BLOCK_START.find(msg.text) != null -> BLOCK_START.find(msg.text)!!.let {
+                        s.copy(phase = it.groupValues[1], blockSize = it.groupValues[2].toInt(), blockDone = 0,
+                            blockUpright = 0, lastRep = null, restEndsAt = 0, target = "")
+                    }
+                    // "# rest 30 s before the POST block"
+                    REST.find(msg.text) != null -> REST.find(msg.text)!!.let {
+                        s.copy(restEndsAt = System.currentTimeMillis() + it.groupValues[1].toLong() * 1000, nextBlock = it.groupValues[2])
+                    }
+                    else -> s
                 }
                 null -> s
             }
             if (msg is Sample && !s.showSamples) next
             else next.copy(log = (next.log + LogLine(ids.incrementAndGet(), line, kindOf(msg))).takeLast(MAX_LOG))
         }
+    }
+
+    /**
+      The firmware's rule, for the screen: past the limit for at least 200 ms while reaching.
+      Once a reach counts as leaning it stays so until the reach ends: the lean itself often
+      lasts under a second, too short to read "Sit back" from across the table.
+    */
+    private fun leaning(sample: Sample, s: UiState): Boolean {
+        if (sample.state != "REACHING") {
+            overSinceMs = -1
+            return false
+        }
+        if (s.leaning) return true
+        if (sample.trunkDeg <= sample.threshold) {
+            overSinceMs = -1
+            return false
+        }
+        if (overSinceMs < 0) overSinceMs = sample.tMs
+        return sample.tMs - overSinceMs >= 200
+    }
+
+    /** An S line: remember the session (for the week and "last time") and show its summary. */
+    private fun endOfSession() {
+        val reps = _ui.value.sessionReps
+        if (reps.isEmpty()) return                            // ended before any reach: nothing to show
+        val done = History.summarize(reps, demo = link is DemoLink)
+        viewModelScope.launch(Dispatchers.IO) { _past.value = history.add(done) }
+        _finished.value = done
     }
 
     private fun kindOf(msg: Message?) = when (msg) {
@@ -227,7 +302,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     companion object {
         const val ACTION_USB_PERMISSION = "ca.remotion.phone.USB_PERMISSION"
         const val MAX_LOG = 300
-        private val BLOCK = Regex("""\b(PRACTICE|BASELINE|TRAINING|POST) block\b""")
+        private val BLOCK_START = Regex("""^(PRACTICE|BASELINE|TRAINING|POST) block: (\d+) reps""")
+        private val REST = Regex("""^rest (\d+) s before the (PRACTICE|BASELINE|TRAINING|POST) block""")
         private const val KEY_DASHBOARD = "dashboard"
         /** With the phone on a cable, `adb reverse tcp:5173 tcp:5173` makes this the Mac's dashboard. */
         const val DEFAULT_DASHBOARD = "http://localhost:5173"
