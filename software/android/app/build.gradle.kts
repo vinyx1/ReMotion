@@ -23,33 +23,6 @@ android {
     }
 }
 
-/*
-  Demo mode plays the repo's sample session (data/sample/fake_session.txt) as if it came
-  from the device. It's copied into the app's assets at build time, so there is one copy
-  in git and the app always has the current one.
-*/
-abstract class CopyDemoSession : DefaultTask() {
-    @get:InputFile abstract val session: RegularFileProperty
-    @get:OutputDirectory abstract val outDir: DirectoryProperty
-
-    @TaskAction
-    fun copy() {
-        val out = outDir.get().asFile
-        out.mkdirs()
-        session.get().asFile.copyTo(out.resolve("fake_session.txt"), overwrite = true)
-    }
-}
-
-val copyDemoSession = tasks.register<CopyDemoSession>("copyDemoSession") {
-    session.set(rootProject.layout.projectDirectory.file("../../data/sample/fake_session.txt"))
-}
-
-androidComponents {
-    onVariants { variant ->
-        variant.sources.assets?.addGeneratedSourceDirectory(copyDemoSession, CopyDemoSession::outDir)
-    }
-}
-
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.11.01")
     implementation(composeBom)

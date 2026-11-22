@@ -31,6 +31,11 @@ data class LogLine(val id: Long, val text: String, val kind: Kind) {
 data class UiState(
     /** The connected device's name; null when not connected. */
     val connected: String? = null,
+    /** Connected to the demo device (the Add rep button shows). */
+    val demo: Boolean = false,
+    /** The dashboard server the lines go to, e.g. http://192.168.1.20:5173 */
+    val dashboard: String = "",
+    val upload: Uploader.Status? = null,
     /** Something to tell the person (why a connection failed, what to do next). */
     val message: String? = null,
     val latest: Sample? = null,
@@ -53,6 +58,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val ui: StateFlow<UiState> = _ui.asStateFlow()
 
     private var link: DeviceLink? = null
+    @Volatile private var uploader: Uploader? = null
+    private val prefs = app.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private val ids = AtomicLong()
     private val writes = Dispatchers.IO.limitedParallelism(1)   // commands go out in order
 
@@ -69,6 +76,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     init {
+        _ui.update { it.copy(dashboard = prefs.getString(KEY_DASHBOARD, null) ?: DEFAULT_DASHBOARD) }
         val filter = IntentFilter().apply {
             addAction(ACTION_USB_PERMISSION)
             addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
@@ -100,24 +108,41 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun startDemo() {
-        if (link != null) return
-        viewModelScope.launch {
-            val lines = withContext(Dispatchers.IO) {
-                getApplication<Application>().assets.open("fake_session.txt").bufferedReader().readLines()
-            }
-            open(DemoLink(lines))
-        }
+        if (link == null) open(DemoLink())
+    }
+
+    /** Demo mode only: play one rep, clean or leaned at random. */
+    fun addDemoRep() = (link as? DemoLink)?.addRep()
+
+    fun setDashboard(address: String) {
+        _ui.update { it.copy(dashboard = address) }
+        prefs.edit().putString(KEY_DASHBOARD, address.trim()).apply()
     }
 
     private fun open(l: DeviceLink) {
+        // The uploader and a fresh screen come first, so not even the device's first lines are missed
+        val address = _ui.value.dashboard.trim().ifEmpty { DEFAULT_DASHBOARD }
+        val up = try {
+            Uploader(address, PATIENT_ID, demo = l is DemoLink, scope = viewModelScope) { st -> _ui.update { it.copy(upload = st) } }
+        } catch (e: Exception) {
+            null
+        }
+        _ui.update {
+            UiState(connected = l.name, demo = l is DemoLink, dashboard = it.dashboard, showSamples = it.showSamples,
+                upload = up?.let { Uploader.Status(address) },
+                message = if (up == null) "\"$address\" isn't a web address, so nothing goes to the dashboard. Disconnect to fix it." else null)
+        }
+        uploader = up
         try {
             l.start(onLine = ::onLine, onClosed = { reason -> viewModelScope.launch { if (link === l) disconnect(reason) } })
         } catch (e: Exception) {
             l.close()
-            return say("Couldn't open the device: ${e.message}")
+            up?.close(viewModelScope)
+            uploader = null
+            _ui.update { UiState(message = "Couldn't open the device: ${e.message}", dashboard = it.dashboard, showSamples = it.showSamples) }
+            return
         }
         link = l
-        _ui.update { UiState(connected = l.name, showSamples = it.showSamples) }
         send(Protocol.STATUS)                  // find out what the device is doing right now
     }
 
@@ -125,7 +150,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val l = link ?: return
         link = null
         l.close()
-        _ui.update { UiState(message = reason, showSamples = it.showSamples) }
+        uploader?.close(viewModelScope)
+        uploader = null
+        _ui.update { UiState(message = reason, dashboard = it.dashboard, showSamples = it.showSamples) }
     }
 
     fun send(command: String) {
@@ -140,10 +167,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun setShowSamples(show: Boolean) = _ui.update { it.copy(showSamples = show) }
+    fun setShowSamples(show: Boolean) = _ui.update { s ->
+        s.copy(showSamples = show, log = if (show) s.log else s.log.filter { it.kind != LogLine.Kind.SAMPLE })
+    }
 
     /** Called on a background thread for every line the device sends. */
     private fun onLine(line: String) {
+        uploader?.add(line)
         val msg = Protocol.parse(line)
         _ui.update { s ->
             val next = when (msg) {
@@ -187,11 +217,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     override fun onCleared() {
         link?.close()
         link = null
+        uploader?.close(viewModelScope)
         getApplication<Application>().unregisterReceiver(usbEvents)
     }
 
     companion object {
         const val ACTION_USB_PERMISSION = "ca.remotion.phone.USB_PERMISSION"
         const val MAX_LOG = 300
+        private const val KEY_DASHBOARD = "dashboard"
+        /** With the phone on a cable, `adb reverse tcp:5173 tcp:5173` makes this the Mac's dashboard. */
+        const val DEFAULT_DASHBOARD = "http://localhost:5173"
+        /** Whose sessions these are: the dashboard's patient id (software/web/src/lib/patients.ts). */
+        const val PATIENT_ID = "vincent"
+        const val PATIENT_NAME = "Vincent Jiang"
     }
 }

@@ -46,6 +46,8 @@ data/raw/
 data/*.csv
 # Fake history for building the dashboard (python -m software.dashboard.fake_history)
 data/fake/
+# Sessions sent by the phone app (data/phone, data/phone-demo, and the server's data/phone-incoming)
+data/phone*/
 
 # Arduino / PlatformIO build output
 firmware/**/build/

@@ -111,6 +111,7 @@ export function PatientsPage({ patients, sessionsFor }: { patients: Patient[]; s
                     </td>
                     <td className="px-3 py-3">
                       {/* one line per exercise: a trend only means something within one exercise */}
+                      {!p.exercises.length && <span className="text-forest-2">No sessions yet</span>}
                       <ul className="flex flex-col gap-1.5">
                         {p.exercises.map((id) => <ExerciseProgress key={id} exercise={id} sessions={ss.filter((s) => exerciseOf(s) === id)} />)}
                       </ul>
@@ -158,7 +159,7 @@ export function ProfilePage({ patient, sessions }: { patient: Patient; sessions:
       <Panel label="Exercise settings" className="p-5 sm:p-6">
         <PanelTitle as="h2" title="Exercise settings" />
         <dl className="mt-3">
-          <Field label={exercises.length === 1 ? 'Exercise' : 'Exercises'}>{exercises.map((e) => e.name).join(', ')}</Field>
+          <Field label={exercises.length === 1 ? 'Exercise' : 'Exercises'}>{exercises.map((e) => e.name).join(', ') || 'None yet'}</Field>
           <Field label="Lean limit" mono>{limits.map((l) => `${l}°`).join(', ')}</Field>
           <Field label="Held for at least" mono>200 ms</Field>
           {exercises.some((e) => e.targets) && (
