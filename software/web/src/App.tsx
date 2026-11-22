@@ -21,13 +21,28 @@ import type { ExerciseId, SessionsFile } from './types'
 
 type Load = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: SessionsFile }
 
+/*
+  sessions.json, read again every 5 s while the page is visible, so a session the phone app
+  is recording (server/phone.ts re-exports after each rep) shows up without a reload. The
+  page only re-renders when the file was written again ("generated" changed).
+*/
+const POLL_MS = 5000
+
 function useSessions(): Load {
   const [state, setState] = useState<Load>({ status: 'loading' })
   useEffect(() => {
-    fetch('/sessions.json', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((data: SessionsFile) => setState({ status: 'ready', data }))
-      .catch((e: Error) => setState({ status: 'error', message: e.message }))
+    let alive = true
+    let generated: string | undefined
+    const read = (first: boolean) =>
+      fetch('/sessions.json', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+        .then((data: SessionsFile) => {
+          if (alive && data.generated !== generated) { generated = data.generated; setState({ status: 'ready', data }) }
+        })
+        .catch((e: Error) => { if (alive && first) setState({ status: 'error', message: e.message }) })
+    void read(true)
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') void read(false) }, POLL_MS)
+    return () => { alive = false; clearInterval(timer) }
   }, [])
   return state
 }
@@ -92,9 +107,11 @@ export default function App() {
         header={<PatientHeader patient={patient} sessions={everything} section="overview" />}>
         <div className="py-16 text-center">
           <h2 className="font-display text-2xl font-medium">No sessions yet</h2>
-          <p className="mt-2 text-[17px] text-forest-2">
-            Record one with <code className={code}>python -m software.tools.logger</code>, then run{' '}
-            <code className={code}>python -m software.dashboard.export</code> and reload.
+          <p className="mt-2 text-[17px] text-pretty text-forest-2">
+            {patient.id === 'vincent'
+              ? 'Start a session in the ReMotion phone app. Each rep shows up here a few seconds after it ends.'
+              : <>Record one with <code className={code}>python -m software.tools.logger</code>, then run{' '}
+                <code className={code}>python -m software.dashboard.export</code> and reload.</>}
           </p>
         </div>
       </Shell>

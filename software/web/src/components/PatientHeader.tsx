@@ -99,7 +99,7 @@ export function PatientHeader({ patient, sessions, section, plates, exercise }: 
             {!exercise && (
               <div className="flex gap-1.5">
                 <dt className="text-forest/75">{patient.exercises.length === 1 ? 'Exercise' : 'Exercises'}</dt>
-                <dd className="font-semibold tabular-nums">{patient.exercises.length === 1 ? EXERCISES[patient.exercises[0]].name : patient.exercises.length}</dd>
+                <dd className="font-semibold tabular-nums">{patient.exercises.length === 1 ? EXERCISES[patient.exercises[0]].name : patient.exercises.length || 'None yet'}</dd>
               </div>
             )}
             {exercise && (

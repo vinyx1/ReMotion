@@ -7,6 +7,7 @@ logger.py  —  record a session from the Arduino (or replay a saved one) into C
     python -m software.tools.logger --plan 0,0,5,0           # short demo: 5 TRAINING reps only
     python -m software.tools.logger --start                  # start a session without pressing START
     python -m software.tools.logger --replay data/sample/fake_session.txt
+    python -m software.tools.logger --replay run.txt --out data/phone/vincent --stamp 20261121_104500
 
 Press Ctrl+C to stop recording.
 
@@ -85,9 +86,9 @@ def file_lines(path):
 class SessionWriter:
     """Writes samples, reps and the raw log for one logger run."""
 
-    def __init__(self, out_dir):
+    def __init__(self, out_dir, stamp=None):
         out_dir.mkdir(parents=True, exist_ok=True)
-        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        stamp = stamp or datetime.now().strftime("%Y%m%d_%H%M%S")
         self.samples_path = out_dir / f"samples_{stamp}.csv"
         self.reps_path = out_dir / f"reps_{stamp}.csv"
         self.raw_path = out_dir / f"raw_{stamp}.txt"
@@ -164,6 +165,8 @@ def main():
     parser.add_argument("--start", action="store_true",
                         help="start a session right away (sends G), instead of pressing START")
     parser.add_argument("--replay", help="read lines from this saved file instead of the Arduino")
+    parser.add_argument("--stamp", help="name the files <kind>_<stamp> (YYYYMMDD_HHMMSS) instead of the "
+                                        "time now; existing files with that name are replaced")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_DIR,
                         help="folder for the output files (default data/raw)")
     args = parser.parse_args()
@@ -180,7 +183,12 @@ def main():
                 parser.error(f"--plan: {e}")
         lines = serial_lines(args.port or find_arduino_port(), args.threshold, plan, args.start)
 
-    writer = SessionWriter(args.out)
+    if args.stamp:
+        try:
+            datetime.strptime(args.stamp, "%Y%m%d_%H%M%S")
+        except ValueError:
+            parser.error("--stamp must look like 20261121_104500")
+    writer = SessionWriter(args.out, args.stamp)
     try:
         for line in lines:
             writer.handle(line)

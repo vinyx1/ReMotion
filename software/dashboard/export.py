@@ -9,6 +9,8 @@ yet, so the id comes from where the files are:
     data/raw/              "recorded"   (real recordings)
     data/fake/<id>/        <id>         (simulated patients, from fake_history.py)
     data/fake/ (loose files)  "sim-a"   (the first simulated patient)
+    data/phone/<id>/       <id>         (recorded with the phone app, sent to the dashboard server)
+    data/phone-demo/<id>/  <id>         (the phone app's demo mode: simulated)
     data/sample/           "sample"     (the committed example session, full length; kept
                                          apart so it doesn't break a simulated patient's story)
 
@@ -38,6 +40,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = REPO_ROOT / "data" / "raw"
 SAMPLE_DIR = REPO_ROOT / "data" / "sample"
 FAKE_DIR = REPO_ROOT / "data" / "fake"         # made by software.dashboard.fake_history
+PHONE_DIR = REPO_ROOT / "data" / "phone"       # sessions from the phone app (software/web/server/phone.ts)
+PHONE_DEMO_DIR = REPO_ROOT / "data" / "phone-demo"   # the phone app's demo mode
 DEFAULT_OUT = REPO_ROOT / "software" / "web" / "public" / "sessions.json"
 
 # The exercises (AGENTS.md section 1). Forward reach is the one the device does today.
@@ -45,8 +49,11 @@ EXERCISES = ("forward-reach", "sideways-reach", "hand-to-mouth", "forearm-rotati
 DEFAULT_EXERCISE = "forward-reach"
 
 
-def export_sessions(folders, patient=None, exercise=DEFAULT_EXERCISE):
-    """Build the dictionary that becomes sessions.json, tagging each session with `patient` (if given) and `exercise`."""
+def export_sessions(folders, patient=None, exercise=DEFAULT_EXERCISE, simulated=None):
+    """
+    Build the dictionary that becomes sessions.json, tagging each session with `patient` (if given) and `exercise`.
+    `simulated` says whether these are made-up sessions; left out, only data/raw counts as real.
+    """
     all_reps = load_reps(folders)
     sessions = []
     if all_reps.empty:
@@ -90,7 +97,7 @@ def export_sessions(folders, patient=None, exercise=DEFAULT_EXERCISE):
             **({"patient": patient} if patient else {}),
             "exercise": exercise,
             "label": label,
-            "simulated": str(first["folder"]) != str(RAW_DIR),   # only data/raw is real
+            "simulated": simulated if simulated is not None else str(first["folder"]) != str(RAW_DIR),
             "thresholdDeg": threshold,
             "reps": rep_list,
             # One entry per block, in session order; [] for logs from before blocks existed
@@ -125,10 +132,15 @@ def exercise_folders(folder):
 
 
 def patient_folders(include_fake=True):
-    """[(folders, patient id, exercise)] for every patient and exercise whose files are on disk."""
-    groups = [([str(RAW_DIR)], "recorded", DEFAULT_EXERCISE)]
+    """[(folders, patient id, exercise, simulated)] for every patient and exercise whose files are on disk."""
+    groups = [([str(RAW_DIR)], "recorded", DEFAULT_EXERCISE, False)]
+    roots = [(PHONE_DIR, False)] + ([(PHONE_DEMO_DIR, True)] if include_fake else [])
+    for root, simulated in roots:
+        if root.exists():
+            for sub in sorted(p for p in root.iterdir() if p.is_dir()):
+                groups += [([folder], sub.name, ex, simulated) for folder, ex in exercise_folders(sub)]
     if include_fake:
-        groups.append(([str(SAMPLE_DIR)], "sample", DEFAULT_EXERCISE))     # the committed example session
+        groups.append(([str(SAMPLE_DIR)], "sample", DEFAULT_EXERCISE, True))   # the committed example session
         sim_a = [str(FAKE_DIR)]                                             # loose files in data/fake
         if FAKE_DIR.exists():
             for sub in sorted(p for p in FAKE_DIR.iterdir() if p.is_dir()):
@@ -136,16 +148,16 @@ def patient_folders(include_fake=True):
                     if sub.name == "sim-a" and ex == DEFAULT_EXERCISE:
                         sim_a.append(folder)
                     else:
-                        groups.append(([folder], sub.name, ex))
-        groups.insert(2, (sim_a, "sim-a", DEFAULT_EXERCISE))
+                        groups.append(([folder], sub.name, ex, True))
+        groups.append((sim_a, "sim-a", DEFAULT_EXERCISE, True))
     return groups
 
 
 def export_groups(groups):
     """Export each patient's folders on their own (so their sessions never merge) and combine them."""
     sessions = []
-    for folders, patient, exercise in groups:
-        sessions += export_sessions(folders, patient, exercise)["sessions"]
+    for folders, patient, exercise, simulated in groups:
+        sessions += export_sessions(folders, patient, exercise, simulated)["sessions"]
     sessions.sort(key=lambda x: x["id"])            # oldest first
     return {"generated": datetime.now().isoformat(timespec="seconds"), "sessions": sessions}
 

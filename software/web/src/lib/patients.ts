@@ -4,8 +4,9 @@
   The logger doesn't record who did a session yet, so the ids come from where the
   files were: "recorded" for real recordings in data/raw, and "sim-a", "sim-b",
   "sim-c" for the simulated patients made by fake_history.py, and "sample" for the
-  committed example session in data/sample (one full four-block session). Older exports have no
-  patient field; those sessions count as "sim-a" when simulated, else "recorded".
+  committed example session in data/sample (one full four-block session). Sessions from the
+  phone app (data/phone/<id>, data/phone-demo/<id>) carry the id the app sends. Older exports
+  have no patient field; those sessions count as "sim-a" when simulated, else "recorded".
 */
 import { exercisesIn } from './exercises'
 import type { ExerciseId, Session } from '../types'
@@ -14,7 +15,7 @@ export interface Patient {
   id: string
   name: string
   initials: string
-  /** the exercises they have sessions of, in the standard order */
+  /** the exercises they have sessions of, in the standard order (none before their first session) */
   exercises: ExerciseId[]
   simulated: boolean
 }
@@ -26,7 +27,11 @@ const KNOWN: Record<string, { name: string; initials: string }> = {
   'sim-c': { name: 'Elena Rossi', initials: 'ER' },     // leans more
   sample: { name: 'Daniel Park', initials: 'DP' },      // one full four-block session (data/sample)
   recorded: { name: 'Recorded sessions', initials: 'R' },
+  vincent: { name: 'Vincent Jiang', initials: 'VJ' },  // the phone app's patient (software/android)
 }
+
+/** Patients listed even before their first session, so the phone app has a profile to fill. */
+const ALWAYS = ['vincent']
 
 export const patientOf = (s: Session) => s.patient ?? (s.simulated ? 'sim-a' : 'recorded')
 
@@ -38,14 +43,14 @@ export function patientsFrom(sessions: Session[]): Patient[] {
     if (!latest.has(id) || s.id > latest.get(id)!) latest.set(id, s.id)
   }
   const ids = [...latest.keys()].sort((a, b) => latest.get(b)!.localeCompare(latest.get(a)!))
-  if (!ids.length) ids.push('sim-a')            // nothing loaded yet: one placeholder patient
+  ids.push(...ALWAYS.filter((id) => !latest.has(id)))   // no sessions yet: listed last
   return ids.map((id) => {
     const own = sessions.filter((s) => patientOf(s) === id)
     const known = KNOWN[id] ?? { name: id, initials: id.slice(0, 2).toUpperCase() }
     return {
       id,
       ...known,
-      exercises: own.length ? exercisesIn(own) : ['forward-reach'],
+      exercises: exercisesIn(own),
       simulated: own.length ? own.every((s) => s.simulated) : true,
     }
   })

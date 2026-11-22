@@ -3,9 +3,12 @@
 
     <!-- The phone talks to the device as a USB host (USB-C OTG). -->
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <!-- Sends the device's lines to the dashboard over Wi-Fi -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:label="ReMotion"
+        android:usesCleartextTraffic="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
 
         <activity
