@@ -41,6 +41,7 @@
     REST         Pause between blocks. HOME LED blinks slowly. 2 beeps when
                  the next block starts. 3 beeps when the whole session is done.
     Pressing START in any active state ends the session early (prints S line).
+    The laptop or phone can do the same over serial: G starts, X ends.
 
   SERIAL PROTOCOL (115200 baud) — see docs/PROTOCOL.md. Do not change it
   without updating the logger and dashboard too.
@@ -48,9 +49,13 @@
     D,t_ms,state,trunk_deg,wrist_dps,threshold      every sample (100 Hz)
     R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase
     S,reps,compensated_reps
+    I,state,phase,threshold,practice,baseline,training,post,streaming,reps,compensated_reps
+                                                    reply to ?
     E,message
   Commands from the laptop:  T12 (threshold = 12 deg),  D0 / D1 (sample stream off/on),
-                             P3,15,30,15 (reps per block; e.g. P0,0,5,0 for a short demo)
+                             P3,15,30,15 (reps per block; e.g. P0,0,5,0 for a short demo),
+                             G (start a session, like pressing START), X (end it now),
+                             ? (status: replies with one I line)
   T and P are only accepted between sessions, so a session's blocks are comparable.
 */
 
@@ -144,6 +149,10 @@ Adafruit_MPU6050 wrist;
 // Settings that can change while running
 float thresholdDeg = DEFAULT_THRESHOLD_DEG;
 bool  streamSamples = STREAM_SAMPLES_DEFAULT;
+
+// Set by the G / X commands, used once by the state machine like a START press
+bool remoteStart = false;
+bool remoteStop = false;
 
 // Sensor values (updated at 100 Hz)
 uint32_t lastSampleUs = 0;
@@ -495,8 +504,14 @@ void startCalibration(uint32_t now) {
 }
 
 void runStateMachine(uint32_t now) {
-  // START ends the session from any active state
-  if (btnStart.pressed && state != IDLE && state != CALIB_FAILED) {
+  // The START button both starts and ends a session; G and X do one each.
+  bool startPressed = btnStart.pressed || remoteStart;
+  bool stopPressed = btnStart.pressed || remoteStop;
+  remoteStart = false;
+  remoteStop = false;
+
+  // START (or X) ends the session from any active state
+  if (stopPressed && state != IDLE && state != CALIB_FAILED) {
     endSession(now);
     return;
   }
@@ -505,7 +520,7 @@ void runStateMachine(uint32_t now) {
 
     case IDLE:
       // Everything off. Wait for the operator.
-      if (btnStart.pressed) startCalibration(now);
+      if (startPressed) startCalibration(now);
       break;
 
     case CALIBRATING:
@@ -524,9 +539,15 @@ void runStateMachine(uint32_t now) {
       break;
 
     case CALIB_FAILED:
-      // HOME blinks fast until the operator presses START to retry.
+      // HOME blinks fast until the operator presses START to retry (or X gives up).
       blinkLed(PIN_LED_HOME, FAIL_BLINK_MS, now);
-      if (btnStart.pressed) startCalibration(now);
+      if (startPressed) {
+        startCalibration(now);
+      } else if (stopPressed) {
+        allLedsOff();
+        Serial.println("# calibration cancelled");
+        enterState(IDLE, now);
+      }
       break;
 
     case WAIT_HOME:
@@ -611,7 +632,7 @@ void runStateMachine(uint32_t now) {
 }
 
 // =====================================================================
-//  SERIAL COMMANDS:  T<deg>  D0  D1  P<a>,<b>,<c>,<d>
+//  SERIAL COMMANDS:  T<deg>  D0  D1  P<a>,<b>,<c>,<d>  G  X  ?
 // =====================================================================
 char cmdBuf[24];
 
@@ -674,10 +695,39 @@ void handleCommand(const char* cmd) {
   } else if ((cmd[0] == 'D' || cmd[0] == 'd') && cmd[1] == '1' && cmd[2] == '\0') {
     streamSamples = true;
     Serial.println("# sample stream on");
+  } else if ((cmd[0] == 'G' || cmd[0] == 'g') && cmd[1] == '\0') {
+    // start a session, as if START were pressed
+    if (sessionRunning()) Serial.println("E,a session is already running");
+    else remoteStart = true;
+  } else if ((cmd[0] == 'X' || cmd[0] == 'x') && cmd[1] == '\0') {
+    // end the session now (or give up after a failed calibration)
+    if (state == IDLE) Serial.println("E,no session to end");
+    else remoteStop = true;
+  } else if (cmd[0] == '?' && cmd[1] == '\0') {
+    printStatus();
   } else if (cmd[0] != '\0') {
     Serial.print("E,unknown command: ");
     Serial.println(cmd);
   }
+}
+
+// I,state,phase,threshold,practice,baseline,training,post,streaming,reps,compensated_reps
+// So the laptop or phone can find out what the device is doing (e.g. after reconnecting).
+// phase is empty when no block has started yet (idle or calibrating).
+void printStatus() {
+  Serial.print("I,");
+  Serial.print(STATE_NAMES[state]);  Serial.print(",");
+  if (sessionRunning() && state != CALIBRATING) Serial.print(PHASE_NAMES[phase]);
+  Serial.print(",");
+  Serial.print(thresholdDeg, 1);
+  for (uint8_t p = 0; p < NUM_PHASES; p++) {
+    Serial.print(",");
+    Serial.print(phaseReps[p]);
+  }
+  Serial.print(",");
+  Serial.print(streamSamples ? 1 : 0);  Serial.print(",");
+  Serial.print(repCount);               Serial.print(",");
+  Serial.println(compensatedCount);
 }
 
 void readCommands() {
@@ -740,6 +790,7 @@ void setup() {
   Serial.println("# R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase");
   printPlan();
   Serial.println("# S,reps,compensated_reps");
+  Serial.println("# I,state,phase,threshold,practice,baseline,training,post,streaming,reps,compensated_reps");
   lastSampleUs = micros();
   enterState(IDLE, millis());
 }

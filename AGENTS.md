@@ -263,13 +263,15 @@ IDLE -> CALIBRATING -> WAIT_HOME -> CUED -> REACHING -> RETURNING -> WAIT_HOME .
 D,t_ms,state,trunk_deg,wrist_dps,threshold      (every sample, 100 Hz; toggle with a constant)
 R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase
 S,reps,compensated_reps
+I,state,phase,threshold,practice,baseline,training,post,streaming,reps,compensated_reps   (reply to ?)
 E,message                                       (errors)
 ```
 
-Commands accepted from the laptop:
+Commands accepted from the laptop (or the phone app, over the same USB cable):
 - `T<deg>` — set threshold (e.g. `T12`)
 - `D0` / `D1` — disable / enable sample (`D`) streaming
 - `P<a>,<b>,<c>,<d>` — reps per block (PRACTICE, BASELINE, TRAINING, POST), e.g. `P3,15,30,15`
+- `G` — start a session, same as pressing START · `X` — end it now · `?` — reply with one `I` status line
 
 **Do not change this format without updating the logger and dashboard together.**
 
