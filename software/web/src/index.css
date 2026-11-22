@@ -23,6 +23,7 @@
   --color-forest-deep: #14201b;
   --color-forest-2: #4a5a52;   /* secondary text, axes (on plaster or panel only) */
   --color-lake: #3f6a8a;       /* a patient leaning less: the trend pill and the wall's cool light */
+  --color-lake-soft: #b3c8d8;  /* the comparison bar on the Overview (average or previous session) */
   --color-terra: #b4532f;      /* compensated marks, large readouts */
   --color-terra-deep: #9a4526; /* small compensated text */
 }
@@ -100,3 +101,34 @@
   .grow-x, .rise-in, .pop-in { animation: none; }
   .measure-bar { transition: filter 150ms ease-out; }
 }
+
+/*
+  A quiet scrollbar for the forest sidebar: thin, no track, and only visible while
+  the pointer is over the list or something in it has focus, so the default grey
+  bar never sits on the dark panel. Scrolling itself is unchanged.
+*/
+.scroll-quiet { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.scroll-quiet:hover, .scroll-quiet:focus-within { scrollbar-color: rgb(238 240 236 / 0.28) transparent; }
+
+/*
+  The patient tabs on the wall. The open tab is a piece of the plaster floor rising
+  into the wall: lit along its top edge, a soft shadow up onto the wall (kept tight
+  so it never spills onto the floor), and small curved flares where it meets the
+  floor, like a folder tab, so the join with the horizon reads as one surface.
+*/
+.wall-tab[aria-current="page"] {
+  position: relative;
+  background: var(--color-plaster);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), 0 -3px 10px -6px rgb(31 45 39 / 0.35);
+}
+.wall-tab[aria-current="page"]::before,
+.wall-tab[aria-current="page"]::after {
+  content: ""; position: absolute; bottom: 0; width: 10px; height: 10px; pointer-events: none;
+}
+.wall-tab[aria-current="page"]::before { left: -10px; background: radial-gradient(circle at 0 0, transparent 9.5px, var(--color-plaster) 10px); }
+.wall-tab[aria-current="page"]::after { right: -10px; background: radial-gradient(circle at 100% 0, transparent 9.5px, var(--color-plaster) 10px); }
+
+/* The header tabs, when the set changes (into or out of an exercise): each rises in, 25 ms apart, 180 ms in all. */
+@keyframes tab-in { from { opacity: 0; transform: translateY(6px); } }
+.tab-in { animation: tab-in 180ms cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i, 0) * 25ms) both; }
+@media (prefers-reduced-motion: reduce) { .tab-in { animation: none; } }

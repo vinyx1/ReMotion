@@ -5,11 +5,12 @@
 import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { TARGET_NAME, TARGET_REACH } from '../lib/stats'
+import { EXERCISES, exerciseOf } from '../lib/exercises'
 import { useWidth } from '../lib/useWidth'
 import { cn, indexAt, phaseName, sampleAt } from '../lib/utils'
 import type { Rep, Session } from '../types'
 import { HoloReplay } from './HoloReplay'
-import { Button, FOCUS, Panel, PanelTitle, Readout, ResultTag, Segmented, Select } from './ui'
+import { Button, FOCUS, Mark, Panel, PanelTitle, Readout, ResultTag, Segmented, Select } from './ui'
 
 const reduceMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
@@ -48,13 +49,15 @@ function usePlayback(start: number, end: number) {
 }
 
 /** A trace over time with the reach shaded, the limit dashed and a playhead. */
-function Trace({ rep, field, unit, t, threshold, label }: {
+function Trace({ rep, field, unit, t, threshold, label, marks = ['leaves HOME', 'presses target'] }: {
   rep: Rep
   field: 'trunkDeg' | 'wristDps'
   unit: string
   t: number
   threshold?: number
   label: string
+  /** the words under the shaded band's start and end */
+  marks?: [string, string]
 }) {
   const tr = rep.trace!
   const [ref, w] = useWidth<HTMLDivElement>()
@@ -89,8 +92,8 @@ function Trace({ rep, field, unit, t, threshold, label }: {
         <line x1={x(t)} x2={x(t)} y1={pad.t} y2={H - pad.b} stroke="var(--color-forest-2)" strokeWidth={1.2} />
         <circle cx={x(t)} cy={y(now)} r={5} fill={over ? 'var(--color-terra)' : 'var(--color-panel)'} stroke="var(--color-forest)" strokeWidth={2} />
         {/* the reach's two moments, under the shaded band */}
-        <text x={x(0)} y={H - 9} textAnchor="start" className="fill-forest-2 text-[12px]">leaves HOME</text>
-        <text x={x(tr.reachEndS)} y={H - 9} textAnchor="end" className="fill-forest-2 text-[12px]">presses target</text>
+        <text x={x(0)} y={H - 9} textAnchor="start" className="fill-forest-2 text-[12px]">{marks[0]}</text>
+        <text x={x(tr.reachEndS)} y={H - 9} textAnchor="end" className="fill-forest-2 text-[12px]">{marks[1]}</text>
       </svg>
     </div>
   )
@@ -106,6 +109,8 @@ export function RepDetail({ sessions, sessionId, repN, onPick }: {
   const reps = session.reps
   const fallback = [...reps].sort((a, b) => b.peakDeg - a.peakDeg)[0]
   const rep = reps.find((r) => r.rep === repN) ?? fallback
+  const ex = EXERCISES[exerciseOf(session)]
+  const marks: [string, string] = ex.targets ? ['leaves HOME', 'presses target'] : ['starts', ex.id === 'hand-to-mouth' ? 'at the mouth' : 'turned']
   const idx = reps.indexOf(rep)
   const tr = rep.trace
   const start = tr ? tr.t[0] : 0
@@ -113,52 +118,100 @@ export function RepDetail({ sessions, sessionId, repN, onPick }: {
   const clock = usePlayback(start, end)
   const t = Math.min(Math.max(clock.t, start), end)
 
-  // a new rep opens paused at its peak lean, the moment that decided its result
-  const peakT = tr ? tr.t[tr.trunkDeg.indexOf(Math.max(...tr.trunkDeg))] : 0
-  useEffect(() => { clock.setPlaying(false); clock.setT(peakT) }, [rep.rep, session.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  // a new rep opens paused on its first frame, so Play runs the whole reach
+  useEffect(() => { clock.setPlaying(false); clock.setT(start) }, [rep.rep, session.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const trunk = tr ? sampleAt(tr.t, tr.trunkDeg, t) : 0
   const over = trunk > session.thresholdDeg
   const wrist = tr ? sampleAt(tr.t, tr.wristDps, t) : 0
-  const phase = tr ? (t >= end ? 'Back on HOME' : phaseName(tr.state[indexAt(tr.t, t)])) : ''
+  const phase = tr ? (t >= end ? 'Back on HOME' : phaseName(tr.state[indexAt(tr.t, t)], ex.figure === 'mouth' ? 'mouth' : 'reach')) : ''
+
+  // play, restart, speed and scrub: one clock for the figure and the traces
+  const controls = (
+    <div className={cn('flex flex-wrap items-center gap-3 px-4 py-3', ex.figure && 'border-t border-wall')}>
+      <Button primary onClick={clock.toggle}>
+        {clock.playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
+        {clock.playing ? 'Pause' : 'Play'}
+      </Button>
+      <Button label="Replay from the start" onClick={() => { clock.setT(start); clock.setPlaying(!reduceMotion) }} className="w-10 px-0">
+        <RotateCcw className="size-4" aria-hidden />
+      </Button>
+      <Segmented label="Speed" value={clock.speed} onChange={clock.setSpeed} options={[{ value: '0.5', label: '½×' }, { value: '1', label: '1×' }]} />
+      <input type="range" aria-label="Scrub through the rep" min={start} max={end} step={0.01} value={t}
+        onChange={(e) => { clock.setPlaying(false); clock.setT(Number(e.target.value)) }}
+        className={cn('h-10 min-w-32 flex-1 cursor-pointer accent-forest', FOCUS)} />
+      <span className="w-16 text-right font-readout text-sm text-forest-2 tabular-nums">{t >= 0 ? '+' : '−'}{Math.abs(t).toFixed(2)} s</span>
+    </div>
+  )
+  const traces = tr && (
+    <>
+      <Panel label="Trunk lean over the rep" className="p-5">
+        <PanelTitle as="h3" title="Trunk lean" />
+        <div className="mt-3"><Trace rep={rep} field="trunkDeg" unit="°" t={t} threshold={session.thresholdDeg} marks={marks} label={`Trunk lean over time for rep ${rep.rep}, peak ${rep.peakDeg.toFixed(1)} degrees`} /></div>
+      </Panel>
+      <Panel label="Wrist rotation speed over the rep" className="p-5">
+        <PanelTitle as="h3" title="Wrist rotation speed" />
+        <div className="mt-3"><Trace rep={rep} field="wristDps" unit="°/s" t={t} marks={marks} label={`Wrist rotation speed over time for rep ${rep.rep}`} /></div>
+      </Panel>
+    </>
+  )
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-3">
+      {/*
+        One header, each fact once: the rep (its title is the rep picker, with
+        previous/next beside it) and its result right next to it; the target under
+        it; which session, on the right.
+      */}
+      <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h2 className="sr-only">Rep {rep.rep} of {reps.length}</h2>
+            <div className="flex items-center gap-1">
+              <Button label="Previous rep" onClick={() => onPick(session.id, reps[idx - 1].rep)} disabled={idx <= 0} className="w-10 px-0">
+                <ChevronLeft className="size-5" aria-hidden />
+              </Button>
+              <Select label={`Rep ${rep.rep} of ${reps.length}. Choose a rep`} value={String(rep.rep)} onChange={(v) => onPick(session.id, Number(v))}
+                display={<>Rep {rep.rep} <span className="text-forest-2">of {reps.length}</span></>}
+                options={reps.map((r) => ({
+                  value: String(r.rep),
+                  label: <>
+                    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden className="shrink-0"><Mark cx={7} cy={7} r={4.4} compensated={r.compensated} /></svg>
+                    <span className="flex-1">Rep {r.rep}<span className="sr-only">, {r.compensated ? 'compensated' : 'clean'}</span></span>
+                    <span className="font-readout text-sm text-forest-2 tabular-nums">{r.peakDeg.toFixed(1)}°</span>
+                  </>,
+                }))}
+                triggerClassName="h-11 border-transparent bg-transparent px-2 font-display text-[1.6rem] font-medium hover:border-wall hover:bg-panel" />
+              <Button label="Next rep" onClick={() => onPick(session.id, reps[idx + 1].rep)} disabled={idx >= reps.length - 1} className="w-10 px-0">
+                <ChevronRight className="size-5" aria-hidden />
+              </Button>
+            </div>
+            <ResultTag compensated={rep.compensated} pill className="text-[15px]" />
+          </div>
+          <p className="mt-1.5 text-[17px] text-pretty text-forest-2">
+            {ex.targets ? <>{TARGET_NAME[rep.target]} target · {TARGET_REACH[rep.target]} of comfortable reach</> : ex.name}
+          </p>
+        </div>
         <Select label="Session" value={session.id} onChange={(id) => onPick(id, -1)}
           options={[...sessions].reverse().map((s) => ({ value: s.id, label: s.label }))} className="w-52" />
-        <div className="flex items-center gap-1.5">
-          <Button label="Previous rep" onClick={() => onPick(session.id, reps[idx - 1].rep)} disabled={idx <= 0} className="w-10 px-0">
-            <ChevronLeft className="size-5" aria-hidden />
-          </Button>
-          <Select label="Rep" value={String(rep.rep)} onChange={(v) => onPick(session.id, Number(v))}
-            options={reps.map((r) => ({ value: String(r.rep), label: `Rep ${r.rep} · ${TARGET_NAME[r.target]} · ${r.peakDeg.toFixed(1)}°` }))}
-            className="w-60" />
-          <Button label="Next rep" onClick={() => onPick(session.id, reps[idx + 1].rep)} disabled={idx >= reps.length - 1} className="w-10 px-0">
-            <ChevronRight className="size-5" aria-hidden />
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
-        <div className="min-w-0">
-          <h2 className="font-display text-[1.6rem] leading-[1.15] font-medium tracking-[-0.01em]">Rep {rep.rep} of {reps.length}</h2>
-          <p className="mt-1 text-[17px] text-forest-2">{session.label} · {TARGET_NAME[rep.target]} target, {TARGET_REACH[rep.target]} of comfortable reach</p>
-        </div>
-        <ResultTag compensated={rep.compensated} className="text-base" />
       </div>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-y border-wall py-5 sm:grid-cols-4">
         <Readout size="md" label="Peak lean" value={`${rep.peakDeg.toFixed(1)}°`} note={`limit ${session.thresholdDeg}°`} tone={rep.compensated ? 'comp' : undefined} />
-        <Readout size="md" label="Reaction" value={`${rep.reactMs} ms`} note="target lit → leaves HOME" />
-        <Readout size="md" label="Reach" value={`${(rep.reachMs / 1000).toFixed(2)} s`} note="leaves HOME → press" />
-        <Readout size="md" label="Wrist bursts" value={String(rep.bursts)} note="fewer = smoother" />
+        <Readout size="md" label="Reaction" value={`${rep.reactMs} ms`} note={ex.targets ? 'target lit → leaves HOME' : 'cue → starts moving'} />
+        <Readout size="md" label={ex.targets ? 'Reach' : ex.time} value={`${(rep.reachMs / 1000).toFixed(2)} s`} note={`${marks[0]} → ${ex.targets ? 'press' : marks[1]}`} />
+        <Readout size="md" label="Wrist bursts" value={String(rep.bursts)} />
       </dl>
 
-      {tr ? (
+      {tr && !ex.figure ? (
+        <div className="flex flex-col gap-4">
+          <Panel label="Playback" className="overflow-hidden">{controls}</Panel>
+          <div className="grid gap-4 xl:grid-cols-2">{traces}</div>
+        </div>
+      ) : tr ? (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           <Panel label="Replay" className="flex flex-col overflow-hidden">
             <div className="relative aspect-[4/3] cursor-grab bg-forest-deep active:cursor-grabbing xl:aspect-auto xl:min-h-[340px] xl:flex-1">
-              <HoloReplay trace={tr} t={t} target={rep.target} threshold={session.thresholdDeg} peakDeg={rep.peakDeg} />
+              <HoloReplay trace={tr} t={t} target={rep.target} threshold={session.thresholdDeg} peakDeg={rep.peakDeg} motion={ex.figure ?? 'reach'} />
               <div className="pointer-events-none absolute top-4 left-5 flex gap-6" aria-live="off">
                 <div>
                   <p className="text-sm font-bold text-plaster/75">Trunk lean</p>
@@ -170,38 +223,10 @@ export function RepDetail({ sessions, sessionId, repN, onPick }: {
                 </div>
               </div>
               <p className="pointer-events-none absolute top-4 right-5 rounded-md bg-plaster/10 px-2.5 py-1 text-sm font-semibold text-plaster">{phase}</p>
-              <p className="pointer-events-none absolute bottom-3 left-5 text-[13px] text-plaster/60">Drag to turn the view</p>
             </div>
-            <div className="flex flex-wrap items-center gap-3 border-t border-wall px-4 py-3">
-              <Button primary onClick={clock.toggle}>
-                {clock.playing ? <Pause className="size-4" aria-hidden /> : <Play className="size-4" aria-hidden />}
-                {clock.playing ? 'Pause' : 'Play'}
-              </Button>
-              <Button label="Replay from the start" onClick={() => { clock.setT(start); clock.setPlaying(!reduceMotion) }} className="w-10 px-0">
-                <RotateCcw className="size-4" aria-hidden />
-              </Button>
-              <Segmented label="Speed" value={clock.speed} onChange={clock.setSpeed} options={[{ value: '0.5', label: '½×' }, { value: '1', label: '1×' }]} />
-              <input type="range" aria-label="Scrub through the reach" min={start} max={end} step={0.01} value={t}
-                onChange={(e) => { clock.setPlaying(false); clock.setT(Number(e.target.value)) }}
-                className={cn('h-10 min-w-32 flex-1 cursor-pointer accent-forest', FOCUS)} />
-              <span className="w-16 text-right font-readout text-sm text-forest-2 tabular-nums">{t >= 0 ? '+' : '−'}{Math.abs(t).toFixed(2)} s</span>
-            </div>
-            <p className="border-t border-wall px-5 py-3 text-sm text-pretty text-forest-2">
-              Measured: the trunk tilt, sample by sample, and how fast the wrist turned, shown as the hand's tremble. Drawn: the hand's path,
-              timed by the button presses, and the direction of the tremble; the sensors give angles and speeds, not positions. The faint figure is the
-              rep's peak lean.
-            </p>
+            {controls}
           </Panel>
-          <div className="flex min-w-0 flex-col gap-4">
-            <Panel label="Trunk lean over the reach" className="p-5">
-              <PanelTitle as="h3" title="Trunk lean" caption="Shaded: from leaving HOME to pressing the target. Dashed: the limit." />
-              <div className="mt-3"><Trace rep={rep} field="trunkDeg" unit="°" t={t} threshold={session.thresholdDeg} label={`Trunk lean over time for rep ${rep.rep}, peak ${rep.peakDeg.toFixed(1)} degrees`} /></div>
-            </Panel>
-            <Panel label="Wrist rotation speed over the reach" className="p-5">
-              <PanelTitle as="h3" title="Wrist rotation speed" caption={`${rep.bursts} separate ${rep.bursts === 1 ? 'burst' : 'bursts'} of movement. Fewer means a smoother reach.`} />
-              <div className="mt-3"><Trace rep={rep} field="wristDps" unit="°/s" t={t} label={`Wrist rotation speed over time for rep ${rep.rep}`} /></div>
-            </Panel>
-          </div>
+          <div className="flex min-w-0 flex-col gap-4">{traces}</div>
         </div>
       ) : (
         <Panel className="px-6 py-10 text-center">

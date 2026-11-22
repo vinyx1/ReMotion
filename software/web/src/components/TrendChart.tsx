@@ -49,6 +49,7 @@ export function TrendChart({ sessions, measure, baseId, otherId, tags = ['Baseli
             {measure === 'lean' && <ReferenceLine y={threshold} stroke="var(--color-forest)" strokeDasharray="6 5" strokeWidth={1.5} />}
             <Tooltip
               cursor={{ stroke: 'var(--color-wall)' }}
+              isAnimationActive={false}
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null
                 const p = payload[0].payload as (typeof data)[number]

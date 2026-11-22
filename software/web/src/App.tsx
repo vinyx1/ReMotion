@@ -8,15 +8,16 @@
 */
 import { useEffect, useState } from 'react'
 import { PatientHeader } from './components/PatientHeader'
-import { Overview } from './components/Overview'
+import { AllExercises, Overview } from './components/Overview'
 import { PatientsHeader, PatientsPage, ProfilePage } from './components/Pages'
 import { RepDetail } from './components/RepDetail'
 import { SessionDetail, SessionPlates, SessionTable } from './components/Sessions'
 import { type Crumb, Shell } from './components/Shell'
+import { EXERCISES, exerciseOf } from './lib/exercises'
 import { patientsFrom, sessionsOf } from './lib/patients'
 import { go, type Route, useRoute } from './lib/route'
 import { trendOf } from './lib/stats'
-import type { SessionsFile } from './types'
+import type { ExerciseId, SessionsFile } from './types'
 
 type Load = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: SessionsFile }
 
@@ -67,15 +68,15 @@ export default function App() {
   }
 
   const patient = patients.find((p) => route.name !== 'patients' && p.id === route.pid) ?? patients[0]
-  const sessions = sessionsOf(patient, all)
   const pid = patient.id
+  const sessionsFor = (p: typeof patient) => sessionsOf(p, all)
   const crumbs: Crumb[] = [{ label: 'Patients', to: { name: 'patients' } }]
 
   if (route.name === 'patients') {
     return (
-      <Shell route={route} patients={patients} patient={patient} crumbs={crumbs} sessionsFor={(p) => sessionsOf(p, all)}
+      <Shell route={route} patients={patients} patient={patient} crumbs={crumbs} sessionsFor={sessionsFor}
         header={<PatientsHeader count={patients.length} />}>
-        <PatientsPage patients={patients} sessionsFor={(p) => sessionsOf(p, all)} />
+        <PatientsPage patients={patients} sessionsFor={sessionsFor} />
       </Shell>
     )
   }
@@ -83,11 +84,12 @@ export default function App() {
   crumbs.push({ label: patient.name, to: { name: 'overview', pid } })
   const openSession = (sid: string) => go({ name: 'session', pid, sid })
   const openRep = (sid: string, rep: number) => go({ name: 'rep', pid, sid, rep })
+  const everything = sessionsOf(patient, all)
 
-  if (!sessions.length) {
+  if (!everything.length) {
     return (
-      <Shell route={route} patients={patients} patient={patient} crumbs={crumbs} sessionsFor={(p) => sessionsOf(p, all)}
-        header={<PatientHeader patient={patient} sessions={sessions} section="overview" />}>
+      <Shell route={route} patients={patients} patient={patient} crumbs={crumbs} sessionsFor={sessionsFor}
+        header={<PatientHeader patient={patient} sessions={everything} section="overview" />}>
         <div className="py-16 text-center">
           <h2 className="font-display text-2xl font-medium">No sessions yet</h2>
           <p className="mt-2 text-[17px] text-forest-2">
@@ -99,39 +101,67 @@ export default function App() {
     )
   }
 
+  /*
+    The exercise in view: an exercise tab's own; on a page about one session (or one
+    of its reps) that session's; none on the overview, the sessions list and the
+    profile, which cover every exercise.
+  */
+  const latest = everything[everything.length - 1]
+  const routeSid = route.name === 'session' || route.name === 'rep' ? route.sid : null
+  const routeSession = routeSid ? everything.find((s) => s.id === routeSid) ?? latest : undefined
+  const exercise: ExerciseId | undefined =
+    route.name === 'exercise' ? (patient.exercises.includes(route.exercise) ? route.exercise : patient.exercises[0])
+      : routeSession ? exerciseOf(routeSession)
+        : route.name === 'replay' ? exerciseOf(latest)
+          : undefined
+  const sessions = exercise ? everything.filter((s) => exerciseOf(s) === exercise) : everything
   const last = sessions[sessions.length - 1]
+  const exerciseCrumb: Crumb | null = exercise ? { label: EXERCISES[exercise].short, to: { name: 'exercise', pid, exercise } } : null
+  // inside an exercise the header shows that exercise's own tabs (Overview, Sessions, Rep replay)
   let section = 'overview'
   let body: React.ReactNode
 
   switch (route.name) {
     case 'overview':
-      body = <Overview sessions={sessions} pid={pid} onOpenSession={openSession} onOpenRep={openRep} />
+      body = <AllExercises patient={patient} sessions={everything} />
       break
+    case 'exercise': {
+      const view = route.view ?? 'overview'
+      section = view
+      if (view === 'overview') {
+        crumbs.push({ label: EXERCISES[exercise!].short })
+        body = <Overview sessions={sessions} pid={pid} onOpenSession={openSession} onOpenRep={openRep} />
+      } else if (view === 'sessions') {
+        crumbs.push(exerciseCrumb!, { label: 'Sessions' })
+        body = <SessionTable sessions={sessions} onPick={openSession} />
+      } else {
+        crumbs.push(exerciseCrumb!, { label: last.label, to: { name: 'session', pid, sid: last.id } }, { label: 'Rep replay' })
+        body = (
+          <RepDetail sessions={sessions} sessionId={last.id} repN={null}
+            onPick={(id, n) => go({ name: 'rep', pid, sid: id, rep: n < 0 ? null : n } as Route)} />
+        )
+      }
+      break
+    }
     case 'sessions':
       section = 'sessions'
       crumbs.push({ label: 'Sessions' })
-      body = (
-        <div className="flex flex-col gap-4">
-          <p className="text-[17px] text-forest-2">{sessions.length} sessions, newest first. Select one to open it.</p>
-          <SessionTable sessions={sessions} onPick={openSession} />
-        </div>
-      )
+      body = <SessionTable sessions={everything} onPick={openSession} />
       break
     case 'session': {
       section = 'sessions'
-      const i = Math.max(0, sessions.findIndex((s) => s.id === route.sid))
+      const i = Math.max(0, sessions.findIndex((s) => s.id === routeSession!.id))
       const s = sessions[i]
-      crumbs.push({ label: 'Sessions', to: { name: 'sessions', pid } }, { label: s.label })
+      crumbs.push(exerciseCrumb!, { label: 'Sessions', to: { name: 'exercise', pid, exercise: exercise!, view: 'sessions' } }, { label: s.label })
       body = <SessionDetail session={s} prev={sessions[i - 1]} next={sessions[i + 1]} onGo={openSession} onOpenRep={(n) => openRep(s.id, n)} />
       break
     }
     case 'rep':
     case 'replay': {
       section = 'replay'
-      const sid = route.name === 'rep' ? route.sid : last.id
-      const s = sessions.find((x) => x.id === sid) ?? last
+      const s = routeSession ?? last
       const repN = route.name === 'rep' ? route.rep : null
-      crumbs.push({ label: 'Sessions', to: { name: 'sessions', pid } }, { label: s.label, to: { name: 'session', pid, sid: s.id } }, { label: 'Rep replay' })
+      crumbs.push(exerciseCrumb!, { label: s.label, to: { name: 'session', pid, sid: s.id } }, { label: 'Rep replay' })
       body = (
         <RepDetail sessions={sessions} sessionId={s.id} repN={repN}
           onPick={(id, n) => go({ name: 'rep', pid, sid: id, rep: n < 0 ? null : n } as Route)} />
@@ -141,21 +171,18 @@ export default function App() {
     case 'profile':
       section = 'profile'
       crumbs.push({ label: 'Profile & settings' })
-      body = <ProfilePage patient={patient} sessions={sessions} />
+      body = <ProfilePage patient={patient} sessions={everything} />
       break
   }
 
   // what hangs on the wall besides the patient: one session's numbers, on a session's page
-  const shown = route.name === 'session' ? sessions.find((x) => x.id === route.sid) ?? sessions[0] : null
-  const plates = shown ? <SessionPlates session={shown} /> : undefined
+  const plates = route.name === 'session' && routeSession ? <SessionPlates session={routeSession} /> : undefined
+  const trend = exercise ? trendOf(sessions) : null
 
   return (
-    <Shell route={route} patients={patients} patient={patient} crumbs={crumbs} sessionsFor={(p) => sessionsOf(p, all)}
-      mood={trendOf(sessions) === 'worsening' ? 'warm' : trendOf(sessions) === 'improving' ? 'cool' : undefined}
-      header={
-        <PatientHeader patient={patient} sessions={sessions} section={section}
-          plates={plates} />
-      }>
+    <Shell route={route} patients={patients} patient={patient} crumbs={crumbs} sessionsFor={sessionsFor}
+      mood={trend === 'worsening' ? 'warm' : trend === 'improving' ? 'cool' : undefined}
+      header={<PatientHeader patient={patient} sessions={sessions} section={section} plates={plates} exercise={exercise} />}>
       {body}
     </Shell>
   )

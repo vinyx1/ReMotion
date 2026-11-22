@@ -30,6 +30,12 @@ export interface BodyInput {
   lean: number
   /** where the reaching wrist should be, scene metres */
   wrist: V3
+  /**
+    0..1: how far the hand has travelled from `wrist` to the figure's own mouth (the
+    hand-to-mouth exercise). The mouth is found on the posed head every frame, so the
+    hand still meets it when the trunk leans. Leave unset for a reach.
+  */
+  mouth?: number
   /** 0..1: how strongly the torso shows the alarm (the lean is flagged) */
   alarm: number
   /** 0..1, hologram looks only: how visible the figure is (default 1). The replay fades its ghost out with it. */
@@ -295,7 +301,24 @@ export function SkinnedHumanoid({ body, look = 'clay' }: { body: React.MutableRe
       aim(bones[n.hand], handDir, thumb)
       return { elbow, wrist }
     }
-    const right = arm('R', V(...body.current.wrist).add(V(0, -0.018, 0)), V(-0.2, -1, 0.7), V(0.25, 0.2, -1), V(1, -0.22, 0))
+    const start = V(...body.current.wrist).add(V(0, -0.018, 0))
+    const m = Math.max(0, Math.min(1, body.current.mouth ?? 0))
+    let right
+    if (m > 0) {
+      // hand to mouth: the fingers end just in front of the lips, pointing up; the wrist sits a hand's length below them
+      const headPos = wp(bones[rig.head].bone)
+      const face = frontOf(a * 0.75)
+      const lips = headPos.clone().addScaledVector(face, 0.085).add(V(0, -0.045, 0.02))
+      const handUp = V(-0.25, 1, -0.3).normalize()
+      const atMouth = lips.clone().addScaledVector(handUp, -0.085)
+      const wristAt = start.clone().lerp(atMouth, m)
+      const handDir = V(1, -0.22, 0).lerp(handUp, m).normalize()
+      // the elbow drops and comes forward as the hand rises
+      const hint = V(-0.2, -1, 0.7).lerp(V(0.35, -1, 0.55), m)
+      right = arm('R', wristAt, hint, V(0.25, 0.2, -1), handDir)
+    } else {
+      right = arm('R', start, V(-0.2, -1, 0.7), V(0.25, 0.2, -1), V(1, -0.22, 0))
+    }
     arm('L', LAP_WRIST, V(-0.2, -1, -0.8), V(0.2, 0.2, 1), V(0.85, -0.3, 0.25))
 
     // alarm colour on the trunk

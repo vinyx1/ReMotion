@@ -7,21 +7,24 @@
   committed example session in data/sample (one full four-block session). Older exports have no
   patient field; those sessions count as "sim-a" when simulated, else "recorded".
 */
-import type { Session } from '../types'
+import { exercisesIn } from './exercises'
+import type { ExerciseId, Session } from '../types'
 
 export interface Patient {
   id: string
   name: string
   initials: string
-  exercise: string
+  /** the exercises they have sessions of, in the standard order */
+  exercises: ExerciseId[]
   simulated: boolean
 }
 
 const KNOWN: Record<string, { name: string; initials: string }> = {
-  'sim-a': { name: 'Simulated patient A', initials: 'A' },
-  'sim-b': { name: 'Simulated patient B', initials: 'B' },
-  'sim-c': { name: 'Simulated patient C', initials: 'C' },
-  sample: { name: 'Example session', initials: 'E' },
+  // Made-up names for the simulated patients (the pages still say the data is simulated)
+  'sim-a': { name: 'Margaret Chen', initials: 'MC' },   // improves
+  'sim-b': { name: 'Robert Okafor', initials: 'RO' },   // holds steady
+  'sim-c': { name: 'Elena Rossi', initials: 'ER' },     // leans more
+  sample: { name: 'Daniel Park', initials: 'DP' },      // one full four-block session (data/sample)
   recorded: { name: 'Recorded sessions', initials: 'R' },
 }
 
@@ -42,7 +45,7 @@ export function patientsFrom(sessions: Session[]): Patient[] {
     return {
       id,
       ...known,
-      exercise: 'Seated forward reach',
+      exercises: own.length ? exercisesIn(own) : ['forward-reach'],
       simulated: own.length ? own.every((s) => s.simulated) : true,
     }
   })

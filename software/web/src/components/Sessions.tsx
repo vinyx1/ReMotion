@@ -8,6 +8,7 @@ import {
 } from 'recharts'
 import { cleanLean, TARGET_NAME, TARGET_REACH, TARGETS } from '../lib/stats'
 import { cn } from '../lib/utils'
+import { EXERCISES, exerciseOf } from '../lib/exercises'
 import type { Rep, Session } from '../types'
 import { Button, ChartBox, FOCUS, Legend, Mark, Panel, PanelTitle, ResultTag, FigureStrip } from './ui'
 
@@ -15,33 +16,62 @@ const AXIS = { fill: 'var(--color-forest-2)', fontSize: 13, fontFamily: 'var(--f
 const TH = 'px-3 py-2.5 text-left text-sm font-bold text-forest-2 whitespace-nowrap'
 const TD = 'px-3 py-2.5 font-readout tabular-nums whitespace-nowrap'
 
-function RepTip({ active, payload }: { active?: boolean; payload?: { payload: Rep }[] }) {
+function RepTip({ active, payload, targets = true }: { active?: boolean; payload?: { payload: Rep }[]; targets?: boolean }) {
   if (!active || !payload?.length) return null
   const r = payload[0].payload
   return (
     <div className="rounded-lg border border-wall bg-panel px-3 py-2 text-sm text-forest shadow-[0_2px_4px_rgb(31_45_39/0.08),0_10px_24px_-14px_rgb(31_45_39/0.5)]">
-      <p className="font-bold">Rep {r.rep} · {TARGET_NAME[r.target]} target</p>
-      <p className="font-readout tabular-nums">{r.peakDeg.toFixed(1)}° peak · {(r.reachMs / 1000).toFixed(2)} s reach</p>
+      <p className="font-bold">Rep {r.rep}{targets && <> · {TARGET_NAME[r.target]} target</>}</p>
+      <p className="font-readout tabular-nums">{r.peakDeg.toFixed(1)}° peak · {(r.reachMs / 1000).toFixed(2)} s</p>
       <ResultTag compensated={r.compensated} className="mt-1" />
     </div>
   )
 }
 
+/*
+  The session at a glance: each rep in order, clean circle or compensated diamond.
+  The marks are laid out as wrapping inline items, so a long session (a full
+  four-block session is 63 reps) drops onto the next line inside its fixed-width
+  column instead of stretching the table.
+*/
+function RepStripMini({ session }: { session: Session }) {
+  return (
+    <span role="img" aria-label={`${session.summary.compensated} of ${session.summary.reps} reps compensated`}
+      className="flex flex-wrap gap-y-1">
+      {session.reps.map((rep) => (
+        <svg key={rep.rep} width={13} height={14} aria-hidden className="block">
+          <Mark cx={6.5} cy={7} r={4} compensated={rep.compensated} />
+        </svg>
+      ))}
+    </span>
+  )
+}
+
 export function SessionTable({ sessions, onPick }: { sessions: Session[]; onPick: (id: string) => void }) {
+  // every exercise is listed here; the time column takes the exercise's own word when there is only one
+  const kinds = new Set(sessions.map(exerciseOf))
+  const timeHead = kinds.size === 1 ? EXERCISES[[...kinds][0]].time : 'Time'
+  const mixed = kinds.size > 1   // the Exercise column, only when the list has more than one
   return (
     <Panel label="All sessions" className="overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[15px]">
+        <table className={cn('w-full table-fixed border-collapse text-[15px]', mixed ? 'min-w-[66rem]' : 'min-w-[56rem]')}>
           <caption className="sr-only">All sessions, newest first. Select a session to open it.</caption>
+          {/* fixed widths, so every row and every patient's table lines up the same */}
+          <colgroup>
+            <col className="w-[10.5rem]" />{mixed && <col className="w-[10rem]" />}<col className="w-[4.5rem]" /><col />
+            <col className="w-[11rem]" /><col className="w-[8.5rem]" /><col className="w-[8rem]" /><col className="w-[7.5rem]" />
+          </colgroup>
           <thead className="border-b border-wall">
             <tr>
               <th scope="col" className={cn(TH, 'pl-5')}>Session</th>
+              {mixed && <th scope="col" className={TH}>Exercise</th>}
               <th scope="col" className={cn(TH, 'text-right')}>Reps</th>
               <th scope="col" className={TH}>Each rep</th>
               <th scope="col" className={TH}>Compensated</th>
               <th scope="col" className={cn(TH, 'text-right')}>Clean-rep lean</th>
               <th scope="col" className={cn(TH, 'text-right')}>Highest lean</th>
-              <th scope="col" className={cn(TH, 'pr-5 text-right')}>Reach time</th>
+              <th scope="col" className={cn(TH, 'pr-5 text-right')}>{timeHead}</th>
             </tr>
           </thead>
           <tbody>
@@ -51,16 +81,14 @@ export function SessionTable({ sessions, onPick }: { sessions: Session[]; onPick
                 <tr key={s.id} className="border-b border-wall/70 last:border-0 hover:bg-wash/60">
                   <td className="py-0 pl-2">
                     <button type="button" onClick={() => onPick(s.id)}
-                      className={cn('flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 text-left font-bold underline decoration-wall underline-offset-4 hover:decoration-forest', FOCUS)}>
+                      className={cn('flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2.5 text-left font-bold whitespace-nowrap underline decoration-wall underline-offset-4 hover:decoration-forest', FOCUS)}>
                       {s.label}
                     </button>
                   </td>
+                  {mixed && <td className="truncate px-3 py-2.5">{EXERCISES[exerciseOf(s)].short}</td>}
                   <td className={cn(TD, 'text-right')}>{s.summary.reps}</td>
-                  <td className="px-3 py-2.5">
-                    {/* the session at a glance: each rep in order, clean circle or compensated diamond */}
-                    <svg width={s.reps.length * 13} height={14} aria-label={`${s.summary.compensated} of ${s.summary.reps} reps compensated`} role="img" className="block">
-                      {s.reps.map((r, i) => <Mark key={r.rep} cx={6.5 + i * 13} cy={7} r={4} compensated={r.compensated} />)}
-                    </svg>
+                  <td className="px-3 py-2.5 align-middle">
+                    <RepStripMini session={s} />
                   </td>
                   <td className={TD}>
                     <span className="inline-flex items-center gap-3">
@@ -94,7 +122,7 @@ function PerTarget({ session }: { session: Session }) {
   })
   return (
     <Panel label="Peak lean per target" className="p-5">
-      <PanelTitle as="h3" title="Peak lean per target" caption="Targets sit further away from left to right." />
+      <PanelTitle as="h3" title="Peak lean per target" />
       <ChartBox height={288} className="mt-3">
         {(w, h) => (
           <ScatterChart width={w} height={h} margin={{ top: 10, right: 12, bottom: 4, left: 0 }}>
@@ -106,7 +134,7 @@ function PerTarget({ session }: { session: Session }) {
               tick={AXIS} axisLine={false} tickLine={false} width={44}
               tickFormatter={(v: number) => `${v}°`} />
             <ReferenceLine y={session.thresholdDeg} stroke="var(--color-forest)" strokeDasharray="6 5" strokeWidth={1.5} />
-            <Tooltip content={<RepTip />} cursor={false} />
+            <Tooltip content={<RepTip />} cursor={false} isAnimationActive={false} />
             <Scatter data={placed} isAnimationActive={false}
               shape={(p: { cx?: number; cy?: number; payload?: Rep }) =>
                 p.cx === undefined || p.cy === undefined ? <g /> : <Mark cx={p.cx} cy={p.cy} compensated={!!p.payload?.compensated} />} />
@@ -119,9 +147,10 @@ function PerTarget({ session }: { session: Session }) {
 
 function ReachTime({ session }: { session: Session }) {
   const data = session.reps.map((r) => ({ ...r, reachS: r.reachMs / 1000 }))
+  const ex = EXERCISES[exerciseOf(session)]
   return (
-    <Panel label="Reach time across the session" className="p-5">
-      <PanelTitle as="h3" title="Reach time across the session" caption="Slower reaches late in a session can point to fatigue." />
+    <Panel label={`${ex.time} across the session`} className="p-5">
+      <PanelTitle as="h3" title={`${ex.time} across the session`} />
       <ChartBox height={288} className="mt-3">
         {(w, h) => (
           <LineChart width={w} height={h} data={data} margin={{ top: 10, right: 12, bottom: 4, left: 0 }}>
@@ -130,7 +159,7 @@ function ReachTime({ session }: { session: Session }) {
               tickFormatter={(v: number) => `#${v}`} />
             <YAxis domain={[0, Math.ceil(Math.max(...data.map((d) => d.reachS)) * 2) / 2]} allowDecimals tickCount={4}
               tick={AXIS} axisLine={false} tickLine={false} width={60} tickFormatter={(v: number) => `${v.toFixed(1)} s`} />
-            <Tooltip content={<RepTip />} cursor={{ stroke: 'var(--color-wall)' }} />
+            <Tooltip content={<RepTip targets={ex.targets} />} cursor={{ stroke: 'var(--color-wall)' }} isAnimationActive={false} />
             <Line type="linear" dataKey="reachS" stroke="var(--color-wall)" strokeWidth={2.5} isAnimationActive={false} activeDot={false}
               dot={(p: { cx?: number; cy?: number; payload?: Rep; index?: number }) =>
                 p.cx === undefined || p.cy === undefined ? <g key={p.index} /> : <Mark key={p.index} cx={p.cx} cy={p.cy} compensated={!!p.payload?.compensated} r={4.5} />} />
@@ -142,6 +171,7 @@ function ReachTime({ session }: { session: Session }) {
 }
 
 function RepTable({ session, onOpenRep }: { session: Session; onOpenRep: (rep: number) => void }) {
+  const ex = EXERCISES[exerciseOf(session)]
   return (
     <Panel label="Reps in this session" className="overflow-hidden">
       <div className="overflow-x-auto">
@@ -150,10 +180,10 @@ function RepTable({ session, onOpenRep }: { session: Session; onOpenRep: (rep: n
           <thead className="border-b border-wall">
             <tr>
               <th scope="col" className={cn(TH, 'pl-5')}>Rep</th>
-              <th scope="col" className={TH}>Target</th>
+              {ex.targets && <th scope="col" className={TH}>Target</th>}
               <th scope="col" className={cn(TH, 'text-right')}>Peak lean</th>
               <th scope="col" className={cn(TH, 'text-right')}>Reaction</th>
-              <th scope="col" className={cn(TH, 'text-right')}>Reach</th>
+              <th scope="col" className={cn(TH, 'text-right')}>{ex.targets ? 'Reach' : ex.time}</th>
               <th scope="col" className={cn(TH, 'text-right')}>Wrist bursts</th>
               <th scope="col" className={cn(TH, 'pr-5')}>Result</th>
             </tr>
@@ -167,7 +197,7 @@ function RepTable({ session, onOpenRep }: { session: Session; onOpenRep: (rep: n
                     Rep {r.rep}
                   </button>
                 </td>
-                <td className="px-3 py-2.5 whitespace-nowrap">{TARGET_NAME[r.target]} <span className="font-readout text-forest-2 tabular-nums">· {TARGET_REACH[r.target]}</span></td>
+                {ex.targets && <td className="px-3 py-2.5 whitespace-nowrap">{TARGET_NAME[r.target]} <span className="text-forest-2 tabular-nums">· {TARGET_REACH[r.target]}</span></td>}
                 <td className={cn(TD, 'text-right', r.compensated && 'text-terra-deep')}>{r.peakDeg.toFixed(1)}°</td>
                 <td className={cn(TD, 'text-right')}>{r.reactMs} ms</td>
                 <td className={cn(TD, 'text-right')}>{(r.reachMs / 1000).toFixed(2)} s</td>
@@ -194,7 +224,7 @@ export function SessionPlates({ session }: { session: Session }) {
       { label: 'Compensated', value: `${Math.round(s.pctCompensated)}%`, note: `${s.compensated} of ${s.reps} reps` },
       { label: 'Clean-rep lean', short: 'Clean lean', value: lean === null ? '—' : `${lean.toFixed(1)}°`, note: 'median peak' },
       { label: 'Highest lean', value: `${s.maxPeakDeg.toFixed(1)}°`, note: over ? 'past the limit' : 'within the limit', tone: over ? 'comp' : undefined },
-      { label: 'Reach time', value: `${s.medianReachS.toFixed(2)} s`, note: 'median' },
+      { label: EXERCISES[exerciseOf(session)].time, value: `${s.medianReachS.toFixed(2)} s`, note: 'median' },
     ]} />
   )
 }
@@ -220,10 +250,12 @@ export function SessionDetail({ session, prev, next, onGo, onOpenRep }: {
         </div>
         <Legend threshold={session.thresholdDeg} />
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <PerTarget session={session} />
-        <ReachTime session={session} />
-      </div>
+      {EXERCISES[exerciseOf(session)].targets ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <PerTarget session={session} />
+          <ReachTime session={session} />
+        </div>
+      ) : <ReachTime session={session} />}
       <RepTable session={session} onOpenRep={onOpenRep} />
     </div>
   )

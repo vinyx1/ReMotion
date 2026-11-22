@@ -3,12 +3,13 @@
   one holds that patient's sessions), a breadcrumb bar over the content, and on
   phones a compact top bar. A patient's own sub-views are tabs on the patient page.
 */
-import { ChevronRight, FileText, Folder, FolderOpen, Users } from 'lucide-react'
+import { ChevronRight, FileText, Users } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { href, type Route } from '../lib/route'
 import type { Patient } from '../lib/patients'
 import { cn } from '../lib/utils'
 import type { Session } from '../types'
+import { Avatar } from './Avatar'
 import { WallFacets } from './WallFacets'
 
 export interface Crumb { label: string; to?: Route }
@@ -56,9 +57,10 @@ function when(s: Session) {
 }
 
 /*
-  A patient's file, drawn as a paper folder on the forest sidebar: a tab with the
-  name, a couple of sheets peeking out behind it, and the sessions inside as files,
-  newest first. The open folder is the patient you are looking at.
+  A patient's file, drawn as a paper folder on the forest sidebar: a tab with their
+  picture and name, a couple of sheets peeking out of the folder below the tab (never
+  over it), and the sessions inside as files, newest first. The open folder is the
+  patient you are looking at.
 */
 function PatientFolder({ patient, sessions, route }: { patient: Patient; sessions: Session[]; route: Route }) {
   const files = [...sessions].reverse()
@@ -69,17 +71,17 @@ function PatientFolder({ patient, sessions, route }: { patient: Patient; session
     <div className="relative mt-2">
       {/* the back of the folder, with its tab */}
       <a href={href({ name: 'overview', pid: patient.id })} aria-current={onPatient && route.name === 'overview' ? 'page' : undefined}
-        className={cn('relative z-0 flex h-[34px] w-fit max-w-[88%] items-center gap-2 rounded-t-[10px] bg-folder px-3 text-forest', FOLDER_FOCUS)}>
-        <FolderOpen className="size-4 shrink-0" aria-hidden />
+        className={cn('relative z-10 flex h-[38px] w-fit max-w-[92%] items-center gap-2 rounded-t-[10px] bg-folder pr-3 pl-1.5 text-forest', FOLDER_FOCUS)}>
+        <Avatar patient={patient} size={26} />
         <span className="truncate text-[15px] font-bold">{patient.name}</span>
       </a>
-      <span aria-hidden className="absolute inset-x-0 top-[33px] bottom-0 rounded-tr-[10px] rounded-b-[10px] bg-folder" />
-      {/* the sheets inside, sticking up behind the front */}
-      <span aria-hidden className="absolute top-[24px] right-2 left-[58%] h-8 rotate-[2.5deg] rounded-t-[3px] bg-plaster shadow-[0_-1px_2px_rgb(31_45_39/0.25)]" />
-      <span aria-hidden className="absolute top-[38px] right-3 left-3 h-8 -rotate-[0.8deg] rounded-t-[3px] bg-panel shadow-[0_-1px_2px_rgb(31_45_39/0.25)]" />
+      <span aria-hidden className="absolute inset-x-0 top-[37px] bottom-0 rounded-tr-[10px] rounded-b-[10px] bg-folder" />
+      {/* the sheets inside: they rise out of the folder's mouth, under the tab line */}
+      <span aria-hidden className="absolute top-[40px] right-2 left-[52%] h-8 rotate-[2.5deg] rounded-t-[3px] bg-plaster shadow-[0_-1px_2px_rgb(31_45_39/0.25)]" />
+      <span aria-hidden className="absolute top-[46px] right-3 left-3 h-8 -rotate-[0.8deg] rounded-t-[3px] bg-panel shadow-[0_-1px_2px_rgb(31_45_39/0.25)]" />
       {/* the front of the folder, holding the session files */}
-      <div className="relative mt-[13px] rounded-[10px] bg-wash px-1.5 pt-2 pb-1.5 text-forest shadow-[0_-1px_0_rgb(255_255_255/0.5)_inset,0_10px_22px_-14px_rgb(0_0_0/0.6)]">
-        <p className="px-2 pt-0.5 pb-2 text-[13px] text-forest-2">{patient.exercise}</p>
+      <div className="relative mt-[16px] rounded-[10px] bg-wash px-1.5 pt-2 pb-1.5 text-forest shadow-[0_-1px_0_rgb(255_255_255/0.5)_inset,0_10px_22px_-14px_rgb(0_0_0/0.6)]">
+        <p className="px-2 pt-0.5 pb-2 text-[13px] text-forest-2">{sessionLine(sessions)}</p>
         {sessions.length === 0 ? (
           <p className="px-2 pb-1.5 text-[13px] text-forest-2">No sessions yet.</p>
         ) : (
@@ -122,25 +124,25 @@ function PatientFolder({ patient, sessions, route }: { patient: Patient; session
   )
 }
 
+/** "8 sessions · last Nov 18": what is in a patient's file, in one line. */
+function sessionLine(sessions: Session[]) {
+  const last = sessions[sessions.length - 1]
+  const count = `${sessions.length} ${sessions.length === 1 ? 'session' : 'sessions'}`
+  return last ? `${count} · last ${when(last).d}` : count
+}
+
 /*
-  Another patient's file, closed: a short tab on top and the folder face below it,
-  holding the name, the exercise and the last session's date. Solid colours (not
-  translucent layers) so the tab and the face read as one piece of card.
+  Another patient's file, closed: the folder face as one solid card (no tab stub),
+  with their picture, name, and what is in the file.
 */
 function ClosedFolder({ patient, sessions }: { patient: Patient; sessions: Session[] }) {
-  const last = sessions[sessions.length - 1]
   return (
-    <a href={href({ name: 'overview', pid: patient.id })} className={cn('group mt-3 block rounded-[10px]', NAV_FOCUS)}>
-      <span aria-hidden className="block h-2 w-16 rounded-t-[6px] bg-folder-shut transition-colors duration-150 group-hover:bg-folder-shut-hi" />
-      <span className="block rounded-[10px] rounded-tl-none bg-folder-shut px-3 pt-2.5 pb-2.5 text-plaster transition-colors duration-150 group-hover:bg-folder-shut-hi">
-        <span className="flex items-center gap-2">
-          <Folder className="size-4 shrink-0 text-plaster/80" aria-hidden />
-          <span className="truncate text-[15px] font-bold">{patient.name}</span>
-        </span>
-        <span className="mt-1 flex items-baseline justify-between gap-2 pl-6 text-[13px] text-plaster/75">
-          <span className="truncate">{patient.exercise}</span>
-          {last && <span className="shrink-0 font-readout tabular-nums">{when(last).d}</span>}
-        </span>
+    <a href={href({ name: 'overview', pid: patient.id })}
+      className={cn('mt-2 flex items-center gap-3 rounded-[10px] bg-folder-shut px-2.5 py-2 text-plaster transition-colors duration-150 hover:bg-folder-shut-hi', NAV_FOCUS)}>
+      <Avatar patient={patient} size={34} />
+      <span className="min-w-0">
+        <span className="block truncate text-[15px] font-bold">{patient.name}</span>
+        <span className="block truncate text-[13px] text-plaster/65 tabular-nums">{sessionLine(sessions)}</span>
       </span>
     </a>
   )
@@ -152,7 +154,7 @@ function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; pati
       <div className="px-5 pt-5 pb-6">
         <a href="/" className={cn('rounded-md font-display text-[1.45rem] font-semibold tracking-[-0.02em]', NAV_FOCUS)}>Re:Motion</a>
       </div>
-      <nav aria-label="Patients" className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4">
+      <nav aria-label="Patients" className="scroll-quiet flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4">
         <NavLink to={{ name: 'patients' }} active={route.name === 'patients'} icon={Users}>All patients</NavLink>
         <p className="mt-5 mb-1 px-3 text-[13px] font-bold text-plaster/60">Patient files · {patients.length}</p>
         {patients.map((p) => (
