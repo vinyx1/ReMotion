@@ -51,9 +51,10 @@ function DataChip({ simulated, className }: { simulated: boolean; className?: st
 }
 
 /** Split "Nov 18, 11:09" into its day and time. */
+/** "Nov 21, 23:15 (session 2)" -> { d: "Nov 21", t: "23:15 (2)" }: short enough for one line (the link's aria-label keeps the full label). */
 function when(s: Session) {
-  const [d, t] = s.label.split(', ')
-  return { d, t: t ?? '' }
+  const [d, t = ''] = s.label.split(', ')
+  return { d, t: t.replace(/ \(session (\d+)\)$/, ' ($1)') }
 }
 
 /*
@@ -97,8 +98,8 @@ function PatientFolder({ patient, sessions, route }: { patient: Patient; session
                     className={cn('flex items-center gap-2 rounded-md px-2 py-1.5 text-[14px] transition-colors duration-150',
                       active ? 'bg-panel font-bold shadow-[0_1px_2px_rgb(31_45_39/0.18)]' : 'hover:bg-panel/70', FOLDER_FOCUS)}>
                     <FileText className="size-3.5 shrink-0 text-forest-2" aria-hidden />
-                    <span className="font-readout tabular-nums">{w.d}</span>
-                    <span className="font-readout text-forest-2 tabular-nums">{w.t}</span>
+                    <span className="font-readout whitespace-nowrap tabular-nums">{w.d}</span>
+                    <span className="font-readout whitespace-nowrap text-forest-2 tabular-nums">{w.t}</span>
                     <span className="ml-auto inline-flex items-center gap-1 font-readout text-[13px] tabular-nums">
                       <svg className="size-2.5" viewBox="0 0 10 10" aria-hidden>
                         {n > 0

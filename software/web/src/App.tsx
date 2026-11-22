@@ -24,7 +24,7 @@ type Load = { status: 'loading' } | { status: 'error'; message: string } | { sta
 /*
   sessions.json, read again every 5 s while the page is visible, so a session the phone app
   is recording (server/phone.ts re-exports after each rep) shows up without a reload. The
-  page only re-renders when the file was written again ("generated" changed).
+  page only re-renders when the file changed.
 */
 const POLL_MS = 5000
 
@@ -32,12 +32,14 @@ function useSessions(): Load {
   const [state, setState] = useState<Load>({ status: 'loading' })
   useEffect(() => {
     let alive = true
-    let generated: string | undefined
+    let last: string | undefined      // the file as last read ("generated" alone only has whole seconds)
     const read = (first: boolean) =>
       fetch('/sessions.json', { cache: 'no-store' })
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-        .then((data: SessionsFile) => {
-          if (alive && data.generated !== generated) { generated = data.generated; setState({ status: 'ready', data }) }
+        .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
+        .then((text) => {
+          if (!alive || text === last) return
+          last = text
+          setState({ status: 'ready', data: JSON.parse(text) as SessionsFile })
         })
         .catch((e: Error) => { if (alive && first) setState({ status: 'error', message: e.message }) })
     void read(true)

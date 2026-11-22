@@ -187,10 +187,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val old = msg.message.removePrefix("unknown command: ") in setOf("G", "X", "?")
                     s.copy(oldFirmware = s.oldFirmware || old)
                 }
-                is Comment -> when (msg.text) {
-                    "sample stream off" -> s.copy(streaming = false)
-                    "sample stream on" -> s.copy(streaming = true)
-                    else -> s
+                is Comment -> when {
+                    msg.text == "sample stream off" -> s.copy(streaming = false)
+                    msg.text == "sample stream on" -> s.copy(streaming = true)
+                    // a new session: last session's numbers no longer apply
+                    msg.text.startsWith("calibrating") -> s.copy(reps = 0, leaned = 0, phase = "")
+                    // "# BASELINE block: 15 reps, ..." (and "# rest 30 s before the POST block")
+                    else -> BLOCK.find(msg.text)?.let { s.copy(phase = it.groupValues[1]) } ?: s
                 }
                 null -> s
             }
@@ -224,6 +227,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     companion object {
         const val ACTION_USB_PERMISSION = "ca.remotion.phone.USB_PERMISSION"
         const val MAX_LOG = 300
+        private val BLOCK = Regex("""\b(PRACTICE|BASELINE|TRAINING|POST) block\b""")
         private const val KEY_DASHBOARD = "dashboard"
         /** With the phone on a cable, `adb reverse tcp:5173 tcp:5173` makes this the Mac's dashboard. */
         const val DEFAULT_DASHBOARD = "http://localhost:5173"

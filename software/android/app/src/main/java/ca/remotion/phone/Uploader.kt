@@ -20,6 +20,10 @@ import java.util.Locale
 
   If the server can't be reached, the lines wait here (up to MAX_WAITING, oldest dropped
   first) and go out once it can, so a short Wi-Fi drop loses nothing.
+
+  Each session gets its own run (the server's file names, raw_<run>.txt and so on, and the
+  time the dashboard shows): a new run starts when the device starts calibrating, so the
+  dashboard labels every session with the time it began.
 */
 class Uploader(
     baseUrl: String,
@@ -30,11 +34,12 @@ class Uploader(
 ) {
     data class Status(val address: String, val sent: Int = 0, val waiting: Int = 0, val error: String? = null)
 
-    /** One recording run, named by when it started (the server's file names: raw_<run>.txt and so on). */
-    private val run = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
     private val address = baseUrl.trim().trimEnd('/')
     private val endpoint = URL("$address/api/phone/lines")
-    private val waiting = ArrayDeque<String>()
+    /** The run lines are added to now: named by when it started. */
+    private var run = stamp()
+    /** Lines waiting to be sent, each with the run it belongs to. */
+    private val waiting = ArrayDeque<Pair<String, String>>()
     private var status = Status(address)
 
     private val job = scope.launch(Dispatchers.IO) {
@@ -46,7 +51,11 @@ class Uploader(
 
     /** Queue one line (called for every line the device sends). */
     fun add(line: String) = synchronized(waiting) {
-        waiting.addLast(line)
+        if (line.startsWith("# calibrating")) {             // a session is starting: give it its own run
+            val next = stamp()
+            run = if (next > run) next else bump(run)          // never reuse a run's name
+        }
+        waiting.addLast(run to line)
         if (waiting.size > MAX_WAITING) waiting.removeFirst()
     }
 
@@ -57,12 +66,16 @@ class Uploader(
     }
 
     private fun flush() {
+        // one batch is lines of one run, in order
         val batch = synchronized(waiting) {
-            List(minOf(BATCH, waiting.size)) { waiting.removeFirst() }
+            val r = waiting.firstOrNull()?.first
+            val out = ArrayList<Pair<String, String>>()
+            while (out.size < BATCH && waiting.firstOrNull()?.first == r && r != null) out.add(waiting.removeFirst())
+            out
         }
         if (batch.isEmpty()) return report(status.copy(waiting = 0))
         try {
-            post(batch)
+            post(batch.first().first, batch.map { it.second })
             val left = synchronized(waiting) { waiting.size }
             report(status.copy(sent = status.sent + batch.size, waiting = left, error = null))
         } catch (e: Exception) {
@@ -75,7 +88,7 @@ class Uploader(
         }
     }
 
-    private fun post(lines: List<String>) {
+    private fun post(run: String, lines: List<String>) {
         val body = JSONObject()
             .put("patient", patient)
             .put("demo", demo)
@@ -105,6 +118,11 @@ class Uploader(
     }
 
     private companion object {
+        val FORMAT = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+        fun stamp(): String = synchronized(FORMAT) { FORMAT.format(Date()) }
+        /** The next second after a run's name (two sessions started within one second). */
+        fun bump(run: String): String = synchronized(FORMAT) { FORMAT.format(Date(FORMAT.parse(run)!!.time + 1000)) }
+
         const val BATCH = 5000                // 50 s of samples; one batch is normally ~100 lines
         const val MAX_WAITING = 200_000       // ~30 min of samples while the dashboard is unreachable
     }
