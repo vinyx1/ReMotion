@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The window is wall-coloured from the first frame, so opening the app never flashes white -->
+    <style name="Theme.ReMotion" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/wall</item>
+    </style>
+</resources>

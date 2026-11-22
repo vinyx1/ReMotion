@@ -49,7 +49,7 @@ private fun variable(res: Int, weight: Int, opsz: Float? = null) = Font(
     ),
 )
 
-val Literata = FontFamily(variable(R.font.literata, 500, opsz = 48f))
+val Literata = FontFamily(variable(R.font.literata, 500, opsz = 48f), variable(R.font.literata, 600, opsz = 48f))
 val Atkinson = FontFamily(variable(R.font.atkinson, 400), variable(R.font.atkinson, 700))
 val AtkinsonMono = FontFamily(variable(R.font.atkinson_mono, 400), variable(R.font.atkinson_mono, 600))
 
@@ -83,7 +83,8 @@ fun RemotionTheme(content: @Composable () -> Unit) {
                 bodyLarge = t.bodyLarge.copy(fontFamily = Atkinson),
                 bodyMedium = t.bodyMedium.copy(fontFamily = Atkinson),
                 bodySmall = t.bodySmall.copy(fontFamily = Atkinson),
-                labelLarge = t.labelLarge.copy(fontFamily = Atkinson, fontWeight = FontWeight.Bold, fontSize = 17.sp),
+                // buttons: room above and below the letters, so a label is never cut by the button's edge
+                labelLarge = t.labelLarge.copy(fontFamily = Atkinson, fontWeight = FontWeight.Bold, fontSize = 17.sp, lineHeight = 24.sp),
                 titleMedium = t.titleMedium.copy(fontFamily = Atkinson, fontWeight = FontWeight.Bold),
             )
         },
