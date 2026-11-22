@@ -48,13 +48,24 @@ export interface Pose {
   hand: V3
 }
 
+/**
+  How far along its movement the hand is at time t: 0 resting on HOME, rising to 1
+  as it arrives (the target press, or the hand at the mouth), back to 0 over the
+  return. Eased at both ends. The arrival time is the logged one; the path is drawn.
+*/
+export function progress(t: number, reachEndS: number): number {
+  if (t <= 0) return 0
+  if (t <= reachEndS) return smoothstep(t / reachEndS)
+  return 1 - smoothstep((t - reachEndS) / RETURN_S)
+}
+
+/** Where HOME is: the hand's resting place on the mat. */
+export const HOME: V3 = [HOME_X, TABLE.height + 0.02, SHOULDER_HALF_WIDTH]
+
 function handPosition(t: number, reachEndS: number, target: Target): V3 {
-  const home: V3 = [HOME_X, TABLE.height + 0.02, SHOULDER_HALF_WIDTH]
+  const home = HOME
   const goal: V3 = [TARGET_X[target], TABLE.height + 0.02, SHOULDER_HALF_WIDTH]
-  let f: number
-  if (t <= 0) f = 0
-  else if (t <= reachEndS) f = smoothstep(t / reachEndS)
-  else f = 1 - smoothstep((t - reachEndS) / RETURN_S)
+  const f = progress(t, reachEndS)
   const moving = t > 0 && t < reachEndS + RETURN_S
   const lift = moving ? HAND_LIFT * Math.sin(Math.PI * f) : 0
   return add(add(home, scale(sub(goal, home), f)), [0, lift, 0])

@@ -111,13 +111,34 @@ def test_simulated_patients_are_tagged_and_kept_apart(tmp_path, monkeypatch, cap
     monkeypatch.setattr(export, "FAKE_DIR", fake)
     sessions = export.export_groups(export.patient_folders())["sessions"]
 
-    by_patient = {p["id"]: [s for s in sessions if s["patient"] == p["id"]] for p in PATIENTS}
+    # the forward reach, each patient on their own (extra exercises are checked below)
+    by_patient = {p["id"]: [s for s in sessions if s["patient"] == p["id"] and s["exercise"] == "forward-reach"] for p in PATIENTS}
     assert {pid: len(ss) for pid, ss in by_patient.items()} == {p["id"]: p["sessions"] for p in PATIENTS}
     assert len({s["id"] for s in sessions}) == len(sessions)          # ids stay unique across patients
     assert all(s["id"][:8].isdigit() for s in sessions)               # and still start with the date
     a, c = by_patient["sim-a"], by_patient["sim-c"]
     assert a[0]["summary"]["pctCompensated"] > a[-1]["summary"]["pctCompensated"]   # sim-a improves
     assert c[0]["summary"]["pctCompensated"] < c[-1]["summary"]["pctCompensated"]   # sim-c gets worse
+
+
+def test_extra_exercises_come_from_their_subfolders(tmp_path, monkeypatch, capsys):
+    from software.dashboard import export
+    from software.dashboard.fake_history import EXTRA_EXERCISES, make_patients
+
+    fake = tmp_path / "fake"
+    make_patients(fake)
+    monkeypatch.setattr(export, "RAW_DIR", tmp_path / "no-real-data-here")
+    monkeypatch.setattr(export, "SAMPLE_DIR", tmp_path / "no-samples-here")
+    monkeypatch.setattr(export, "FAKE_DIR", fake)
+    sessions = export.export_groups(export.patient_folders())["sessions"]
+
+    assert {s["exercise"] for s in sessions} <= set(export.EXERCISES)
+    for pid, extras in EXTRA_EXERCISES.items():
+        for x in extras:
+            mine = [s for s in sessions if s["patient"] == pid and s["exercise"] == x["exercise"]]
+            assert len(mine) == x["sessions"]
+            assert all(s["id"].endswith(f"-{pid}-{x['exercise']}") for s in mine)   # ids stay unique
+    assert len({s["id"] for s in sessions}) == len(sessions)
 
 
 def test_phase_summary(session_folder):

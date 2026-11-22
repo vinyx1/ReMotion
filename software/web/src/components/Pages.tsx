@@ -3,18 +3,50 @@
 */
 import { Plus } from 'lucide-react'
 import { Popover } from 'radix-ui'
-import { day, pct, TARGET_NAME, TARGET_REACH, TARGETS } from '../lib/stats'
+import { day, pct, TARGET_NAME, TARGET_REACH, TARGETS, type Trend, trendOf } from '../lib/stats'
 import { href } from '../lib/route'
 import type { Patient } from '../lib/patients'
 import { cn } from '../lib/utils'
-import type { Session } from '../types'
-import { TrendPill } from './PatientHeader'
+import { EXERCISES, exerciseOf } from '../lib/exercises'
+import type { ExerciseId, Session } from '../types'
+import { ExerciseIcon } from './ExerciseIcon'
+import { Avatar } from './Avatar'
 import { FOCUS, Panel, PanelTitle } from './ui'
 
 const TH = 'px-3 py-2.5 text-left text-sm font-bold text-forest-2 whitespace-nowrap'
 const TD = 'px-3 py-3 font-readout tabular-nums whitespace-nowrap'
 
 /* ---------- all patients ---------- */
+
+/*
+  How one exercise is going, in words: its icon (in its colour), its name, then
+  Improving / Steady / Getting worse / New, and the compensated reps it is based on
+  (first session → latest). The word carries the meaning; its colour only echoes it.
+*/
+const PROGRESS: Record<Trend, { word: string; cls: string }> = {
+  improving: { word: 'Improving', cls: 'text-[color-mix(in_oklab,var(--color-lake),black_18%)]' },
+  steady: { word: 'Steady', cls: 'text-forest' },
+  worsening: { word: 'Getting worse', cls: 'text-terra-deep' },
+  'too-early': { word: 'New', cls: 'text-forest-2' },
+}
+
+function ExerciseProgress({ exercise, sessions }: { exercise: ExerciseId; sessions: Session[] }) {
+  const t = PROGRESS[trendOf(sessions)]
+  const first = sessions[0], last = sessions[sessions.length - 1]
+  return (
+    <li className="flex items-center gap-2 whitespace-nowrap">
+      <span style={{ color: EXERCISES[exercise].color }}><ExerciseIcon exercise={exercise} className="size-[18px]" /></span>
+      <span>{EXERCISES[exercise].short}</span>
+      <span className="text-forest-2">·</span>
+      <span className={cn('font-bold', t.cls)}>{t.word}</span>
+      {last && (
+        <span className="text-[14px] text-forest-2 tabular-nums">
+          {sessions.length > 1 ? `${Math.round(pct(first))}% → ${Math.round(pct(last))}%` : `${Math.round(pct(last))}%`}
+        </span>
+      )}
+    </li>
+  )
+}
 
 function AddPatient() {
   return (
@@ -43,7 +75,7 @@ export function PatientsHeader({ count }: { count: number }) {
     <div className="flex flex-wrap items-end justify-between gap-4 pt-6 pb-8 sm:pt-8 sm:pb-10">
       <div>
         <h1 className="font-display text-[1.75rem] leading-tight font-medium tracking-[-0.02em] sm:text-[2.5rem]">Patients</h1>
-        <p className="mt-1 text-[17px] text-forest">{count} {count === 1 ? 'patient file' : 'patient files'}, newest activity first.</p>
+        <p className="mt-1 text-[17px] text-forest">{count} {count === 1 ? 'patient file' : 'patient files'}</p>
       </div>
       <AddPatient />
     </div>
@@ -60,9 +92,7 @@ export function PatientsPage({ patients, sessionsFor }: { patients: Patient[]; s
             <thead className="border-b border-wall">
               <tr>
                 <th scope="col" className={cn(TH, 'pl-5')}>Patient</th>
-                <th scope="col" className={TH}>Exercise</th>
-                <th scope="col" className={TH}>Trend</th>
-                <th scope="col" className={cn(TH, 'text-right')}>Compensated, latest</th>
+                <th scope="col" className={TH}>Exercises</th>
                 <th scope="col" className={cn(TH, 'text-right')}>Sessions</th>
                 <th scope="col" className={cn(TH, 'pr-5')}>Last session</th>
               </tr>
@@ -75,12 +105,16 @@ export function PatientsPage({ patients, sessionsFor }: { patients: Patient[]; s
                   <tr key={p.id} className="border-b border-wall/70 last:border-0 hover:bg-wash/60">
                     <td className="py-2 pl-3">
                       <a href={href({ name: 'overview', pid: p.id })} className={cn('flex items-center gap-3 rounded-md px-2 py-1', FOCUS)}>
+                        <Avatar patient={p} size={32} />
                         <span className="font-bold underline decoration-wall underline-offset-4 hover:decoration-forest">{p.name}</span>
                       </a>
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap">{p.exercise}</td>
-                    <td className="px-3 py-3"><TrendPill sessions={ss} /></td>
-                    <td className={cn(TD, 'text-right')}>{last ? `${Math.round(pct(last))}%` : '—'}</td>
+                    <td className="px-3 py-3">
+                      {/* one line per exercise: a trend only means something within one exercise */}
+                      <ul className="flex flex-col gap-1.5">
+                        {p.exercises.map((id) => <ExerciseProgress key={id} exercise={id} sessions={ss.filter((s) => exerciseOf(s) === id)} />)}
+                      </ul>
+                    </td>
                     <td className={cn(TD, 'text-right')}>{ss.length}</td>
                     <td className={cn(TD, 'pr-5')}>{last ? last.label : '—'}</td>
                   </tr>
@@ -108,10 +142,11 @@ function Field({ label, children, mono }: { label: string; children: React.React
 export function ProfilePage({ patient, sessions }: { patient: Patient; sessions: Session[] }) {
   const first = sessions[0], last = sessions[sessions.length - 1]
   const limits = [...new Set(sessions.map((s) => s.thresholdDeg))]
+  const exercises = patient.exercises.map((id) => EXERCISES[id])
   return (
     <div className="grid items-start gap-4 xl:grid-cols-2">
       <Panel label="Patient" className="p-5 sm:p-6">
-        <PanelTitle as="h2" title="Patient" caption="Editing these arrives with patient profiles." />
+        <PanelTitle as="h2" title="Patient" />
         <dl className="mt-3">
           <Field label="Name">{patient.name}</Field>
           <Field label="Patient ID" mono>{patient.id}</Field>
@@ -121,18 +156,20 @@ export function ProfilePage({ patient, sessions }: { patient: Patient; sessions:
         </dl>
       </Panel>
       <Panel label="Exercise settings" className="p-5 sm:p-6">
-        <PanelTitle as="h2" title="Exercise settings" caption="As recorded in the sessions. Change the limit on the device (T12 sets 12°)." />
+        <PanelTitle as="h2" title="Exercise settings" />
         <dl className="mt-3">
-          <Field label="Exercise">{patient.exercise}</Field>
+          <Field label={exercises.length === 1 ? 'Exercise' : 'Exercises'}>{exercises.map((e) => e.name).join(', ')}</Field>
           <Field label="Lean limit" mono>{limits.map((l) => `${l}°`).join(', ')}</Field>
           <Field label="Held for at least" mono>200 ms</Field>
-          <Field label="Targets">
-            <ul className="flex flex-col gap-1">
-              {TARGETS.map((t) => (
-                <li key={t}>{TARGET_NAME[t]} <span className="text-forest-2">at <span className="font-readout tabular-nums">{TARGET_REACH[t]}</span> of comfortable reach</span></li>
-              ))}
-            </ul>
-          </Field>
+          {exercises.some((e) => e.targets) && (
+            <Field label="Targets">
+              <ul className="flex flex-col gap-1">
+                {TARGETS.map((t) => (
+                  <li key={t}>{TARGET_NAME[t]} <span className="text-forest-2">at <span className="tabular-nums">{TARGET_REACH[t]}</span> of comfortable reach</span></li>
+                ))}
+              </ul>
+            </Field>
+          )}
           <Field label="Calibration">3 s sitting upright and still, at the start of each session</Field>
           <Field label="Sensors">Chest (trunk angle) and wrist (rotation speed), 100 samples a second</Field>
         </dl>

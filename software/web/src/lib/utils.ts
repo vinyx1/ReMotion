@@ -6,11 +6,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /** Readable name for a firmware state. */
-export function phaseName(state: string): string {
+export function phaseName(state: string, motion: 'reach' | 'mouth' = 'reach'): string {
   switch (state) {
-    case 'CUED': return 'Target lit'
-    case 'REACHING': return 'Reaching'
-    case 'RETURNING': return 'Returning'
+    case 'CUED': return motion === 'mouth' ? 'Cue' : 'Target lit'
+    case 'REACHING': return motion === 'mouth' ? 'To the mouth' : 'Reaching'
+    case 'RETURNING': return motion === 'mouth' ? 'Lowering' : 'Returning'
     case 'WAIT_HOME': return 'On HOME'
     default: return state.charAt(0) + state.slice(1).toLowerCase()
   }

@@ -60,9 +60,10 @@ export function Readout({ label, value, note, tone, size = 'lg' }: {
 }
 
 /** Clean / compensated: the rep's own mark (open circle or terracotta diamond) and a word, never colour alone. */
-export function ResultTag({ compensated, className }: { compensated: boolean; className?: string }) {
+export function ResultTag({ compensated, className, pill }: { compensated: boolean; className?: string; pill?: boolean }) {
   return (
-    <span className={cn('inline-flex items-center gap-2 text-sm font-bold whitespace-nowrap', compensated ? 'text-terra-deep' : 'text-forest', className)}>
+    <span className={cn('inline-flex items-center gap-2 text-sm font-bold whitespace-nowrap', compensated ? 'text-terra-deep' : 'text-forest',
+      pill && (compensated ? 'rounded-full bg-terra/12 px-3 py-1.5' : 'rounded-full bg-eucalyptus/12 px-3 py-1.5'), className)}>
       <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden className="shrink-0"><Mark cx={7} cy={7} r={4.4} compensated={compensated} /></svg>
       {compensated ? 'Compensated' : 'Clean'}
     </span>
@@ -98,7 +99,7 @@ export function Legend({ threshold, className }: { threshold: number; className?
       </span>
       <span className="inline-flex items-center gap-1.5">
         <svg className="h-3.5 w-6" viewBox="0 0 24 14" aria-hidden><line x1="0" x2="24" y1="7" y2="7" stroke="var(--color-forest)" strokeDasharray="6 5" strokeWidth="1.5" /></svg>
-        Limit <span className="font-readout tabular-nums">{threshold}°</span>
+        Limit <span className="tabular-nums">{threshold}°</span>
       </span>
     </div>
   )
@@ -110,13 +111,15 @@ export interface Option {
 }
 
 /** Accessible dropdown (Radix Select). */
-export function Select({ label, value, onChange, options, className, triggerClassName }: {
+export function Select({ label, value, onChange, options, className, triggerClassName, display }: {
   label: string
   value: string
   onChange: (value: string) => void
   options: Option[]
   className?: string
   triggerClassName?: string
+  /** what the closed trigger shows, when it should differ from the chosen option's label */
+  display?: ReactNode
 }) {
   return (
     <RSelect.Root value={value} onValueChange={onChange}>
@@ -128,7 +131,7 @@ export function Select({ label, value, onChange, options, className, triggerClas
           FOCUS, className, triggerClassName,
         )}
       >
-        <span className="truncate"><RSelect.Value /></span>
+        <span className="truncate"><RSelect.Value>{display}</RSelect.Value></span>
         <RSelect.Icon><ChevronDown className="size-4 text-forest-2" aria-hidden /></RSelect.Icon>
       </RSelect.Trigger>
       <RSelect.Portal>
@@ -144,7 +147,7 @@ export function Select({ label, value, onChange, options, className, triggerClas
                 value={o.value}
                 className="relative flex cursor-pointer items-center rounded-md py-2 pr-9 pl-3 text-[15px] outline-none select-none data-highlighted:bg-wash"
               >
-                <RSelect.ItemText>{o.label}</RSelect.ItemText>
+                <RSelect.ItemText asChild><span className="flex w-full items-center gap-2.5">{o.label}</span></RSelect.ItemText>
                 <RSelect.ItemIndicator className="absolute right-2.5">
                   <Check className="size-4 text-eucalyptus" aria-hidden />
                 </RSelect.ItemIndicator>

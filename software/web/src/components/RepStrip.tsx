@@ -44,7 +44,7 @@ export function RepStrip({ reps, threshold, yMax, onOpen, height = 128 }: {
               key={r.rep}
               type="button"
               onClick={() => onOpen(r.rep)}
-              title={`Rep ${r.rep} · ${r.target} · ${r.peakDeg.toFixed(1)}°`}
+              title={`Rep ${r.rep} · ${r.compensated ? 'Compensated' : 'Clean'} · ${r.peakDeg.toFixed(1)}°`}
               aria-label={`Rep ${r.rep}, ${r.target.toLowerCase()} target, peak lean ${r.peakDeg.toFixed(1)} degrees, ${r.compensated ? 'compensated' : 'clean'}. Open rep.`}
               className={cn('group absolute grid size-7 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full hover:bg-eucalyptus/15', FOCUS)}
               style={{ left: `${left(i)}%`, top: top(r.peakDeg) }}

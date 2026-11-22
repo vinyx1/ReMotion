@@ -9,6 +9,10 @@ dashboard has more than one patient to show:
     sim-a  improves: early sessions lean on most reps, by the end most are clean
     sim-b  holds steady at about a third of reps leaning
     sim-c  gets worse: leans more as the weeks go on
+sim-a also does a few hand-to-mouth sessions and sim-b a few sideways reaches, so
+the dashboard has patients with more than one exercise. Those go in an exercise
+sub-folder, data/fake/<id>/<exercise>/, which is how export.py tells them apart.
+(They are made by the same reach generator: the dashboard ignores their targets.)
 Each session is made by software/tools/fake_session.py and saved by the
 logger's own SessionWriter, so the files are exactly what a real recording
 would produce. Each patient's files go in their own folder, data/fake/<id>/;
@@ -48,6 +52,12 @@ PATIENTS = [
     {"id": "sim-b", "sessions": 7, "seed": 7, "first": datetime(2026, 11, 3, 14, 0), "start": 0.35, "end": 0.32},
     {"id": "sim-c", "sessions": 6, "seed": 11, "first": datetime(2026, 11, 5, 9, 30), "start": 0.15, "end": 0.5},
 ]
+
+# Extra exercises some patients also practise: patient id -> sessions of that exercise
+EXTRA_EXERCISES = {
+    "sim-a": [{"exercise": "hand-to-mouth", "sessions": 4, "seed": 21, "first": datetime(2026, 11, 7, 15, 0), "start": 0.5, "end": 0.2}],
+    "sim-b": [{"exercise": "sideways-reach", "sessions": 4, "seed": 27, "first": datetime(2026, 11, 8, 11, 0), "start": 0.4, "end": 0.35}],
+}
 
 
 def lean_fraction(i, n, rng, start=START_LEAN, end=END_LEAN):
@@ -98,6 +108,8 @@ def make_patients(out_dir=FAKE_DIR):
     written = {}
     for p in PATIENTS:
         written[p["id"]] = make_history(p["sessions"], p["seed"], out_dir / p["id"], p["first"], p["start"], p["end"])
+        for x in EXTRA_EXERCISES.get(p["id"], []):        # after the patient's own folder, which make_history clears
+            written[p["id"]] += make_history(x["sessions"], x["seed"], out_dir / p["id"] / x["exercise"], x["first"], x["start"], x["end"])
     return written
 
 
