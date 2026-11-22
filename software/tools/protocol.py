@@ -10,6 +10,7 @@ Each line from the Arduino becomes one small Python object:
     "D,15230,REACHING,4.2,85.3,10.0"     -> Sample(...)
     "R,1,BLUE,412,1380,6.8,2,0,BASELINE" -> Rep(...)
     "S,10,3"                             -> SessionEnd(...)
+    "I,REACHING,BASELINE,10.0,3,15,30,15,1,7,2" -> Status(...)   (reply to ?)
     "E,chest IMU (0x68) not found"       -> DeviceError(...)
     "# calibration OK"                   -> Comment(...)
 
@@ -57,6 +58,18 @@ class Rep:
 class SessionEnd:
     """One S line: printed when START ends the session."""
     reps: int
+    compensated_reps: int
+
+
+@dataclass
+class Status:
+    """One I line: the device's reply to the ? command."""
+    state: str           # one of STATES
+    phase: str           # block in progress (one of PHASES); "" before a block has started
+    threshold: float     # lean threshold in force, degrees
+    plan: tuple          # reps per block, in PHASES order
+    streaming: bool      # D lines on?
+    reps: int            # reps finished in this session so far
     compensated_reps: int
 
 
@@ -114,6 +127,16 @@ def parse_line(line):
             )
         if kind == "S" and len(fields) >= 3:
             return SessionEnd(reps=int(fields[1]), compensated_reps=int(fields[2]))
+        if kind == "I" and len(fields) >= 11:
+            return Status(
+                state=fields[1],
+                phase=fields[2],
+                threshold=float(fields[3]),
+                plan=tuple(int(n) for n in fields[4:8]),
+                streaming=fields[8] == "1",
+                reps=int(fields[9]),
+                compensated_reps=int(fields[10]),
+            )
         if kind == "E" and len(fields) >= 2:
             return DeviceError(",".join(fields[1:]))   # the message itself may contain commas
     except ValueError:
@@ -138,6 +161,12 @@ def format_session_end(s):
     return f"S,{s.reps},{s.compensated_reps}"
 
 
+def format_status(s):
+    plan = ",".join(str(n) for n in s.plan)
+    return (f"I,{s.state},{s.phase},{s.threshold:.1f},{plan},"
+            f"{1 if s.streaming else 0},{s.reps},{s.compensated_reps}")
+
+
 # ---- Commands the laptop can send to the Arduino ----
 
 def threshold_command(degrees):
@@ -157,3 +186,6 @@ def plan_command(plan):
 
 STREAM_ON = "D1"
 STREAM_OFF = "D0"
+START = "G"        # start a session, like pressing START (refused if one is running)
+STOP = "X"         # end the session now (prints the S line)
+STATUS = "?"       # ask for one I line

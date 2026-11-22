@@ -4,8 +4,8 @@ from software.tools.fake_session import generate
 import pytest
 
 from software.tools.protocol import (
-    PHASES, TARGETS, Comment, DeviceError, Rep, Sample, SessionEnd,
-    format_rep, format_sample, parse_line, plan_command, threshold_command,
+    PHASES, TARGETS, Comment, DeviceError, Rep, Sample, SessionEnd, Status,
+    format_rep, format_sample, format_status, parse_line, plan_command, threshold_command,
 )
 
 
@@ -17,6 +17,15 @@ def test_parses_the_examples_in_protocol_md():
     assert parse_line("S,2,1") == SessionEnd(2, 1)
     assert parse_line("E,chest IMU (0x68) not found") == DeviceError("chest IMU (0x68) not found")
     assert parse_line("# session started") == Comment("session started")
+
+
+def test_parses_status_lines():
+    s = parse_line("I,REACHING,BASELINE,10.0,3,15,30,15,1,7,2")
+    assert s == Status("REACHING", "BASELINE", 10.0, (3, 15, 30, 15), True, 7, 2)
+    idle = parse_line("I,IDLE,,12.5,0,0,5,0,0,0,0")
+    assert idle.phase == "" and idle.plan == (0, 0, 5, 0) and idle.streaming is False
+    assert parse_line(format_status(s)) == s
+    assert parse_line("I,IDLE,,10.0,3,15") is None        # cut off
 
 
 def test_bad_lines_return_none():

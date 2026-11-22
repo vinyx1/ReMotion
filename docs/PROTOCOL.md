@@ -11,7 +11,8 @@ Changing this format means updating `firmware/reach_tracker`, `software/tools/pr
 | `#` | free text | Comments and status. Ignore when parsing. |
 | `D` | `t_ms,state,trunk_deg,wrist_dps,threshold` | Every sample (100 Hz) while streaming is on |
 | `R` | `rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase` | After each completed rep |
-| `S` | `reps,compensated_reps` | When the session ends (all blocks done, or START pressed early) |
+| `S` | `reps,compensated_reps` | When the session ends (all blocks done, or START / `X` early) |
+| `I` | `state,phase,threshold,practice,baseline,training,post,streaming,reps,compensated_reps` | Reply to the `?` command |
 | `E` | `message` | Errors (IMU missing, calibration rejected, rep aborted, bad command) |
 
 Field meanings:
@@ -27,6 +28,7 @@ Field meanings:
 - `peak_deg`: highest `trunk_deg` during the reach.
 - `bursts`: number of wrist movement bursts during the reach (enter >60 deg/s, exit <30 deg/s).
 - `compensated`: `1` if the lean went past the threshold for at least 200 ms, otherwise `0`. Judged the same way in every block, buzzer or not.
+- `I` line: `phase` is the block in progress (during `REST`, the block that comes next) and empty before a block has started; `practice`…`post` are the reps per block (the `P` plan); `streaming` is `1` while `D` lines are on; `reps` and `compensated_reps` count the session so far.
 - `phase`: the block the rep belongs to: `PRACTICE`, `BASELINE`, `TRAINING` (the only block where the buzzer sounds) or `POST`. Logs from before 2026-11-20 have no `phase` field; the parser reads it as empty.
 
 Example:
@@ -53,12 +55,15 @@ One press of START runs the whole session: calibration, then the blocks below, b
 
 BASELINE vs POST (percent compensated, median peak lean) is the session's result. `P` changes the block sizes; a block with 0 reps is skipped.
 
-## Laptop → device
+## Laptop (or phone) → device
 
 | Command | Effect |
 |---|---|
 | `T<deg>` | Set the lean threshold, from 1 to 60 degrees (e.g. `T12`, `T12.5`) |
 | `D0` / `D1` | Turn the `D` sample stream off / on |
 | `P<a>,<b>,<c>,<d>` | Reps per block: PRACTICE, BASELINE, TRAINING, POST, each 0–60, not all 0 (e.g. `P3,15,30,15`; `P0,0,5,0` for a short demo with the buzzer) |
+| `G` | Start a session, exactly as if START were pressed (also retries a failed calibration). Refused while a session runs |
+| `X` | End the session now, as if START were pressed during it (prints the `S` line). After a failed calibration, gives up and goes back to `IDLE`. Refused when idle |
+| `?` | Reply with one `I` status line |
 
-Every command ends with a newline. Unknown commands get an `E` reply. `T` and `P` are refused with an `E` reply while a session is running, so every block of a session uses the same threshold.
+Every command ends with a newline. Unknown commands get an `E` reply, so firmware from before `G`, `X` and `?` (2026-11-21) answers them with `E,unknown command: G`; an app can use that to say the device needs updating. `T` and `P` are refused with an `E` reply while a session is running, so every block of a session uses the same threshold.
