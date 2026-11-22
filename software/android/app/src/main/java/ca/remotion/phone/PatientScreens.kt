@@ -150,10 +150,11 @@ private fun ColumnScope.HomeCoach(s: UiState) {
 private fun ColumnScope.PlugInCoach(message: String?, onConnect: () -> Unit) {
     Text(greeting(), style = LabelStyle.copy(fontSize = 19.sp), color = Forest)
     Spacer(Modifier.height(10.dp))
-    Instruction("Plug the device into this phone", "Use the cable from the mat, in the phone’s charging port. The app connects by itself.")
+    // once Connect has failed, what to do about it replaces the general line (there's no room for both)
+    Instruction("Plug the device into this phone",
+        message ?: "Use the cable from the mat, in the phone’s charging port. The app connects by itself.")
     Spacer(Modifier.weight(1f))
-    if (message != null) Text(message, style = BodyStyle, color = Forest, modifier = Modifier.padding(bottom = 12.dp))
-    PrimaryButton("Connect", onConnect)
+    PrimaryButton(if (message == null) "Connect" else "Try again", onConnect)
 }
 
 @Composable
