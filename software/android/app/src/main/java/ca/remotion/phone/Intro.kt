@@ -38,7 +38,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /*
-  The opening, about two seconds: it picks up where Android's launch screen leaves off
+  The opening, about three and a half seconds: it picks up where Android's launch screen leaves off
   (res/drawable/splash_figure.xml, the seated figure at rest, same size and place), and
   the arm reaches out to the target while the back stays upright, which is the whole idea
   of the device. The wordmark rises in, then everything lifts a little and a phone outline
@@ -66,22 +66,23 @@ fun Intro(onDone: () -> Unit) {
         if (reduced) {
             // no movement: the finished picture, the phone already sideways, long enough to read
             reach.snapTo(1f); lit.snapTo(1f); word.snapTo(1f); lift.snapTo(1f); cue.snapTo(1f); turn.snapTo(1f)
-            delay(1600)
+            delay(3100)
             return@LaunchedEffect onDone()
         }
         delay(60)
         launch {
-            reach.animateTo(1f, tween(520, easing = EaseOutCubic))
-            lit.animateTo(1f, tween(160))
+            reach.animateTo(1f, tween(700, easing = EaseOutCubic))
+            lit.animateTo(1f, tween(200))
         }
-        delay(380)
+        delay(560)
         word.animateTo(1f, tween(320, easing = EaseOutCubic))
+        delay(300)                                         // the name, read on its own
         launch { lift.animateTo(1f, tween(380, easing = EaseOutCubic)) }
-        delay(120)
+        delay(240)
         cue.animateTo(1f, tween(260, easing = EaseOutCubic))
         delay(120)
-        turn.animateTo(1f, tween(480, easing = FastOutSlowInEasing))
-        delay(420)                                         // held, so the turned phone is seen
+        turn.animateTo(1f, tween(700, easing = FastOutSlowInEasing))
+        delay(1100)                                        // held, so the turned phone is seen
         onDone()
     }
     val density = LocalDensity.current
