@@ -638,17 +638,63 @@ function Hardware() {
   )
 }
 
+/** GitHub's mark (lucide no longer ships brand icons), drawn in the text colour. */
+function GitHubMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden className={className} fill="currentColor">
+      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+    </svg>
+  )
+}
+
+/** The team, as on GitHub (AGENTS.md "Who owns what"). */
+const TEAM = [
+  { name: 'Vincent Jiang', github: 'vinyx1' },
+  { name: 'Yousuf Hamoda', github: 'Yousuf-Hamoda' },
+  { name: 'Preston Baichoo', github: 'prestonbaichoo3' },
+]
+
+/*
+  The page's footer: what ReMotion is and for whom, the team with their GitHub profiles, the
+  project's links, and the honest line about what it is not. The demo button lives in the nav
+  and here as a plain link; the page doesn't end on a second, repeated call to action.
+*/
 function Close() {
   return (
     <footer className="lp-close">
       <div className="lp-wrap">
-        <h2 className="lp-close-h">See a whole session.</h2>
-        <a className="lp-btn lp-btn-light" href="/dashboard">Try the demo <ArrowRight aria-hidden className="size-5" /></a>
-        <div className="lp-credits">
-          <p><strong>ReMotion</strong> · ECE 198, University of Waterloo · Group 19</p>
-          <p>Built for the CCCARE course challenge on at-home rehab.</p>
-          <a href="https://github.com/vinyx1/ReMotion" target="_blank" rel="noreferrer">Source on GitHub</a>
+        <div className="lp-foot">
+          <div className="lp-foot-about">
+            <p className="lp-foot-mark">ReMotion</p>
+            <p>A seated reach trainer that catches the trunk leaning in to help a weaker arm, and shows it to the therapist between appointments.</p>
+            <p className="lp-foot-meta">ECE 198, University of Waterloo · Group 19 · Fall 2026<br />Built for the CCCARE challenge on at-home rehab.</p>
+          </div>
+          <nav aria-labelledby="foot-team" className="lp-foot-col">
+            <h2 id="foot-team">Team</h2>
+            <ul>
+              {TEAM.map((m) => (
+                <li key={m.github}>
+                  <a href={`https://github.com/${m.github}`} target="_blank" rel="noreferrer">
+                    <GitHubMark className="lp-foot-icon" />
+                    <span className="lp-foot-person"><span>{m.name}</span><span className="lp-foot-handle">@{m.github}</span></span>
+                    <span className="sr-only"> on GitHub (opens in a new tab)</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <nav aria-labelledby="foot-project" className="lp-foot-col">
+            <h2 id="foot-project">Project</h2>
+            <ul>
+              <li><a href="https://github.com/vinyx1/ReMotion" target="_blank" rel="noreferrer"><GitHubMark className="lp-foot-icon" /><span>Source on GitHub</span><span className="sr-only"> (opens in a new tab)</span></a></li>
+              <li><a href="/dashboard"><span>Try the demo</span></a></li>
+              <li><a href="#how"><span>How it works</span></a></li>
+              <li><a href="#evidence"><span>Evidence</span></a></li>
+              <li><a href="#hardware"><span>Hardware</span></a></li>
+            </ul>
+          </nav>
         </div>
+        <p className="lp-foot-legal">A student prototype, tested only on team members. Not a medical device.</p>
       </div>
     </footer>
   )
