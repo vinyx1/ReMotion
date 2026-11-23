@@ -45,6 +45,9 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -90,24 +93,33 @@ fun ColumnScope.SetupCoach(exercise: Exercise, onReady: () -> Unit) {
     // which step is being shown (-1: all of them, the finished scene)
     val step by remember { derivedStateOf { if (reduced || clock.value >= 3 * STEP) -1 else (clock.value / STEP).toInt() } }
 
-    Text("Get set up", style = CoachStyle, color = Forest, modifier = Modifier.semantics { heading() })
-    Spacer(Modifier.height(12.dp))
+    // phones shorter than about 420 dp sideways (a Galaxy S22 is 384): a smaller heading and tighter steps
+    val short = LocalConfiguration.current.screenHeightDp < 420
+    Text("Get set up", style = if (short) CoachStyle.copy(fontSize = 36.sp, lineHeight = 40.sp) else CoachStyle, color = Forest,
+        modifier = Modifier.semantics { heading() })
+    Spacer(Modifier.height(if (short) 8.dp else 12.dp))
     Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
         Canvas(
             Modifier.weight(1f).aspectRatio(300f / 180f).align(Alignment.CenterVertically)
                 .semantics { contentDescription = "A drawing: the phone propped up on the table, the mat " +
                     (if (exercise == Exercise.SIDEWAYS) "along the table edge on your right" else "in front of you") + ", the chest strap on." },
         ) { if (exercise == Exercise.SIDEWAYS) frontScene(clock.value) else sideScene(clock.value, exercise) }
-        Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)) {
-            steps(exercise).forEachIndexed { i, text -> StepLine(i + 1, text, lit = step == -1 || step == i) }
-            Spacer(Modifier.height(6.dp))
+        // the button always keeps its full height at the bottom; the steps above it scroll if there isn't room
+        Column(Modifier.weight(1f).fillMaxHeight()) {
+            Column(
+                Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(if (short) 6.dp else 10.dp, Alignment.CenterVertically),
+            ) {
+                steps(exercise).forEachIndexed { i, text -> StepLine(i + 1, text, lit = step == -1 || step == i, short = short) }
+            }
+            Spacer(Modifier.height(if (short) 8.dp else 12.dp))
             PrimaryButton("I’m ready", onReady, Modifier.fillMaxWidth())
         }
     }
 }
 
 @Composable
-private fun StepLine(n: Int, text: String, lit: Boolean) {
+private fun StepLine(n: Int, text: String, lit: Boolean, short: Boolean = false) {
     val ink by animateColorAsState(if (lit) Forest else Forest2.copy(alpha = 0.6f), tween(STATE_MS * 2), label = "ink")
     val disc by animateColorAsState(if (lit) Forest else Wall, tween(STATE_MS * 2), label = "disc")
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -115,7 +127,7 @@ private fun StepLine(n: Int, text: String, lit: Boolean) {
             Text("$n", style = LabelStyle.copy(fontSize = 16.sp), color = if (lit) Plaster else ink)
         }
         Spacer(Modifier.width(12.dp))
-        Text(text, style = CoachSubStyle.copy(fontSize = 19.sp, lineHeight = 23.sp, fontWeight = if (lit) FontWeight.Bold else FontWeight.Normal), color = ink)
+        Text(text, style = CoachSubStyle.copy(fontSize = if (short) 17.sp else 19.sp, lineHeight = if (short) 21.sp else 23.sp, fontWeight = if (lit) FontWeight.Bold else FontWeight.Normal), color = ink)
     }
 }
 

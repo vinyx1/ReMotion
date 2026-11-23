@@ -494,9 +494,9 @@ private fun ExerciseRow(e: Exercise, chosen: Boolean, onClick: () -> Unit) {
     val fill by animateColorAsState(if (chosen) Panel else Plaster, tween(STATE_MS), label = "fill")
     val shape = RoundedCornerShape(12.dp)
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(shape).background(fill).border(if (chosen) 2.dp else 1.dp, edge, shape)
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(fill).border(if (chosen) 2.dp else 1.dp, edge, shape)
             .selectable(selected = chosen, onClick = onClick, role = Role.RadioButton)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(26.dp).clip(CircleShape).background(if (chosen) Forest else Plaster)
@@ -505,7 +505,7 @@ private fun ExerciseRow(e: Exercise, chosen: Boolean, onClick: () -> Unit) {
         }
         Column(Modifier.padding(start = 12.dp)) {
             Text(e.title, style = LabelStyle.copy(fontSize = 18.sp, lineHeight = 22.sp), color = Forest)
-            Text(e.blurb, style = BodyStyle.copy(fontSize = 14.sp, lineHeight = 18.sp), color = Forest2)
+            Text(e.blurb, style = BodyStyle.copy(fontSize = 14.sp, lineHeight = 18.sp), color = Forest2, maxLines = 2)
         }
     }
 }
