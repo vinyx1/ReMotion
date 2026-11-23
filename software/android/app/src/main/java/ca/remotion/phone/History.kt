@@ -15,6 +15,7 @@ data class PastSession(
     val reaches: Int,           // reaches that count (practice left out, unless that's all there was)
     val upright: Int,           // of those, how many stayed within the limit
     val demo: Boolean,
+    val exercise: Exercise = Exercise.FORWARD,
 ) {
     val day: LocalDate get() = Instant.ofEpochMilli(endedAt).atZone(ZoneId.systemDefault()).toLocalDate()
 }
@@ -31,7 +32,7 @@ class History(context: Context) {
         val a = JSONArray(file.readText())
         List(a.length()) { i ->
             val o = a.getJSONObject(i)
-            PastSession(o.getLong("endedAt"), o.getInt("reaches"), o.getInt("upright"), o.optBoolean("demo"))
+            PastSession(o.getLong("endedAt"), o.getInt("reaches"), o.getInt("upright"), o.optBoolean("demo"), Exercise.of(o.optString("exercise")))
         }
     } catch (_: Exception) {
         emptyList()                                       // first run, or an unreadable file
@@ -47,7 +48,7 @@ class History(context: Context) {
         val all = (load() + session).takeLast(MAX)
         val a = JSONArray()
         all.forEach { s ->
-            a.put(JSONObject().put("endedAt", s.endedAt).put("reaches", s.reaches).put("upright", s.upright).put("demo", s.demo))
+            a.put(JSONObject().put("endedAt", s.endedAt).put("reaches", s.reaches).put("upright", s.upright).put("demo", s.demo).put("exercise", s.exercise.id))
         }
         val tmp = File(file.parentFile, "history.json.tmp")
         tmp.writeText(a.toString())
@@ -59,9 +60,9 @@ class History(context: Context) {
         private const val MAX = 500
 
         /** The session's reaches that count: practice is a warm-up, unless the session was only practice. */
-        fun summarize(reps: List<Rep>, demo: Boolean, endedAt: Long = System.currentTimeMillis()): PastSession {
+        fun summarize(reps: List<Rep>, demo: Boolean, exercise: Exercise = Exercise.FORWARD, endedAt: Long = System.currentTimeMillis()): PastSession {
             val scored = reps.filter { it.phase != "PRACTICE" }.ifEmpty { reps }
-            return PastSession(endedAt, scored.size, scored.count { !it.compensated }, demo)
+            return PastSession(endedAt, scored.size, scored.count { !it.compensated }, demo, exercise)
         }
 
         /** Monday to Sunday of this week, each with whether there was a session that day. */

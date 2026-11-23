@@ -61,11 +61,12 @@ fun MainScreen(vm: MainViewModel) {
     val login by vm.login.collectAsStateWithLifecycle()
     val signIn by vm.signIn.collectAsStateWithLifecycle()
     val hello by vm.hello.collectAsStateWithLifecycle()
+    val exercise by vm.exercise.collectAsStateWithLifecycle()
     var settings by rememberSaveable { mutableStateOf(false) }
     var intro by rememberSaveable { mutableStateOf(true) }      // once per launch, not on rotation
     Crossfade(intro, animationSpec = tween(260), label = "intro") { opening ->
         if (opening) Intro(onDone = { intro = false })
-        else CompositionLocalProvider(LocalFirstName provides (login?.firstName ?: "")) {
+        else CompositionLocalProvider(LocalFirstName provides (login?.firstName ?: ""), LocalExercise provides exercise) {
             App(s, past, finished, login, signIn, hello, vm, settings) { settings = it }
         }
     }
@@ -94,6 +95,7 @@ private fun App(s: UiState, past: List<PastSession>, finished: PastSession?, log
                     onDone = vm::dismissFinished,
                     onSettings = { setSettings(true) },
                     onAddReach = vm::addDemoRep,
+                    onChooseExercise = vm::chooseExercise,
                 ))
             }
         }
