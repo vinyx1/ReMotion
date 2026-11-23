@@ -140,11 +140,10 @@ private fun SettingsScreen(s: UiState, login: Login?, vm: MainViewModel, onClose
             if (login == null) {
                 Text("Not signed in. Sign in with the code from a patient’s Profile & settings page.", style = BodyStyle, color = Forest)
             } else {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Signed in as ${login.patientName}" + if (login.demo) " (demo)" else "", style = BodyStyle, color = Forest, modifier = Modifier.weight(1f))
-                    OutlinedButton(onClick = vm::signOutPhone) { Text("Sign out of this phone") }
-                }
+                // the name gets the whole line; the button goes under it (a narrow phone squeezed them side by side)
+                Text("Signed in as ${login.patientName}" + if (login.demo) " (demo)" else "", style = BodyStyle, color = Forest)
                 Text(login.server, style = BodyStyle.copy(fontSize = 15.sp), color = Forest2)
+                OutlinedButton(onClick = vm::signOutPhone) { Text("Sign out of this phone") }
             }
 
             Section("Device")
