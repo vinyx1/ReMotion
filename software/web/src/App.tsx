@@ -119,7 +119,7 @@ function Dashboard({ me, onSignedOut, version }: { me: Me; onSignedOut: () => vo
   const load = useSessions(onSignedOut, version)
   const all = load.status === 'ready' ? load.data.sessions : []
   const patients = patientsFrom(all, me.patients)
-  const route = useRoute(patients[0]?.id ?? '')
+  const route = useRoute()
 
   if (load.status === 'loading') {
     return <Message title="Loading sessions…"><p role="status">Reading this account’s sessions.</p></Message>
