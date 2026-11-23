@@ -36,6 +36,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -85,16 +89,21 @@ private sealed interface Screen {
     data object PlugIn : Screen
     data object Session : Screen
     data object Home : Screen
+    data object Setup : Screen
 }
 
 @Composable
 fun PatientApp(s: UiState, past: List<PastSession>, finished: PastSession?, actions: PatientActions) {
     val warm = s.sessionRunning && s.feedback && s.leaning
     val wall by animateColorAsState(if (warm) WarmWall else Wall, tween(STATE_MS * 2), label = "wall")
+    // getting set up comes before every session: "I'm ready" moves on to "Press the yellow button"
+    var ready by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(s.sessionRunning) { if (s.sessionRunning) ready = false }
     val screen = when {
         finished != null -> Screen.Done(finished)
         s.connected == null -> Screen.PlugIn
         s.sessionRunning -> Screen.Session
+        !ready -> Screen.Setup
         else -> Screen.Home
     }
     Row(Modifier.fillMaxSize().background(Plaster)) {
@@ -110,6 +119,7 @@ fun PatientApp(s: UiState, past: List<PastSession>, finished: PastSession?, acti
                         Screen.PlugIn -> PlugInCoach(s.message, actions.onConnect)
                         Screen.Session -> SessionCoach(s, warm)
                         Screen.Home -> HomeCoach(s)
+                        Screen.Setup -> SetupCoach(onReady = { ready = true })
                     }
                 }
             }
@@ -124,7 +134,7 @@ fun PatientApp(s: UiState, past: List<PastSession>, finished: PastSession?, acti
                     Text("Settings", fontSize = 15.sp, color = Forest2)
                 }
             }
-            AnimatedContent(if (screen == Screen.PlugIn) Screen.Home else screen,         // the week shows on both
+            AnimatedContent(if (screen == Screen.PlugIn || screen == Screen.Setup) Screen.Home else screen,   // the week shows on all three
                 transitionSpec = { fadeThrough() }, contentKey = { it::class }, label = "score") { shown ->
                 Column(Modifier.fillMaxSize()) {
                     when (shown) {
@@ -165,7 +175,7 @@ private fun ColumnScope.HomeCoach(s: UiState) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         // the START button as it looks on the table
         Box(Modifier.size(52.dp).shadow(3.dp, CircleShape).clip(CircleShape).background(ButtonYellow).border(3.dp, Forest, CircleShape))
-        Text("The phone follows along by itself. Nothing to tap.", style = CoachSubStyle, color = Forest,
+        Text("After that, the phone follows along by itself.", style = CoachSubStyle, color = Forest,
             modifier = Modifier.padding(start = 16.dp))
     }
     Spacer(Modifier.height(14.dp))
