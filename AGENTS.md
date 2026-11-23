@@ -114,7 +114,7 @@ Rough plan: (1) wiring + firmware streaming at 100 Hz, ship a sample CSV early s
 **Team split:** hardware/firmware · signal processing · dashboard/storage · mounting/testing.
 
 ### Demo plan
-A judge straps on the chest and wrist sensors, the team measures their arm and places the mat, they press START, sit upright for 3 s, do ~5 reaches, hear the beep when leaning, then see the dashboard. For the demo, run the logger with `--plan 0,0,5,0` (5 TRAINING reps, buzzer on). Rehearse it, and keep a pre-recorded session as a fallback if the wiring fails.
+A judge straps on the chest and wrist sensors, the team measures their arm and places the mat, they press START, sit upright for 3 s, do ~5 reaches, hear the beep when leaning, then see the dashboard. For the demo, run `python -m software.tools.demo` and pick a short session with one key (5 TRAINING reps, or 3 / 5 / 3 before-and-after); it refreshes the dashboard when the session ends. Rehearse it, and keep a pre-recorded session as a fallback if the wiring fails.
 
 ## 2. Session procedure (how a patient uses it)
 
@@ -226,8 +226,8 @@ The yellow START button's LED is optional; leave it unconnected unless the user 
 - **Calibration:** average the trunk accelerometer vector over 3 s while upright → normalize → `base`.
 - Reject calibration and ask to redo if the samples vary too much (person moved). Pick a sensible variance threshold and make it a named constant.
 - **Every sample:** `angle = acos( dot(a, base) / |a| )` in degrees. Clamp the cosine to [-1, 1]; skip the sample if |a| is tiny.
-- **Smooth:** `trunkDeg += 0.15 * (angle - trunkDeg)` (exponential low-pass).
-- Works regardless of how the GY-521 is mounted. Detects forward and sideways lean. Does **NOT** detect trunk twisting (rotation about vertical); document as a known limitation. Later upgrade: fuse the gyro (complementary filter).
+- **Filter (complementary, on the vector, not the angle):** each sample, turn a gravity estimate `g` by the chest gyro (`g -= (w x g) dt`, gyro offset averaged during calibration), then nudge it toward the accelerometer direction by `ACCEL_WEIGHT = 0.01`, only when `|a|` is within 1 m/s² of gravity (not mid-jolt). `angle = acos(dot(g, base))`. Smoothing angles instead reads high: noise can only add to an angle. Calibration ignores its first 0.5 s and rejects a wobble over 0.25 m/s².
+- Works regardless of how the GY-521 is mounted. Detects forward and sideways lean. Does **NOT** detect trunk twisting (rotation about vertical); document as a known limitation (the gyro filter doesn't change this: a twist doesn't tilt the chest away from gravity).
 
 ### Lean decision
 - **Threshold:** fixed constant, default **10°** (no potentiometer). Easy to change in code, and settable over serial (`T12` sets 12°).
