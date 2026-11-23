@@ -342,26 +342,17 @@ html.lp-root {
   background: #e4e8e2; color: var(--color-forest-2); font-size: 0.98rem;
 }
 
-.lp-close { background: var(--color-wall); padding-block: clamp(64px, 10vh, 104px) 40px; }
-.lp-foot { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px clamp(32px, 5vw, 72px); }
-@media (max-width: 900px) { .lp-foot { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .lp-foot-about { grid-column: 1 / -1; } }
-@media (max-width: 520px) { .lp-foot { grid-template-columns: minmax(0, 1fr); } }
-.lp-foot p { margin: 0; color: var(--color-forest-2); font-size: 1rem; line-height: 1.55; max-width: 46ch; text-wrap: pretty; }
-.lp-foot-about { display: flex; flex-direction: column; gap: 14px; }
-.lp-foot-mark { font-family: var(--font-display); font-weight: 600; font-size: 1.9rem !important; line-height: 1.1 !important; letter-spacing: -0.02em; color: var(--color-forest) !important; }
-.lp-foot-meta { font-size: 0.95rem !important; }
-.lp-foot-col h2 { margin: 0 0 14px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-eucalyptus); }
-.lp-foot-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.lp-foot-col a { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; color: var(--color-forest); text-decoration: none; font-size: 1rem;
-  border-radius: 6px; transition: color 150ms ease; }
-@media (hover: hover) { .lp-foot-col a:hover > span:first-of-type, .lp-foot-col a:hover .lp-foot-person > span:first-child { text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: from-font; } }
-.lp-foot-col a:focus-visible { outline: 3px solid var(--color-eucalyptus); outline-offset: 3px; }
-.lp-foot-icon { width: 18px; height: 18px; flex: none; color: var(--color-forest); }
-.lp-foot-person { display: flex; flex-direction: column; line-height: 1.3; }
-.lp-foot-person > span:first-child { white-space: nowrap; }
-.lp-foot-handle { font-family: var(--font-readout); font-size: 0.85rem; color: var(--color-forest-2); }
-.lp-foot-legal { margin: clamp(48px, 7vh, 72px) 0 0 !important; padding-top: 20px; border-top: 1px solid rgb(31 45 39 / 0.2);
-  font-size: 0.9rem !important; color: var(--color-forest-2); }
+.lp-close { background: var(--color-wall); padding-block: 20px; }
+.lp-foot { display: flex; flex-direction: column; gap: 6px; font-size: 0.95rem; line-height: 1.5; color: var(--color-forest-2); }
+.lp-foot p { margin: 0; }
+.lp-foot-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 24px; }
+.lp-foot-team { justify-content: flex-start; gap: 4px 20px; }
+.lp-foot-mark { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; letter-spacing: -0.01em; color: var(--color-forest); margin-right: 10px; }
+.lp-foot a { display: inline-flex; align-items: center; gap: 7px; min-height: 28px; color: var(--color-forest); text-decoration: none; border-radius: 4px; }
+@media (hover: hover) { .lp-foot a:hover { text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: from-font; } }
+.lp-foot a:focus-visible { outline: 3px solid var(--color-eucalyptus); outline-offset: 2px; }
+.lp-foot-icon { width: 16px; height: 16px; flex: none; }
+.lp-foot-legal { font-size: 0.85rem; }
 
 @media (prefers-reduced-motion: reduce) {
   .lp *, .lp *::before, .lp *::after { transition: none !important; }

@@ -652,48 +652,31 @@ const TEAM = [
   { name: 'Vincent Jiang', github: 'vinyx1' },
   { name: 'Yousuf Hamoda', github: 'Yousuf-Hamoda' },
   { name: 'Preston Baichoo', github: 'prestonbaichoo3' },
+  { name: 'Ali Hadi', github: 'Ali-Hadi123' },
 ]
 
 /*
-  The page's footer: what ReMotion is and for whom, the team with their GitHub profiles, the
-  project's links, and the honest line about what it is not. The demo button lives in the nav
-  and here as a plain link; the page doesn't end on a second, repeated call to action.
+  The page's footer, three short lines: what it is and where it's from (and the source), the
+  team with their GitHub profiles, and the line that it's a student prototype. The nav at the
+  top already links the sections and the demo, so the footer doesn't repeat them.
 */
 function Close() {
   return (
     <footer className="lp-close">
-      <div className="lp-wrap">
-        <div className="lp-foot">
-          <div className="lp-foot-about">
-            <p className="lp-foot-mark">ReMotion</p>
-            <p>A seated reach trainer that catches the trunk leaning in to help a weaker arm, and shows it to the therapist between appointments.</p>
-            <p className="lp-foot-meta">ECE 198, University of Waterloo · Group 19 · Fall 2026<br />Built for the CCCARE challenge on at-home rehab.</p>
-          </div>
-          <nav aria-labelledby="foot-team" className="lp-foot-col">
-            <h2 id="foot-team">Team</h2>
-            <ul>
-              {TEAM.map((m) => (
-                <li key={m.github}>
-                  <a href={`https://github.com/${m.github}`} target="_blank" rel="noreferrer">
-                    <GitHubMark className="lp-foot-icon" />
-                    <span className="lp-foot-person"><span>{m.name}</span><span className="lp-foot-handle">@{m.github}</span></span>
-                    <span className="sr-only"> on GitHub (opens in a new tab)</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          <nav aria-labelledby="foot-project" className="lp-foot-col">
-            <h2 id="foot-project">Project</h2>
-            <ul>
-              <li><a href="https://github.com/vinyx1/ReMotion" target="_blank" rel="noreferrer"><GitHubMark className="lp-foot-icon" /><span>Source on GitHub</span><span className="sr-only"> (opens in a new tab)</span></a></li>
-              <li><a href="/dashboard"><span>Try the demo</span></a></li>
-              <li><a href="#how"><span>How it works</span></a></li>
-              <li><a href="#evidence"><span>Evidence</span></a></li>
-              <li><a href="#hardware"><span>Hardware</span></a></li>
-            </ul>
-          </nav>
+      <div className="lp-wrap lp-foot">
+        <div className="lp-foot-row">
+          <p><strong className="lp-foot-mark">ReMotion</strong> ECE 198, University of Waterloo · Group 19 · for CCCARE</p>
+          <a href="https://github.com/vinyx1/ReMotion" target="_blank" rel="noreferrer">
+            <GitHubMark className="lp-foot-icon" />Source on GitHub<span className="sr-only"> (opens in a new tab)</span>
+          </a>
         </div>
+        <nav aria-label="Team" className="lp-foot-row lp-foot-team">
+          {TEAM.map((m) => (
+            <a key={m.github} href={`https://github.com/${m.github}`} target="_blank" rel="noreferrer">
+              <GitHubMark className="lp-foot-icon" />{m.name}<span className="sr-only"> on GitHub (opens in a new tab)</span>
+            </a>
+          ))}
+        </nav>
         <p className="lp-foot-legal">A student prototype, tested only on team members. Not a medical device.</p>
       </div>
     </footer>
