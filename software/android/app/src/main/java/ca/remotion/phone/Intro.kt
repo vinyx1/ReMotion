@@ -88,7 +88,7 @@ fun Intro(onDone: () -> Unit) {
     val density = LocalDensity.current
     val rise = with(density) { 10.dp.toPx() }
     val up = with(density) { 44.dp.toPx() }
-    Box(Modifier.fillMaxSize().background(Wall).semantics { contentDescription = "Re:Motion. Turn your phone sideways." },
+    Box(Modifier.fillMaxSize().background(Wall).semantics { contentDescription = "ReMotion. Turn your phone sideways." },
         contentAlignment = Alignment.Center) {
         Canvas(Modifier.size(FIGURE).graphicsLayer { translationY = -lift.value * up }) {
             val u = size.minDimension / 108f                    // one unit of the 108-grid
@@ -103,7 +103,7 @@ fun Intro(onDone: () -> Unit) {
             drawLine(Forest, p(30f, 80f), p(84f, 80f), 3 * u, StrokeCap.Round)          // the table
         }
         Text(
-            "Re:Motion",
+            "ReMotion",
             style = TextStyle(fontFamily = Literata, fontWeight = FontWeight(600), fontSize = 34.sp, letterSpacing = (-0.02).em),
             color = Forest,
             modifier = Modifier.offset(y = 92.dp).graphicsLayer {

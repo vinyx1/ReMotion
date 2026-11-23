@@ -15,7 +15,7 @@ web
 
 ## Product Purpose
 
-Clinical reaching assessments score *whether* a reach was completed, not *how*. A patient who leans their trunk forward to make up for a weak arm looks the same on the score sheet as one whose arm has recovered, and at home nobody is watching. Re:Motion measures how the reach was done: it flags reps where the trunk did the arm's work, gives the patient instant feedback (a buzzer while leaning, a green or red light after each rep), and logs every rep so a therapist can follow progress over time.
+Clinical reaching assessments score *whether* a reach was completed, not *how*. A patient who leans their trunk forward to make up for a weak arm looks the same on the score sheet as one whose arm has recovered, and at home nobody is watching. ReMotion measures how the reach was done: it flags reps where the trunk did the arm's work, gives the patient instant feedback (a buzzer while leaning, a green or red light after each rep), and logs every rep so a therapist can follow progress over time.
 
 Success for the prototype: one exercise (the seated reach) detected reliably, with the device's clean/compensated label agreeing with a side-view video label. The agreement target is a placeholder (~90% over ~60 reps from 3+ testers) until the first recordings.
 
@@ -42,7 +42,7 @@ It measures the quality of the reach, not just its completion, with two inexpens
 
 ## Brand Commitments
 
-- **Name: Re:Motion** (with the colon). "IMU Reach Tracker" is the technical/course description (schematic, firmware); the GitHub repo is `vinyx1/ReMotion` only because repo names can't contain a colon.
+- **Name: ReMotion** (one word, no colon), everywhere: the app, the website, the docs and the GitHub repo `vinyx1/ReMotion`. "IMU Reach Tracker" is the technical/course description (schematic, firmware).
 - ECE 198, University of Waterloo, Group 19.
 
 ## Evidence on Hand

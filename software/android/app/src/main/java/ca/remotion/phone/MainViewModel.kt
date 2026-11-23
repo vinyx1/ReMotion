@@ -146,7 +146,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val target = Account.parse(text, _ui.value.dashboard.trim().ifEmpty { DEFAULT_DASHBOARD })
             ?: return run {
                 _signIn.value = SignInState(error = if (text.isBlank()) "The camera couldn’t scan here. Type the code instead."
-                                                    else "That isn’t a Re:Motion code. It’s 6 letters and numbers, like ABC 123.")
+                                                    else "That isn’t a ReMotion code. It’s 6 letters and numbers, like ABC 123.")
             }
         _signIn.value = SignInState(busy = true)
         viewModelScope.launch {
