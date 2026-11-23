@@ -115,7 +115,8 @@ export function SignIn({ note, onSignedIn }: { note?: string; onSignedIn: (me: M
             <span className="h-px flex-1 bg-wall" /> or <span className="h-px flex-1 bg-wall" />
           </div>
 
-          <button type="button" onClick={onDemo} disabled={busy !== null}
+          {/* once a demo account is filled in, the next step is Sign in: this one greys out */}
+          <button type="button" onClick={onDemo} disabled={busy !== null || demo}
             className={cn('inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-xl border-[1.5px] border-forest/30 px-5 text-[16px] font-bold text-forest transition-colors duration-150 hover:border-forest/60 hover:bg-wash disabled:cursor-not-allowed disabled:opacity-55', FOCUS)}>
             {busy === 'demo' ? 'Opening the demo…' : 'Try a 1-hour demo'}
           </button>
