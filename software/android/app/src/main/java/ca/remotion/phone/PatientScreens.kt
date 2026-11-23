@@ -49,6 +49,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
@@ -494,7 +495,7 @@ private fun ExerciseRow(e: Exercise, chosen: Boolean, onClick: () -> Unit) {
     val fill by animateColorAsState(if (chosen) Panel else Plaster, tween(STATE_MS), label = "fill")
     val shape = RoundedCornerShape(12.dp)
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp).clip(shape).background(fill).border(if (chosen) 2.dp else 1.dp, edge, shape)
+        Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(shape).background(fill).border(if (chosen) 2.dp else 1.dp, edge, shape)
             .selectable(selected = chosen, onClick = onClick, role = Role.RadioButton)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -503,9 +504,12 @@ private fun ExerciseRow(e: Exercise, chosen: Boolean, onClick: () -> Unit) {
             .border(if (chosen) 0.dp else 2.dp, Forest2.copy(alpha = 0.6f), CircleShape), contentAlignment = Alignment.Center) {
             if (chosen) CheckMark(Plaster, 14.dp)
         }
+        // on short phones (under 400 dp sideways, e.g. a Galaxy S22 at its default display size) the
+        // names alone, so all three always fit; the setup drawing on the left shows the rest
+        val short = LocalConfiguration.current.screenHeightDp < 400
         Column(Modifier.padding(start = 12.dp)) {
-            Text(e.title, style = LabelStyle.copy(fontSize = 18.sp, lineHeight = 22.sp), color = Forest)
-            Text(e.blurb, style = BodyStyle.copy(fontSize = 14.sp, lineHeight = 18.sp), color = Forest2, maxLines = 2)
+            Text(e.title, style = LabelStyle.copy(fontSize = if (short) 17.sp else 18.sp, lineHeight = if (short) 21.sp else 22.sp), color = Forest)
+            if (!short) Text(e.blurb, style = BodyStyle.copy(fontSize = 14.sp, lineHeight = 18.sp), color = Forest2, maxLines = 2)
         }
     }
 }
