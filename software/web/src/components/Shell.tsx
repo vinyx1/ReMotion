@@ -203,7 +203,7 @@ function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; pati
   return (
     <aside className="sticky top-0 hidden h-dvh w-[17rem] shrink-0 flex-col bg-forest text-plaster lg:flex">
       <div className="px-5 pt-5 pb-6">
-        <a href="/" className={cn('rounded-md font-display text-[1.45rem] font-semibold tracking-[-0.02em]', NAV_FOCUS)}>Re:Motion</a>
+        <a href="/" className={cn('rounded-md font-display text-[1.45rem] font-semibold tracking-[-0.02em]', NAV_FOCUS)}>ReMotion</a>
       </div>
       <nav ref={nav} aria-label="Patients" className="scroll-quiet flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4">
         <NavLink to={{ name: 'patients' }} active={route.name === 'patients'} icon={Users}>All patients</NavLink>
@@ -238,7 +238,7 @@ function MobileAccount() {
 function MobileBar({ route }: { route: Route }) {
   return (
     <div className="flex items-center gap-3 bg-forest px-4 py-3 text-plaster lg:hidden">
-      <a href="/" className={cn('shrink-0 rounded-md font-display text-[1.2rem] font-semibold tracking-[-0.02em]', NAV_FOCUS)}>Re:Motion</a>
+      <a href="/" className={cn('shrink-0 rounded-md font-display text-[1.2rem] font-semibold tracking-[-0.02em]', NAV_FOCUS)}>ReMotion</a>
       <a href={href({ name: 'patients' })} aria-current={route.name === 'patients' ? 'page' : undefined}
         className={cn('inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-plaster/85 hover:text-plaster', NAV_FOCUS)}>
         <Users className="size-4" aria-hidden /> Patients

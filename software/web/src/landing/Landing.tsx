@@ -1,5 +1,5 @@
 /*
-  Re:Motion landing page (served at /).
+  ReMotion landing page (served at /).
 
   The first screen is the device working: a 3D figure at the button mat that the
   visitor leans themselves. Scrolling keeps the room on screen and walks the
@@ -383,7 +383,7 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
   const stateLabel = step === 1 ? 'Calibrating' : deg < 0.5 ? 'Upright' : 'Within the limit'
 
   return (
-    <section ref={section} id="how" className="lp-story" style={{ height: `${STEPS * 100}svh` }} aria-label="How Re:Motion works">
+    <section ref={section} id="how" className="lp-story" style={{ height: `${STEPS * 100}svh` }} aria-label="How ReMotion works">
       <div
         className={`lp-stage ${flagged ? 'is-flagged' : ''} ${step === 0 ? 'is-hero' : ''}`}
       >
@@ -426,7 +426,7 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
           <div className="lp-step lp-step-hero" ref={(el) => { stepEls.current[0] = el }}>
             <h1 className="lp-h1">Relearning to reach, the right way.</h1>
             <p className="lp-lede">
-              Rehab scores check whether a reach was completed. Re:Motion’s two sensors notice when the trunk leans in to do the arm’s work.
+              Rehab scores check whether a reach was completed. ReMotion’s two sensors notice when the trunk leans in to do the arm’s work.
             </p>
             <div className="lp-actions">
               <a className="lp-btn" href="/dashboard">Try the demo <ArrowRight aria-hidden className="size-5" /></a>
@@ -577,14 +577,14 @@ function Evidence() {
           <div>
             <h3>Our own number</h3>
             <p>
-              How often Re:Motion agrees with a blind label from side-view video. Target: about 90% over about 60 reps
+              How often ReMotion agrees with a blind label from side-view video. Target: about 90% over about 60 reps
               from three or more testers.
             </p>
           </div>
           <p className="lp-ours-value">To be measured</p>
         </div>
         <p className="lp-honest">
-          Re:Motion is a student prototype, tested only on team members, never on patients. It is not a certified medical device.
+          ReMotion is a student prototype, tested only on team members, never on patients. It is not a certified medical device.
         </p>
       </div>
     </section>
@@ -635,7 +635,7 @@ function Close() {
         <h2 className="lp-close-h">See a whole session.</h2>
         <a className="lp-btn lp-btn-light" href="/dashboard">Try the demo <ArrowRight aria-hidden className="size-5" /></a>
         <div className="lp-credits">
-          <p><strong>Re:Motion</strong> · ECE 198, University of Waterloo · Group 19</p>
+          <p><strong>ReMotion</strong> · ECE 198, University of Waterloo · Group 19</p>
           <p>Built for the CCCARE course challenge on at-home rehab.</p>
           <a href="https://github.com/vinyx1/ReMotion" target="_blank" rel="noreferrer">Source on GitHub</a>
         </div>
@@ -658,7 +658,7 @@ export default function Landing() {
     return () => window.removeEventListener('scroll', on)
   }, [])
   useEffect(() => {
-    document.title = 'Re:Motion: the reach, measured'
+    document.title = 'ReMotion: the reach, measured'
     document.documentElement.classList.add('lp-root')
     return () => document.documentElement.classList.remove('lp-root')
   }, [])
@@ -666,7 +666,7 @@ export default function Landing() {
     <div className="lp">
       <a className="lp-skip" href="#main">Skip to content</a>
       <header className={`lp-nav ${solidNav ? 'is-solid' : ''}`}>
-        <a href="/" className="lp-mark">Re:Motion</a>
+        <a href="/" className="lp-mark">ReMotion</a>
         <nav aria-label="Sections">
           <a href="#how">How it works</a>
           <a href="#evidence">Evidence</a>

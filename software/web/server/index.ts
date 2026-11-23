@@ -39,4 +39,4 @@ createServer(async (req, res) => {
   res.setHeader('Cache-Control', path.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache')
   if (req.method === 'HEAD') return res.end()
   createReadStream(file).on('error', () => { res.statusCode = 500; res.end() }).pipe(res)
-}).listen(PORT, () => console.log(`Re:Motion on http://localhost:${PORT}`))
+}).listen(PORT, () => console.log(`ReMotion on http://localhost:${PORT}`))
