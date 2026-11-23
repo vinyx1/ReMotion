@@ -2,8 +2,8 @@
   Where the dashboard is, kept in the URL hash so every view can be bookmarked and
   the browser's back button works:
 
-    #/patients                         all patients
-    #/p/<pid>                          a patient's overview of every exercise (the default view)
+    #/patients                         all patients (where the dashboard opens; also for no hash)
+    #/p/<pid>                          a patient's overview of every exercise
     #/p/<pid>/x/<exercise>             one exercise's overview (e.g. #/p/sim-a/x/hand-to-mouth)
     #/p/<pid>/x/<exercise>/sessions    that exercise's sessions
     #/p/<pid>/x/<exercise>/replay      that exercise's rep replay (its latest session)
@@ -29,10 +29,11 @@ export type Route =
   | { name: 'replay'; pid: string }
   | { name: 'profile'; pid: string }
 
-export function parse(hash: string, defaultPid: string): Route {
+/** The page a hash names; no hash (or one it doesn't know) is the patients list, where the dashboard opens. */
+export function parse(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent)
   if (parts[0] === 'patients') return { name: 'patients' }
-  if (parts[0] !== 'p' || !parts[1]) return { name: 'overview', pid: defaultPid }
+  if (parts[0] !== 'p' || !parts[1]) return { name: 'patients' }
   const pid = parts[1]
   switch (parts[2]) {
     case 'sessions':
@@ -68,7 +69,7 @@ export function go(r: Route) {
   window.location.hash = href(r)
 }
 
-export function useRoute(defaultPid: string): Route {
+export function useRoute(): Route {
   const [hash, setHash] = useState(() => window.location.hash)
   useEffect(() => {
     const on = () => {
@@ -78,5 +79,5 @@ export function useRoute(defaultPid: string): Route {
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
   }, [])
-  return parse(hash, defaultPid)
+  return parse(hash)
 }
