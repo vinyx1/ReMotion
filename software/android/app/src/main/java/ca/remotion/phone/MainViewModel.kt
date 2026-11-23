@@ -95,6 +95,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _signIn = MutableStateFlow(SignInState())
     /** The sign-in screen: busy, and what went wrong or why the phone was signed out. */
     val signIn: StateFlow<SignInState> = _signIn.asStateFlow()
+    private val _exercise = MutableStateFlow(Exercise.of(prefs.getString(KEY_EXERCISE, null)))
+    /** The exercise chosen on the setup screen; the next session is this one. */
+    val exercise: StateFlow<Exercise> = _exercise.asStateFlow()
+    fun chooseExercise(e: Exercise) {
+        _exercise.value = e
+        prefs.edit().putString(KEY_EXERCISE, e.id).apply()
+    }
     private val _hello = MutableStateFlow<String?>(null)
     /** Set right after a sign-in: the first name the "Hello" screen greets, until it's done. */
     val hello: StateFlow<String?> = _hello.asStateFlow()
@@ -183,7 +190,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun startUploader(l: DeviceLink) {
         val who = _login.value ?: return
         uploader?.close(viewModelScope)
-        uploader = Uploader(who.server, who.token, who.patientId, demo = l is DemoLink, scope = viewModelScope,
+        uploader = Uploader(who.server, who.token, who.patientId, demo = l is DemoLink, exercise = { _exercise.value.id }, scope = viewModelScope,
             onStatus = { st -> _ui.update { it.copy(upload = st) } },
             onSignedOut = { viewModelScope.launch { endSignIn(who) } })
         _ui.update { it.copy(upload = Uploader.Status(who.server)) }
@@ -344,7 +351,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun endOfSession() {
         val reps = _ui.value.sessionReps
         if (reps.isEmpty()) return                            // ended before any reach: nothing to show
-        val done = History.summarize(reps, demo = link is DemoLink)
+        val done = History.summarize(reps, demo = link is DemoLink, exercise = _exercise.value)
         viewModelScope.launch(Dispatchers.IO) { _past.value = history.add(done) }
         _finished.value = done
     }
@@ -378,6 +385,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private val REST = Regex("""^rest (\d+) s before the (PRACTICE|BASELINE|TRAINING|POST) block""")
         private const val KEY_DASHBOARD = "dashboard"
         private const val KEY_HISTORY_OWNER = "historyFor"
+        private const val KEY_EXERCISE = "exercise"
         /**
           Where a typed code is sent (a scanned QR code carries its own address). With the phone on a
           cable, `adb reverse tcp:5173 tcp:5173` makes this the Mac's dashboard; once it's online,

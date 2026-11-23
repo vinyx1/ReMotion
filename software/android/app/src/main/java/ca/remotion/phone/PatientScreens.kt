@@ -29,6 +29,9 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,6 +39,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -120,7 +124,10 @@ fun PatientApp(s: UiState, past: List<PastSession>, finished: PastSession?, acti
                         Screen.PlugIn -> PlugInCoach(s.message, actions.onConnect)
                         Screen.Session -> SessionCoach(s, warm)
                         Screen.Home -> HomeCoach(s)
-                        Screen.Setup -> SetupCoach(onReady = { ready = true })
+                        Screen.Setup -> {
+                            val e = LocalExercise.current
+                            key(e) { SetupCoach(e, onReady = { ready = true }) }      // a new choice starts its drawing over
+                        }
                     }
                 }
             }
@@ -135,12 +142,13 @@ fun PatientApp(s: UiState, past: List<PastSession>, finished: PastSession?, acti
                     Text("Settings", fontSize = 15.sp, color = Forest2)
                 }
             }
-            AnimatedContent(if (screen == Screen.PlugIn || screen == Screen.Setup) Screen.Home else screen,   // the week shows on all three
+            AnimatedContent(if (screen == Screen.PlugIn) Screen.Home else screen,         // the week shows on both
                 transitionSpec = { fadeThrough() }, contentKey = { it::class }, label = "score") { shown ->
                 Column(Modifier.fillMaxSize()) {
                     when (shown) {
                         is Screen.Done -> DoneScore(shown.done, past)
                         Screen.Session -> SessionScore(s, actions)
+                        Screen.Setup -> ExercisePicker(LocalExercise.current, actions.onChooseExercise)
                         else -> WeekScore(past)
                     }
                 }
@@ -155,6 +163,7 @@ class PatientActions(
     val onDone: () -> Unit,
     val onSettings: () -> Unit,
     val onAddReach: () -> Unit,
+    val onChooseExercise: (Exercise) -> Unit,
 )
 
 // ---------------------------------------------------------------- the coach (left)
@@ -202,16 +211,28 @@ private fun ColumnScope.PlugInCoach(message: String?, onConnect: () -> Unit) {
 private data class Say(val headline: String, val sub: String? = null, val warning: Boolean = false,
                        val restEndsAt: Long = 0, val next: String = "")
 
-private fun say(s: UiState, warm: Boolean): Say = when {
-    warm -> Say("Sit back against the chair", "You’re leaning forward. Let your arm do the reaching.", warning = true)
+private fun say(s: UiState, warm: Boolean, e: Exercise): Say = when {
+    warm -> when (e) {
+        Exercise.MOUTH -> Say("Sit up straight", "You’re bending down to meet your hand. Bring your hand all the way up.", warning = true)
+        Exercise.SIDEWAYS -> Say("Sit up straight", "You’re leaning to the side. Let your arm do the reaching.", warning = true)
+        Exercise.FORWARD -> Say("Sit back against the chair", "You’re leaning forward. Let your arm do the reaching.", warning = true)
+    }
     else -> when (s.state) {
         "CALIBRATING" -> Say("Sit up straight and stay still", "The device is learning how you sit upright. It takes 3 seconds.")
         "WAIT_HOME" -> Say("Put your hand on the white button", "Keep it there until a light comes on.")
-        "CUED", "REACHING" -> Say(
-            if (s.target.isEmpty()) "Reach for the button that lights up" else "Reach for the ${s.target.lowercase()} button",
-            if (s.feedback) "The buzzer sounds if you lean forward." else "Keep your back against the chair.",
-        )
-        "RETURNING" -> Say("Bring your hand back to the white button")
+        "CUED", "REACHING" -> when (e) {
+            Exercise.MOUTH -> Say("Lift your hand up to your mouth",
+                if (s.feedback) "Keep your head up. The buzzer sounds if you bend down." else "Keep your head up and your back straight.")
+            Exercise.SIDEWAYS -> Say(
+                if (s.target.isEmpty()) "Reach out to the side for the light" else "Reach out to the side for the ${s.target.lowercase()} button",
+                if (s.feedback) "The buzzer sounds if you lean to the side." else "Keep your back straight against the chair.",
+            )
+            Exercise.FORWARD -> Say(
+                if (s.target.isEmpty()) "Reach for the button that lights up" else "Reach for the ${s.target.lowercase()} button",
+                if (s.feedback) "The buzzer sounds if you lean forward." else "Keep your back against the chair.",
+            )
+        }
+        "RETURNING" -> Say(if (e == Exercise.MOUTH) "Bring your hand back down to the white button" else "Bring your hand back to the white button")
         "REST" -> Say("Rest for a moment", restEndsAt = s.restEndsAt, next = s.nextBlock)
         else -> Say("Getting ready")
     }
@@ -220,7 +241,7 @@ private fun say(s: UiState, warm: Boolean): Say = when {
 @Composable
 private fun ColumnScope.SessionCoach(s: UiState, warm: Boolean) {
     // a new instruction crossfades in; the same one (CUED then REACHING) stays put
-    AnimatedContent(say(s, warm), transitionSpec = { swap() }, contentKey = { it.headline }, label = "instruction") { said ->
+    AnimatedContent(say(s, warm, LocalExercise.current), transitionSpec = { swap() }, contentKey = { it.headline }, label = "instruction") { said ->
         Column {
             if (said.warning) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -246,7 +267,7 @@ private fun ColumnScope.SessionCoach(s: UiState, warm: Boolean) {
 
 @Composable
 private fun ColumnScope.DoneCoach(done: PastSession, onDone: () -> Unit) {
-    Instruction("Well done, ${LocalFirstName.current}", "You finished ${done.reaches} ${if (done.reaches == 1) "reach" else "reaches"}. Your results are on the right, and your therapist can see them too.")
+    Instruction("Well done, ${LocalFirstName.current}", "You finished ${done.reaches} ${done.exercise.reps(done.reaches)}. Your results are on the right, and your therapist can see them too.")
     Spacer(Modifier.weight(1f))
     PrimaryButton("Done", onDone)
 }
@@ -266,9 +287,11 @@ private fun Mat(s: UiState) {
         horizontalArrangement = Arrangement.spacedBy(22.dp),
     ) {
         MatButton("Home", Panel, lit == "HOME")
-        MatButton("Green", ButtonGreen, lit == "GREEN")
-        MatButton("Blue", ButtonBlue, lit == "BLUE")
-        MatButton("Red", ButtonRed, lit == "RED")
+        if (LocalExercise.current != Exercise.MOUTH) {            // hand to mouth has no target to press
+            MatButton("Green", ButtonGreen, lit == "GREEN")
+            MatButton("Blue", ButtonBlue, lit == "BLUE")
+            MatButton("Red", ButtonRed, lit == "RED")
+        }
     }
 }
 
@@ -371,13 +394,14 @@ private fun ColumnScope.SessionScore(s: UiState, actions: PatientActions) {
     Text(if (s.state == "REST") "Finished. Well done." else blockLine(s.phase), style = BodyStyle.copy(fontSize = 16.sp), color = Forest2)
     if (s.blockSize > 0) {
         val now = (s.blockDone + if (s.state in listOf("WAIT_HOME", "CUED", "REACHING")) 1 else 0).coerceIn(1, s.blockSize)
+        val e = LocalExercise.current
         AnimatedContent(now to s.blockSize, transitionSpec = { swap() }, label = "count") { (n, of) ->
             Text(
                 buildAnnotatedString {
                     append("$n")
-                    withStyle(SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Normal, color = Forest2)) { append(" of $of reaches") }
+                    withStyle(SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Normal, color = Forest2)) { append(" of $of ${e.many}") }
                 },
-                style = NumberStyle, color = Forest, modifier = Modifier.padding(top = 8.dp).semantics { contentDescription = "Reach $n of $of" },
+                style = NumberStyle, color = Forest, modifier = Modifier.padding(top = 8.dp).semantics { contentDescription = "${e.one.replaceFirstChar { it.uppercase() }} $n of $of" },
             )
         }
     }
@@ -391,7 +415,7 @@ private fun ColumnScope.SessionScore(s: UiState, actions: PatientActions) {
     }
     }
     if (s.demo) TextButton(onClick = actions.onAddReach, enabled = s.state == "WAIT_HOME", modifier = Modifier.fillMaxWidth()) {
-        Text("Add a reach (demo)", fontSize = 16.sp)
+        Text("Add a ${LocalExercise.current.one} (demo)", fontSize = 16.sp)
     }
     if (s.oldFirmware) Text("To stop, press the yellow button.", style = BodyStyle.copy(fontSize = 16.sp), color = Forest)
     else OutlinedButton(onClick = actions.onEnd, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
@@ -411,7 +435,7 @@ private fun LastReach(rep: Rep, upright: Int, done: Int) {
         ResultIcon(upright = up, size = 30.dp)
         Column(Modifier.padding(start = 10.dp)) {
             Text(if (up) "Upright" else "Leaned", style = LabelStyle.copy(fontSize = 19.sp), color = if (up) Forest else TerraDeep)
-            Text("Last reach · ${of(upright, done)} upright", style = BodyStyle.copy(fontSize = 15.sp, fontFeatureSettings = "tnum"), color = Forest)
+            Text("Last ${LocalExercise.current.one} · ${of(upright, done)} upright", style = BodyStyle.copy(fontSize = 15.sp, fontFeatureSettings = "tnum"), color = Forest)
         }
     }
 }
@@ -429,17 +453,60 @@ private fun ColumnScope.DoneScore(done: PastSession, past: List<PastSession>) {
             style = NumberStyle, color = Forest, modifier = Modifier.padding(start = 10.dp),
         )
     }
-    Text("reaches upright", style = BodyStyle, color = Forest)
+    Text("${done.exercise.many} upright", style = BodyStyle, color = Forest)
     val leaned = done.reaches - done.upright
     if (leaned > 0) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
         ResultIcon(upright = false, size = 22.dp)
-        Text("$leaned leaned forward", style = BodyStyle.copy(fontFeatureSettings = "tnum"), color = TerraDeep, modifier = Modifier.padding(start = 8.dp))
+        Text("$leaned " + when (done.exercise) {
+            Exercise.MOUTH -> "bent down"
+            Exercise.SIDEWAYS -> "leaned to the side"
+            Exercise.FORWARD -> "leaned forward"
+        }, style = BodyStyle.copy(fontFeatureSettings = "tnum"), color = TerraDeep, modifier = Modifier.padding(start = 8.dp))
     }
-    val before = past.dropLast(1).lastOrNull()       // the session just ended is already the last one
+    // the session just ended is already the last one; compare with the same exercise only
+    val before = past.dropLast(1).lastOrNull { it.exercise == done.exercise }
     if (before != null) {
         Spacer(Modifier.weight(1f))
         Box(Modifier.fillMaxWidth().height(1.dp).background(Wall))
         Text(compare(done, before), style = BodyStyle, color = Forest, modifier = Modifier.padding(top = 12.dp))
+    }
+}
+
+/*
+  Before a session, the right side is the choice of exercise: three large rows, one chosen,
+  remembered for next time. A radio group: the whole row is the target, the mark is never
+  colour alone (filled with a tick, or an empty ring).
+*/
+@Composable
+private fun ColumnScope.ExercisePicker(chosen: Exercise, onChoose: (Exercise) -> Unit) {
+    Text("Today’s exercise", style = LabelStyle, color = Forest2, modifier = Modifier.semantics { heading() })
+    Column(
+        Modifier.padding(top = 10.dp).weight(1f).verticalScroll(rememberScrollState()).selectableGroup(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Exercise.entries.forEach { e -> ExerciseRow(e, e == chosen) { onChoose(e) } }
+    }
+}
+
+@Composable
+private fun ExerciseRow(e: Exercise, chosen: Boolean, onClick: () -> Unit) {
+    val edge by animateColorAsState(if (chosen) Forest else Wall, tween(STATE_MS), label = "edge")
+    val fill by animateColorAsState(if (chosen) Panel else Plaster, tween(STATE_MS), label = "fill")
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 64.dp).clip(shape).background(fill).border(if (chosen) 2.dp else 1.dp, edge, shape)
+            .selectable(selected = chosen, onClick = onClick, role = Role.RadioButton)
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(26.dp).clip(CircleShape).background(if (chosen) Forest else Plaster)
+            .border(if (chosen) 0.dp else 2.dp, Forest2.copy(alpha = 0.6f), CircleShape), contentAlignment = Alignment.Center) {
+            if (chosen) CheckMark(Plaster, 14.dp)
+        }
+        Column(Modifier.padding(start = 12.dp)) {
+            Text(e.title, style = LabelStyle.copy(fontSize = 18.sp, lineHeight = 22.sp), color = Forest)
+            Text(e.blurb, style = BodyStyle.copy(fontSize = 14.sp, lineHeight = 18.sp), color = Forest2)
+        }
     }
 }
 
@@ -502,14 +569,13 @@ private fun blockName(phase: String) = when (phase) {
 }
 
 private fun blockLine(phase: String) = when (phase) {
-    "PRACTICE" -> "Practice reaches. These don’t count."
+    "PRACTICE" -> "Practice goes. These don’t count."
     "BASELINE" -> "Reach the way you normally do."
     "TRAINING" -> "The buzzer sounds if you lean."
     "POST" -> "No buzzer this time."
     else -> "Sit up straight and still."
 }
 
-private fun reaches(n: Int) = if (n == 1) "reach" else "reaches"
 
 /** "3 of 4" that never breaks across lines. */
 private fun of(a: Int, b: Int) = "$a\u00A0of\u00A0$b"
@@ -517,8 +583,8 @@ private fun of(a: Int, b: Int) = "$a\u00A0of\u00A0$b"
 /** How the last session went, and the one before. Only called once there is one. */
 private fun lastTime(past: List<PastSession>): String {
     val last = past.last()
-    val before = past.dropLast(1).lastOrNull()
-    val line = "Last time you stayed upright in ${of(last.upright, last.reaches)} ${reaches(last.reaches)}."
+    val before = past.dropLast(1).lastOrNull { it.exercise == last.exercise }
+    val line = "Last time you stayed upright in ${of(last.upright, last.reaches)} ${last.exercise.reps(last.reaches)}."
     return if (before == null) line else "$line " + compare(last, before)
 }
 

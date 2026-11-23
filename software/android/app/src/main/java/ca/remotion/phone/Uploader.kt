@@ -31,6 +31,8 @@ class Uploader(
     private val token: String,
     private val patient: String,
     private val demo: Boolean,
+    /** the exercise chosen now (read when a session starts) */
+    private val exercise: () -> String,
     scope: CoroutineScope,
     private val onStatus: (Status) -> Unit,
     /** the server said the sign-in has ended (a demo's hour is up, the patient was deleted) */
@@ -42,6 +44,8 @@ class Uploader(
     private val endpoint = URL("$address/api/phone/lines")
     /** The run lines are added to now: named by when it started. */
     private var run = stamp()
+    /** Each run's exercise, fixed when the run starts. */
+    private val exercises = HashMap<String, String>().apply { put(run, exercise()) }
     /** Lines waiting to be sent, each with the run it belongs to. */
     private val waiting = ArrayDeque<Pair<String, String>>()
     private var status = Status(address)
@@ -58,6 +62,7 @@ class Uploader(
         if (line.startsWith("# calibrating")) {             // a session is starting: give it its own run
             val next = stamp()
             run = if (next > run) next else bump(run)          // never reuse a run's name
+            exercises[run] = exercise()
         }
         waiting.addLast(run to line)
         if (waiting.size > MAX_WAITING) waiting.removeFirst()
@@ -100,6 +105,7 @@ class Uploader(
             .put("patient", patient)
             .put("demo", demo)
             .put("run", run)
+            .put("exercise", synchronized(waiting) { exercises[run] } ?: Exercise.FORWARD.id)
             .put("lines", JSONArray(lines))
             .toString()
             .toByteArray(Charsets.UTF_8)
