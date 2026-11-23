@@ -48,6 +48,8 @@ data/*.csv
 data/fake/
 # Sessions sent by the phone app (data/phone, data/phone-demo, and the server's data/phone-incoming)
 data/phone*/
+# The dashboard server's accounts, sign-ins and demo sandboxes (software/web/server/accounts.ts)
+data/state/
 
 # Arduino / PlatformIO build output
 firmware/**/build/

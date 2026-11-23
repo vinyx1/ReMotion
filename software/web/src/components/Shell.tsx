@@ -4,7 +4,8 @@
   phones a compact top bar. A patient's own sub-views are tabs on the patient page.
 */
 import { ChevronRight, FileText, Users } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
+import { timeLeft, useAccount } from '../lib/account'
 import { href, type Route } from '../lib/route'
 import type { Patient } from '../lib/patients'
 import { cn } from '../lib/utils'
@@ -50,7 +51,6 @@ function DataChip({ simulated, className }: { simulated: boolean; className?: st
   )
 }
 
-/** Split "Nov 18, 11:09" into its day and time. */
 /** "Nov 21, 23:15 (session 2)" -> { d: "Nov 21", t: "23:15 (2)" }: short enough for one line (the link's aria-label keeps the full label). */
 function when(s: Session) {
   const [d, t = ''] = s.label.split(', ')
@@ -149,6 +149,37 @@ function ClosedFolder({ patient, sessions }: { patient: Patient; sessions: Sessi
   )
 }
 
+/** Now, updated every 20 s: enough for a countdown in minutes. */
+function useNow(every = 20_000) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), every); return () => clearInterval(t) }, [every])
+  return now
+}
+
+const ACCOUNT_BTN = 'inline-flex h-10 cursor-pointer items-center justify-center rounded-lg border border-plaster/30 px-3 text-[14px] font-bold text-plaster transition-colors duration-150 hover:border-plaster/60 hover:bg-plaster/10'
+
+/**
+  Who's signed in, at the foot of the sidebar. A demo shows how long it has left and
+  End demo (deletes it now, for the next visitor at the table); the owner, Sign out.
+*/
+function AccountBlock() {
+  const { me, signOut, endDemo } = useAccount()
+  const now = useNow()
+  const demo = me.kind === 'demo' && me.expiresAt !== null
+  return (
+    <div className="flex flex-col gap-2.5">
+      <p className="min-w-0">
+        <span className="block text-[12px] font-bold text-plaster/60">{demo ? 'Demo account' : 'Signed in as'}</span>
+        <span className="block truncate text-[14px] font-bold text-plaster" title={me.email}>{me.email}</span>
+        {demo && <span className="block text-[13px] text-plaster/75 tabular-nums">Deleted in {timeLeft(me.expiresAt!, now)}</span>}
+      </p>
+      {demo
+        ? <button type="button" onClick={endDemo} className={cn(ACCOUNT_BTN, NAV_FOCUS)}>End demo</button>
+        : <button type="button" onClick={signOut} className={cn(ACCOUNT_BTN, NAV_FOCUS)}>Sign out</button>}
+    </div>
+  )
+}
+
 function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; patients: Patient[]; patient: Patient; sessionsFor: (p: Patient) => Session[] }) {
   return (
     <aside className="sticky top-0 hidden h-dvh w-[17rem] shrink-0 flex-col bg-forest text-plaster lg:flex">
@@ -164,15 +195,28 @@ function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; pati
             : <ClosedFolder key={p.id} patient={p} sessions={sessionsFor(p)} />
         ))}
       </nav>
-      <div className="flex flex-col gap-3 border-t border-plaster/15 px-5 py-4 text-[13px] text-plaster/75">
-        <DataChip simulated={patient.simulated} className="self-start" />
-        <p>Chest and wrist sensors, 100 Hz</p>
+      <div className="flex flex-col gap-4 border-t border-plaster/15 px-5 py-4 text-[13px] text-plaster/75">
+        <AccountBlock />
+        <p>{sessionsFor(patient).length > 0 && <><DataChip simulated={patient.simulated} /> · </>}Chest and wrist sensors, 100 Hz</p>
       </div>
     </aside>
   )
 }
 
-function MobileBar({ route, patient }: { route: Route; patient: Patient }) {
+/** The small screen's version: the demo's time left and End demo, or Sign out. */
+function MobileAccount() {
+  const { me, signOut, endDemo } = useAccount()
+  const now = useNow()
+  const demo = me.kind === 'demo' && me.expiresAt !== null
+  return (
+    <div className="ml-auto flex shrink-0 items-center gap-2">
+      {demo && <span className="text-[13px] text-plaster/75 tabular-nums">{timeLeft(me.expiresAt!, now)} left</span>}
+      <button type="button" onClick={demo ? endDemo : signOut} className={cn(ACCOUNT_BTN, 'h-9', NAV_FOCUS)}>{demo ? 'End demo' : 'Sign out'}</button>
+    </div>
+  )
+}
+
+function MobileBar({ route }: { route: Route }) {
   return (
     <div className="flex items-center gap-3 bg-forest px-4 py-3 text-plaster lg:hidden">
       <a href="/" className={cn('shrink-0 rounded-md font-display text-[1.2rem] font-semibold tracking-[-0.02em]', NAV_FOCUS)}>Re:Motion</a>
@@ -180,7 +224,7 @@ function MobileBar({ route, patient }: { route: Route; patient: Patient }) {
         className={cn('inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-plaster/85 hover:text-plaster', NAV_FOCUS)}>
         <Users className="size-4" aria-hidden /> Patients
       </a>
-      <DataChip simulated={patient.simulated} className="ml-auto shrink-0" />
+      <MobileAccount />
     </div>
   )
 }
@@ -221,7 +265,7 @@ export function Shell({ route, patients, patient, crumbs, sessionsFor, header, m
     <div className="flex min-h-dvh">
       <Sidebar route={route} patients={patients} patient={patient} sessionsFor={sessionsFor} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <MobileBar route={route} patient={patient} />
+        <MobileBar route={route} />
         {/* the wall: the page's header, painted like the landing page's room, meeting the floor at a horizon */}
         <header className={cn('dash-wall', mood === 'warm' && 'is-warm', mood === 'cool' && 'is-cool')}>
           <WallFacets />

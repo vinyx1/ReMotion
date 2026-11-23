@@ -1,12 +1,15 @@
 /*
-  The therapist dashboard (/dashboard), built from public/sessions.json.
+  The therapist dashboard (/dashboard): sign in (components/SignIn.tsx), then the signed-in
+  account's patients and sessions from the API (server/api.ts).
 
   A clinic-style frame: a sidebar that lists the patients, and a page per patient
   with sub-views (Overview, Sessions, Rep replay, Profile & settings). Sessions and
   reps open on their own pages. Where you are lives in the URL hash (lib/route.ts).
   The look is Rehab Studio (DESIGN.md) at working density.
 */
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { SignIn } from './components/SignIn'
+import { AccountContext, type AccountApi, ApiError, endDemo, getMe, type Me, signOut } from './lib/account'
 import { PatientHeader } from './components/PatientHeader'
 import { AllExercises, Overview } from './components/Overview'
 import { PatientsHeader, PatientsPage, ProfilePage } from './components/Pages'
@@ -15,29 +18,33 @@ import { SessionDetail, SessionPlates, SessionTable } from './components/Session
 import { type Crumb, Shell } from './components/Shell'
 import { EXERCISES, exerciseOf } from './lib/exercises'
 import { patientsFrom, sessionsOf } from './lib/patients'
-import { go, type Route, useRoute } from './lib/route'
+import { go, href, type Route, useRoute } from './lib/route'
 import { trendOf } from './lib/stats'
 import type { ExerciseId, SessionsFile } from './types'
 
 type Load = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: SessionsFile }
 
 /*
-  sessions.json, read again every 5 s while the page is visible, so a session the phone app
-  is recording (server/phone.ts re-exports after each rep) shows up without a reload. The
-  page only re-renders when the file changed.
+  The account's sessions, read again every 5 s while the page is visible, so a session the
+  phone app is recording (server/phone.ts re-exports after each rep) shows up without a
+  reload. The page only re-renders when the file changed. A 401 means the sign-in ended
+  (a demo's hour is up): onSignedOut.
 */
 const POLL_MS = 5000
 
-function useSessions(): Load {
+function useSessions(onSignedOut: () => void): Load {
   const [state, setState] = useState<Load>({ status: 'loading' })
   useEffect(() => {
     let alive = true
     let last: string | undefined      // the file as last read ("generated" alone only has whole seconds)
     const read = (first: boolean) =>
-      fetch('/sessions.json', { cache: 'no-store' })
-        .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      fetch('/api/sessions', { cache: 'no-store' })
+        .then((r) => {
+          if (r.status === 401) { if (alive) onSignedOut(); return null }
+          return r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))
+        })
         .then((text) => {
-          if (!alive || text === last) return
+          if (!alive || text === null || text === last) return
           last = text
           setState({ status: 'ready', data: JSON.parse(text) as SessionsFile })
         })
@@ -45,8 +52,49 @@ function useSessions(): Load {
     void read(true)
     const timer = setInterval(() => { if (document.visibilityState === 'visible') void read(false) }, POLL_MS)
     return () => { alive = false; clearInterval(timer) }
-  }, [])
+  }, [onSignedOut])
   return state
+}
+
+type Auth = { status: 'checking' } | { status: 'out'; note?: string } | { status: 'in'; me: Me } | { status: 'error'; message: string }
+
+const DEMO_OVER = 'Your demo hour is up. Request a new login to try again.'
+
+/** Who's signed in decides what shows: the sign-in page, or the dashboard of their account. */
+export default function App() {
+  const [auth, setAuth] = useState<Auth>({ status: 'checking' })
+  useEffect(() => {
+    getMe().then((me) => setAuth({ status: 'in', me }))
+      .catch((e) => setAuth(e instanceof ApiError && e.status === 401 ? { status: 'out' } : { status: 'error', message: e.message }))
+  }, [])
+
+  const me = auth.status === 'in' ? auth.me : null
+  const ended = useCallback(() => setAuth({ status: 'out', note: me?.kind === 'demo' ? DEMO_OVER : 'You were signed out.' }), [me?.kind])
+
+  // a demo signs out by itself when its hour is up, even with the page left open
+  useEffect(() => {
+    if (!me?.expiresAt) return
+    const t = setTimeout(ended, Math.max(0, me.expiresAt - Date.now()) + 1000)
+    return () => clearTimeout(t)
+  }, [me?.expiresAt, ended])
+
+  const account = useMemo<AccountApi | null>(() => me && ({
+    me,
+    refresh: async () => { const fresh = await getMe(); setAuth({ status: 'in', me: fresh }) },
+    signOut: () => { void signOut().finally(() => { location.hash = ''; setAuth({ status: 'out' }) }) },
+    endDemo: () => { void endDemo().finally(() => { location.hash = ''; setAuth({ status: 'out', note: 'The demo was ended and deleted.' }) }) },
+  }), [me])
+
+  if (auth.status === 'checking') return <Message title="Loading…"><p role="status">Checking who’s signed in.</p></Message>
+  if (auth.status === 'error') {
+    return <Message title="The dashboard couldn’t start"><p>The server answered with an error ({auth.message}). Reload the page to try again.</p></Message>
+  }
+  if (auth.status === 'out' || !account) return <SignIn note={auth.status === 'out' ? auth.note : undefined} onSignedIn={(m) => setAuth({ status: 'in', me: m })} />
+  return (
+    <AccountContext.Provider value={account}>
+      <Dashboard me={account.me} onSignedOut={ended} />
+    </AccountContext.Provider>
+  )
 }
 
 function Message({ title, children }: { title: string; children: React.ReactNode }) {
@@ -63,23 +111,21 @@ function Message({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-const code = 'rounded bg-wash px-1.5 py-0.5 font-readout text-[15px] text-forest'
 
-export default function App() {
-  const load = useSessions()
-  const all = load.status === 'ready' ? load.data.sessions : []
-  const patients = patientsFrom(all)
-  const route = useRoute(patients[0].id)
+function Dashboard({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
   useEffect(() => { document.title = 'Re:Motion dashboard' }, [])
+  const load = useSessions(onSignedOut)
+  const all = load.status === 'ready' ? load.data.sessions : []
+  const patients = patientsFrom(all, me.patients)
+  const route = useRoute(patients[0]?.id ?? '')
 
   if (load.status === 'loading') {
-    return <Message title="Loading sessions…"><p role="status">Reading sessions.json.</p></Message>
+    return <Message title="Loading sessions…"><p role="status">Reading this account’s sessions.</p></Message>
   }
   if (load.status === 'error') {
     return (
       <Message title="The sessions couldn't be loaded">
-        <p>The dashboard reads <code className={code}>sessions.json</code> and got an error ({load.message}).</p>
-        <p className="mt-2">From the repo root, run <code className={code}>python -m software.dashboard.export</code>, then reload this page.</p>
+        <p>The server answered with an error ({load.message}). Reload the page to try again.</p>
       </Message>
     )
   }
@@ -103,17 +149,17 @@ export default function App() {
   const openRep = (sid: string, rep: number) => go({ name: 'rep', pid, sid, rep })
   const everything = sessionsOf(patient, all)
 
-  if (!everything.length) {
+  // nothing recorded yet: every page says so, except Profile & settings, where the phone gets connected
+  if (!everything.length && route.name !== 'profile') {
     return (
       <Shell route={route} patients={patients} patient={patient} crumbs={crumbs} sessionsFor={sessionsFor}
         header={<PatientHeader patient={patient} sessions={everything} section="overview" />}>
         <div className="py-16 text-center">
           <h2 className="font-display text-2xl font-medium">No sessions yet</h2>
-          <p className="mt-2 text-[17px] text-pretty text-forest-2">
-            {patient.id === 'vincent'
-              ? 'Start a session in the ReMotion phone app. Each rep shows up here a few seconds after it ends.'
-              : <>Record one with <code className={code}>python -m software.tools.logger</code>, then run{' '}
-                <code className={code}>python -m software.dashboard.export</code> and reload.</>}
+          <p className="mx-auto mt-2 max-w-[46ch] text-[17px] text-pretty text-forest-2">
+            Connect {patient.name.split(' ')[0]}’s phone from{' '}
+            <a href={href({ name: 'profile', pid })} className="font-bold text-forest underline decoration-forest/30 underline-offset-4 hover:decoration-forest">Profile &amp; settings</a>,
+            then start a session on the mat. Each rep shows up here a few seconds after it ends.
           </p>
         </div>
       </Shell>
