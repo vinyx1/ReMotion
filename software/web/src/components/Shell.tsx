@@ -4,7 +4,7 @@
   phones a compact top bar. A patient's own sub-views are tabs on the patient page.
 */
 import { ChevronRight, FileText, Users } from 'lucide-react'
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
 import { timeLeft, useAccount } from '../lib/account'
 import { href, type Route } from '../lib/route'
 import type { Patient } from '../lib/patients'
@@ -69,7 +69,7 @@ function PatientFolder({ patient, sessions, route }: { patient: Patient; session
   const sid = route.name === 'session' || route.name === 'rep' ? route.sid : null
   const onPatient = route.name !== 'patients' && route.pid === patient.id
   return (
-    <div className="relative mt-2">
+    <div data-open-folder className="relative mt-2">
       {/* the back of the folder, with its tab */}
       <a href={href({ name: 'overview', pid: patient.id })} aria-current={onPatient && route.name === 'overview' ? 'page' : undefined}
         className={cn('relative z-10 flex h-[38px] w-fit max-w-[92%] items-center gap-2 rounded-t-[10px] bg-folder pr-3 pl-1.5 text-forest', FOLDER_FOCUS)}>
@@ -181,12 +181,30 @@ function AccountBlock() {
 }
 
 function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; patients: Patient[]; patient?: Patient; sessionsFor: (p: Patient) => Session[] }) {
+  const nav = useRef<HTMLElement>(null)
+  const openId = patient && route.name !== 'patients' ? patient.id : null
+
+  /*
+    Opening a patient brings their folder into view in the list, top first, if it's out of
+    sight; one already in view stays put. Only the list scrolls, never the page (the sidebar
+    is sticky); smooth unless the reader asked for reduced motion.
+  */
+  useEffect(() => {
+    const list = nav.current
+    const folder = list?.querySelector<HTMLElement>('[data-open-folder]')
+    if (!list || !folder || !openId) return
+    const l = list.getBoundingClientRect(), f = folder.getBoundingClientRect()
+    if (f.top >= l.top && f.bottom <= l.bottom) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    list.scrollTo({ top: list.scrollTop + (f.top - l.top) - 8, behavior: reduce ? 'auto' : 'smooth' })
+  }, [openId])
+
   return (
     <aside className="sticky top-0 hidden h-dvh w-[17rem] shrink-0 flex-col bg-forest text-plaster lg:flex">
       <div className="px-5 pt-5 pb-6">
         <a href="/" className={cn('rounded-md font-display text-[1.45rem] font-semibold tracking-[-0.02em]', NAV_FOCUS)}>Re:Motion</a>
       </div>
-      <nav aria-label="Patients" className="scroll-quiet flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4">
+      <nav ref={nav} aria-label="Patients" className="scroll-quiet flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4">
         <NavLink to={{ name: 'patients' }} active={route.name === 'patients'} icon={Users}>All patients</NavLink>
         <p className="mt-5 mb-1 px-3 text-[13px] font-bold text-plaster/60">Patient files · {patients.length}</p>
         {patients.map((p) => (
