@@ -214,7 +214,7 @@ private data class Say(val headline: String, val sub: String? = null, val warnin
 private fun say(s: UiState, warm: Boolean, e: Exercise): Say = when {
     warm -> when (e) {
         Exercise.MOUTH -> Say("Sit up straight", "You’re bending down to meet your hand. Bring your hand all the way up.", warning = true)
-        Exercise.SIDEWAYS -> Say("Sit up straight", "You’re leaning to the side. Let your arm do the reaching.", warning = true)
+        Exercise.SIDEWAYS -> Say("Sit up straight", "You’re leaning to your right. Let your arm do the reaching.", warning = true)
         Exercise.FORWARD -> Say("Sit back against the chair", "You’re leaning forward. Let your arm do the reaching.", warning = true)
     }
     else -> when (s.state) {
@@ -224,8 +224,8 @@ private fun say(s: UiState, warm: Boolean, e: Exercise): Say = when {
             Exercise.MOUTH -> Say("Lift your hand up to your mouth",
                 if (s.feedback) "Keep your head up. The buzzer sounds if you bend down." else "Keep your head up and your back straight.")
             Exercise.SIDEWAYS -> Say(
-                if (s.target.isEmpty()) "Reach out to the side for the light" else "Reach out to the side for the ${s.target.lowercase()} button",
-                if (s.feedback) "The buzzer sounds if you lean to the side." else "Keep your back straight against the chair.",
+                if (s.target.isEmpty()) "Reach out to your right for the light" else "Reach out to your right for the ${s.target.lowercase()} button",
+                if (s.feedback) "The buzzer sounds if you lean to the right." else "Keep your back straight against the chair.",
             )
             Exercise.FORWARD -> Say(
                 if (s.target.isEmpty()) "Reach for the button that lights up" else "Reach for the ${s.target.lowercase()} button",
@@ -459,7 +459,7 @@ private fun ColumnScope.DoneScore(done: PastSession, past: List<PastSession>) {
         ResultIcon(upright = false, size = 22.dp)
         Text("$leaned " + when (done.exercise) {
             Exercise.MOUTH -> "bent down"
-            Exercise.SIDEWAYS -> "leaned to the side"
+            Exercise.SIDEWAYS -> "leaned to the right"
             Exercise.FORWARD -> "leaned forward"
         }, style = BodyStyle.copy(fontFeatureSettings = "tnum"), color = TerraDeep, modifier = Modifier.padding(start = 8.dp))
     }

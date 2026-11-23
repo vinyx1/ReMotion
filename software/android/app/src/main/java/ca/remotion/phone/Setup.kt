@@ -67,7 +67,7 @@ import androidx.compose.ui.unit.sp
 
 private fun steps(e: Exercise) = listOf(
     "Prop the phone up, facing you",
-    if (e == Exercise.SIDEWAYS) "Turn the mat along the table edge, by your reaching hand" else "Put the mat on the table in front of you",
+    if (e == Exercise.SIDEWAYS) "Turn the mat along the table edge, on your right" else "Put the mat on the table in front of you",
     "Put on the chest strap",
 )
 
@@ -96,7 +96,7 @@ fun ColumnScope.SetupCoach(exercise: Exercise, onReady: () -> Unit) {
         Canvas(
             Modifier.weight(1f).aspectRatio(300f / 180f).align(Alignment.CenterVertically)
                 .semantics { contentDescription = "A drawing: the phone propped up on the table, the mat " +
-                    (if (exercise == Exercise.SIDEWAYS) "along the table edge" else "in front of you") + ", the chest strap on." },
+                    (if (exercise == Exercise.SIDEWAYS) "along the table edge on your right" else "in front of you") + ", the chest strap on." },
         ) { if (exercise == Exercise.SIDEWAYS) frontScene(clock.value) else sideScene(clock.value, exercise) }
         Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically)) {
             steps(exercise).forEachIndexed { i, text -> StepLine(i + 1, text, lit = step == -1 || step == i) }
@@ -227,7 +227,8 @@ private fun DrawScope.frontScene(t: Float) {
         drawRoundRect(Forest.copy(alpha = (phone * 3f).coerceAtMost(1f) * fade), p(44f, 80f), Size(42 * u, 26 * u), CornerRadius(3 * u))
     }
 
-    // 2. the mat slides in along the table edge, on the reaching side, white button nearest the hand
+    // 2. the mat slides in along the table edge on the patient's right (drawn on our right: the figure faces
+    //    the patient like a mirror, so it moves the way they do), white button nearest the hand
     val mat = part(t, STEP)
     if (mat > 0f) translate(left = (1f - mat) * 50 * u) {
         val a = mat * fade

@@ -224,6 +224,11 @@ export function RepDetail({ sessions, sessionId, repN, onPick }: {
               </div>
               <p className="pointer-events-none absolute top-4 right-5 rounded-md bg-plaster/10 px-2.5 py-1 text-sm font-semibold text-plaster">{phase}</p>
             </div>
+            {ex.figure === 'side' && (
+              <p className="border-t border-wall px-4 py-2 text-[13px] leading-snug text-pretty text-forest-2">
+                The chest sensor measures how far the trunk tilts, not which way, so the replay draws the lean towards the reaching side.
+              </p>
+            )}
             {controls}
           </Panel>
           <div className="flex min-w-0 flex-col gap-4">{traces}</div>

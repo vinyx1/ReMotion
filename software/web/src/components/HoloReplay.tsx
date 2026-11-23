@@ -7,6 +7,8 @@
     MEASURED  the trunk tilt, sample by sample (100 a second), wobble included
     MEASURED  how fast the wrist was rotating: it drives the hand's tremble here
     DRAWN     the hand's path, HOME to target, timed by the button presses
+    DRAWN     for the sideways reach, which way the trunk leans (towards the reaching
+              side; the sensor measures how far it tilts, not which way)
     DRAWN     the direction of the tremble (the sensor gives a speed, not a direction)
 
   A faint ghost marks the rep's peak lean: it appears once he passes the peak, stays
@@ -16,7 +18,7 @@
 import { Edges, Grid, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useMemo, useRef } from 'react'
-import { HOME, HOME_X, pose, progress, SEAT_HEIGHT, SHOULDER_HALF_WIDTH, TABLE, TARGET_X, type V3 } from '../lib/figure'
+import { HOME, HOME_X, pose, progress, SEAT_HEIGHT, SHOULDER_HALF_WIDTH, TABLE, TARGET_X, targetAt, type V3 } from '../lib/figure'
 import { sampleAt } from '../lib/utils'
 import { type BodyInput, SkinnedHumanoid } from '../landing/SkinnedHumanoid'
 import type { Target, Trace } from '../types'
@@ -60,7 +62,7 @@ const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
 const TABLE_DROP = 0.03
 
 /** The furniture and mat, drawn as faint wireframe so the body stays the subject. */
-function Room({ target, targets = true }: { target: Target; targets?: boolean }) {
+function Room({ target, targets = true, side = false }: { target: Target; targets?: boolean; side?: boolean }) {
   const width = TABLE.far - TABLE.near
   const line = '#4f6f5f'
   return (
@@ -87,7 +89,7 @@ function Room({ target, targets = true }: { target: Target; targets?: boolean })
       {targets && (Object.keys(TARGET_X) as Target[]).map((name) => {
         const lit = name === target
         return (
-          <mesh key={name} position={[TARGET_X[name], TABLE.height - TABLE_DROP + 0.008, SHOULDER_HALF_WIDTH]}>
+          <mesh key={name} position={[targetAt(name, side)[0], TABLE.height - TABLE_DROP + 0.008, targetAt(name, side)[2]]}>
             <cylinderGeometry args={[lit ? 0.03 : 0.022, lit ? 0.03 : 0.022, 0.014, 24]} />
             <meshBasicMaterial color={TARGET_COLOR[name]} transparent opacity={lit ? 1 : 0.35} />
           </mesh>
@@ -107,14 +109,17 @@ export function HoloReplay({ trace, t, target, threshold, peakDeg, motion = 'rea
     'reach': the hand travels HOME to the lit target (forward reach). 'mouth': it rises
     from HOME to the figure's own mouth (hand to mouth), arriving at the logged time;
     the mat shows only HOME, and there is no hand trail (the path is the figure's own).
+    'side': the sideways reach: the mat along the table edge, the hand out to the side,
+    the trunk leaning towards the reaching side; seen from the front.
   */
-  motion?: 'reach' | 'mouth'
+  motion?: 'reach' | 'mouth' | 'side'
 }) {
   const toMouth = motion === 'mouth'
+  const side = motion === 'side'
   const trunk = sampleAt(trace.t, trace.trunkDeg, t)
   const over = trunk > threshold
 
-  const p = useMemo(() => pose(trunk, t, trace.reachEndS, target), [trunk, t, trace.reachEndS, target])
+  const p = useMemo(() => pose(trunk, t, trace.reachEndS, target, side), [trunk, t, trace.reachEndS, target, side])
   const shake = tremble(trace, t)
   const hand = add(toMouth ? HOME : p.hand, shake)
 
@@ -125,16 +130,19 @@ export function HoloReplay({ trace, t, target, threshold, peakDeg, motion = 'rea
     for (let k = 1; k <= 18; k++) {
       const tk = t - k * 0.035
       if (tk < trace.t[0]) break
-      const pk = pose(sampleAt(trace.t, trace.trunkDeg, tk), tk, trace.reachEndS, target)
+      const pk = pose(sampleAt(trace.t, trace.trunkDeg, tk), tk, trace.reachEndS, target, side)
       out.push({ at: add(pk.hand, tremble(trace, tk)), age: k / 18 })
     }
     return out
-  }, [t, trace, target, toMouth])
+  }, [t, trace, target, toMouth, side])
 
   // what the 3D man is asked to do this frame (read by SkinnedHumanoid every frame)
   const liveBody = useRef<BodyInput>({ lean: 0, wrist: hand, alarm: 0 })
-  liveBody.current = { lean: (trunk * Math.PI) / 180, wrist: hand, alarm: over ? 1 : 0, mouth: toMouth ? progress(t, trace.reachEndS) : undefined }
-  const ghostPose = useMemo(() => pose(peakDeg, 0, trace.reachEndS, target), [peakDeg, trace.reachEndS, target])
+  liveBody.current = {
+    lean: (trunk * Math.PI) / 180, wrist: hand, alarm: over ? 1 : 0, mouth: toMouth ? progress(t, trace.reachEndS) : undefined,
+    sideways: side ? progress(t, trace.reachEndS) : undefined,
+  }
+  const ghostPose = useMemo(() => pose(peakDeg, 0, trace.reachEndS, target, side), [peakDeg, trace.reachEndS, target, side])
   // when the logged trunk was at its highest: the ghost appears from there
   const peakT = useMemo(() => {
     let i = 0
@@ -145,12 +153,13 @@ export function HoloReplay({ trace, t, target, threshold, peakDeg, motion = 'rea
   ghostBody.current = {
     lean: (peakDeg * Math.PI) / 180, wrist: toMouth ? HOME : ghostPose.hand, alarm: peakDeg > threshold ? 1 : 0, fade: ghostFade(t, peakT),
     mouth: toMouth ? progress(peakT, trace.reachEndS) : undefined,
+    sideways: side ? 0 : undefined,
   }
 
   return (
     <Canvas
       dpr={[1, 2]}
-      camera={{ position: [0.42, 1.0, 3.25], fov: 30 }}
+      camera={{ position: side ? [3.0, 1.15, 1.25] : [0.42, 1.0, 3.25], fov: 30 }}   // sideways reach: from the front, so the reach and the lean read
       onCreated={({ gl }) => gl.setClearColor(STAGE)}
       aria-label="Holographic replay of the reach: trunk tilt and wrist movement from the logged samples"
       role="img"
@@ -158,9 +167,9 @@ export function HoloReplay({ trace, t, target, threshold, peakDeg, motion = 'rea
       <Grid position={[0.3, 0, 0]} args={[4, 4]} cellSize={0.1} cellThickness={0.6} cellColor="#2b3d35"
         sectionSize={0.5} sectionThickness={1} sectionColor="#4f6f5f" fadeDistance={4.5} fadeStrength={1.2} infiniteGrid />
       {/* drag to turn the view around the figure; no zoom (the wheel keeps scrolling the page) and no panning, so he stays centred */}
-      <OrbitControls target={[0.32, 0.68, 0]} enablePan={false} enableZoom={false} enableDamping dampingFactor={0.12}
+      <OrbitControls target={side ? [0.2, 0.7, 0.18] : [0.32, 0.68, 0]} enablePan={false} enableZoom={false} enableDamping dampingFactor={0.12}
         minPolarAngle={0.25} maxPolarAngle={Math.PI / 2 - 0.05} rotateSpeed={0.7} />
-      <Room target={target} targets={!toMouth} />
+      <Room target={target} targets={!toMouth} side={side} />
 
       <Suspense fallback={null}>
         {/* the peak lean, as a ghost that fades soon after he leans back */}
