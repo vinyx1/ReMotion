@@ -153,6 +153,14 @@ def patient_folders(include_fake=True):
     return groups
 
 
+def use_data_folder(root):
+    """Read every kind of session from under `root` instead of the repo's data/ folder."""
+    global RAW_DIR, SAMPLE_DIR, FAKE_DIR, PHONE_DIR, PHONE_DEMO_DIR
+    root = Path(root)
+    RAW_DIR, SAMPLE_DIR, FAKE_DIR = root / "raw", root / "sample", root / "fake"
+    PHONE_DIR, PHONE_DEMO_DIR = root / "phone", root / "phone-demo"
+
+
 def export_groups(groups):
     """Export each patient's folders on their own (so their sessions never merge) and combine them."""
     sessions = []
@@ -166,7 +174,11 @@ def main():
     parser = argparse.ArgumentParser(description="Export logged sessions to JSON for the web dashboard.")
     parser.add_argument("--no-sample", action="store_true", help="real recordings only: leave out data/sample and data/fake")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="output file")
+    parser.add_argument("--data", type=Path, help="read this folder instead of the repo's data/ (it holds raw/, sample/, "
+                                                  "fake/, phone/, phone-demo/; the dashboard server keeps one per account)")
     args = parser.parse_args()
+    if args.data:
+        use_data_folder(args.data)
 
     data = export_groups(patient_folders(include_fake=not args.no_sample))
     args.out.parent.mkdir(parents=True, exist_ok=True)

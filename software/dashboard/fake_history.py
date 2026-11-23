@@ -114,11 +114,13 @@ def make_patients(out_dir=FAKE_DIR):
 
 
 def main():
-    argparse.ArgumentParser(description="Make a few weeks of fake sessions for three simulated patients in data/fake/.").parse_args()
+    parser = argparse.ArgumentParser(description="Make a few weeks of fake sessions for three simulated patients in data/fake/.")
+    parser.add_argument("--out", type=Path, default=FAKE_DIR, help="folder to write the patients' folders into (default data/fake)")
+    args = parser.parse_args()
     with contextlib.redirect_stdout(io.StringIO()):   # SessionWriter prints every rep
-        written = make_patients()
+        written = make_patients(args.out)
     for pid, paths in written.items():
-        print(f"wrote {len(paths)} fake sessions to {FAKE_DIR / pid}")
+        print(f"wrote {len(paths)} fake sessions to {args.out / pid}")
     print("now run: python -m software.dashboard.export")
 
 

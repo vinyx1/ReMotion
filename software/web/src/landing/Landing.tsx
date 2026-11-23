@@ -429,7 +429,7 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
               Rehab scores check whether a reach was completed. Re:Motion’s two sensors notice when the trunk leans in to do the arm’s work.
             </p>
             <div className="lp-actions">
-              <a className="lp-btn" href="/dashboard">Open the dashboard <ArrowRight aria-hidden className="size-5" /></a>
+              <a className="lp-btn" href="/dashboard">Try the demo <ArrowRight aria-hidden className="size-5" /></a>
               <span className="lp-cue">{reducedMotion ? 'Drag the figure, or focus the readout and use the arrow keys, to lean.' : 'Drag the figure to lean it.'}</span>
             </div>
           </div>
@@ -481,7 +481,7 @@ function Progress() {
             The dashboard turns each session into the numbers that matter between appointments: how often the trunk
             took over, how far it leaned, and how long each reach took, rep by rep and week by week.
           </p>
-          <a className="lp-btn" href="/dashboard">Open the dashboard <ArrowRight aria-hidden className="size-5" /></a>
+          <a className="lp-btn" href="/dashboard">Try the demo <ArrowRight aria-hidden className="size-5" /></a>
         </div>
         <figure className="lp-chart">
           {sessions.length > 1 ? (
@@ -615,7 +615,7 @@ function Close() {
     <footer className="lp-close">
       <div className="lp-wrap">
         <h2 className="lp-close-h">See a whole session.</h2>
-        <a className="lp-btn lp-btn-light" href="/dashboard">Open the dashboard <ArrowRight aria-hidden className="size-5" /></a>
+        <a className="lp-btn lp-btn-light" href="/dashboard">Try the demo <ArrowRight aria-hidden className="size-5" /></a>
         <div className="lp-credits">
           <p><strong>Re:Motion</strong> · ECE 198, University of Waterloo · Group 19</p>
           <p>Built for the CCCARE course challenge on at-home rehab.</p>
