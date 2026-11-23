@@ -54,15 +54,23 @@ export function cookie(req: IncomingMessage, name: string): string | undefined {
 export const isHttps = (req: IncomingMessage) =>
   req.headers['x-forwarded-proto'] === 'https' || Boolean((req.socket as { encrypted?: boolean }).encrypted)
 
-/** The sign-in cookie: HttpOnly, SameSite=Lax; maxAgeS null means until the browser closes. */
-export function setSessionCookie(req: IncomingMessage, res: ServerResponse, token: string, maxAgeS: number | null) {
-  const parts = [`${COOKIE}=${encodeURIComponent(token)}`, 'Path=/', 'HttpOnly', 'SameSite=Lax']
+/** The browser's demo: which live demo this browser requested (one at a time, server/api.ts). */
+export const DEMO_COOKIE = 'rm_demo'
+
+/** Add a cookie (HttpOnly, SameSite=Lax; Secure over https); maxAgeS null means until the browser closes. */
+export function addCookie(req: IncomingMessage, res: ServerResponse, name: string, value: string, maxAgeS: number | null) {
+  const parts = [`${name}=${encodeURIComponent(value)}`, 'Path=/', 'HttpOnly', 'SameSite=Lax']
   if (maxAgeS !== null) parts.push(`Max-Age=${Math.max(0, Math.floor(maxAgeS))}`)
   if (isHttps(req)) parts.push('Secure')
-  res.setHeader('Set-Cookie', parts.join('; '))
+  const had = res.getHeader('Set-Cookie')
+  res.setHeader('Set-Cookie', [...(Array.isArray(had) ? had : had ? [String(had)] : []), parts.join('; ')])
 }
 
-export function clearSessionCookie(req: IncomingMessage, res: ServerResponse) { setSessionCookie(req, res, '', 0) }
+/** The sign-in cookie. */
+export const setSessionCookie = (req: IncomingMessage, res: ServerResponse, token: string, maxAgeS: number | null) =>
+  addCookie(req, res, COOKIE, token, maxAgeS)
+
+export function clearSessionCookie(req: IncomingMessage, res: ServerResponse) { addCookie(req, res, COOKIE, '', 0) }
 
 /** The address the browser used, for links that must point back here (the phone's QR code). */
 export function origin(req: IncomingMessage): string {

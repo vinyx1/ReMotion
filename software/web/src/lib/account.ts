@@ -17,7 +17,9 @@ export interface Me {
 
 export class ApiError extends Error {
   status: number
-  constructor(status: number, message: string) { super(message); this.status = status }
+  /** the rest of the server's answer (e.g. the demo this browser already has) */
+  data: Record<string, unknown>
+  constructor(status: number, message: string, data: Record<string, unknown> = {}) { super(message); this.status = status; this.data = data }
 }
 
 async function call<T>(path: string, body?: object): Promise<T> {
@@ -28,12 +30,14 @@ async function call<T>(path: string, body?: object): Promise<T> {
     cache: 'no-store',
   })
   const data = await r.json().catch(() => ({}))
-  if (!r.ok) throw new ApiError(r.status, (data as { error?: string }).error ?? `The server answered ${r.status}.`)
+  if (!r.ok) throw new ApiError(r.status, (data as { error?: string }).error ?? `The server answered ${r.status}.`, data as Record<string, unknown>)
   return data as T
 }
 
 export const getMe = () => call<Me>('/api/me')
 export const requestDemo = () => call<{ email: string; password: string; expiresAt: number }>('/api/demo', {})
+/** Sign this browser in to the demo it already has (one live demo per browser). */
+export const continueDemo = () => call<Me>('/api/demo/continue', {})
 export const signIn = (email: string, password: string, remember: boolean) => call<Me>('/api/login', { email, password, remember })
 export const signOut = () => call('/api/logout', {})
 export const endDemo = () => call('/api/demo/end', {})

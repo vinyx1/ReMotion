@@ -45,6 +45,8 @@ export interface Account {
   expiresAt: number | null
   /** Claude summaries written for this account (demo accounts are capped) */
   summaries: number
+  /** demo accounts: hash of the token the requesting browser keeps, so it can continue this demo instead of making another */
+  claimHash?: string
 }
 
 export interface PatientEntry { id: string; name: string }
@@ -172,8 +174,12 @@ export async function setOwner(email: string, password: string): Promise<void> {
   await exportSessions(owner)
 }
 
-/** A new 1-hour demo account with the two example patients; its password is returned once and never stored. */
-export async function createDemo(): Promise<{ email: string; password: string; expiresAt: number }> {
+/**
+  A new 1-hour demo account with the two example patients. Its password is returned once and
+  never stored; the claim token goes in the requesting browser's cookie, so that browser gets
+  its demo back (demoForClaim) instead of a second one.
+*/
+export async function createDemo(): Promise<{ email: string; password: string; expiresAt: number; claim: string }> {
   await init()
   if (accounts.filter((a) => a.kind === 'demo').length >= MAX_DEMOS) {
     throw new Error('Too many demos are running right now. Try again in a few minutes.')
@@ -181,17 +187,26 @@ export async function createDemo(): Promise<{ email: string; password: string; e
   const tpl = await template()
   const id = `demo-${randomBytes(5).toString('hex')}`
   const password = demoPassword()
+  const claim = randomBytes(32).toString('base64url')
   const now = Date.now()
   const account: Account = {
     id, email: `guest-${id.slice(5, 9)}@demo.remotion`, kind: 'demo', ...hashPassword(password),
-    createdAt: now, expiresAt: now + DEMO_MS, summaries: 0,
+    createdAt: now, expiresAt: now + DEMO_MS, summaries: 0, claimHash: tokenHash(claim),
   }
   await cp(join(tpl, 'data'), dataDir(account), { recursive: true })
   await cp(join(tpl, 'sessions.json'), sessionsFile(account))
   await writeJsonFile(patientsFile(account), DEMO_PATIENTS)
   accounts.push(account)
   await saveAccounts()
-  return { email: account.email, password, expiresAt: account.expiresAt! }
+  return { email: account.email, password, expiresAt: account.expiresAt!, claim }
+}
+
+/** The live demo a browser's claim token belongs to, if any (ended and expired demos are gone). */
+export async function demoForClaim(claim: string | undefined): Promise<Account | null> {
+  await init()
+  if (!claim) return null
+  const h = tokenHash(claim)
+  return accounts.find((a) => a.kind === 'demo' && a.claimHash === h && live(a)) ?? null
 }
 
 const live = (a: Account) => a.expiresAt === null || a.expiresAt > Date.now()
@@ -201,6 +216,11 @@ export async function signIn(email: string, password: string, remember: boolean)
   await init()
   const a = accounts.find((x) => x.email === email.trim().toLowerCase())
   if (!a || !live(a) || !passwordMatches(a, password)) return null
+  return startSignIn(a, remember)
+}
+
+/** A new sign-in for an account already checked (a password, or a demo's claim token). */
+export async function startSignIn(a: Account, remember: boolean) {
   const token = randomBytes(32).toString('base64url')
   // a demo's sign-in ends with the demo; the owner's after 30 days, or with the browser
   const expiresAt = a.kind === 'demo' ? a.expiresAt! : Date.now() + (remember ? REMEMBER_MS : SESSION_ONLY_MS)
