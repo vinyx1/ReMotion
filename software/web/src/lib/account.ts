@@ -38,6 +38,7 @@ export const signIn = (email: string, password: string, remember: boolean) => ca
 export const signOut = () => call('/api/logout', {})
 export const endDemo = () => call('/api/demo/end', {})
 export const addPatient = (name: string) => call<PatientEntry>('/api/patients', { name })
+export const deletePatient = (pid: string) => call<Me>(`/api/patients/${encodeURIComponent(pid)}/delete`, {})
 export const pairCode = (pid: string) => call<{ code: string; expiresAt: number; url: string }>(`/api/patients/${encodeURIComponent(pid)}/pair`, {})
 
 /** The account and what the dashboard can do with it, for components deep in the page (the sidebar, Add patient). */

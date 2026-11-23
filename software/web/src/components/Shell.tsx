@@ -180,7 +180,7 @@ function AccountBlock() {
   )
 }
 
-function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; patients: Patient[]; patient: Patient; sessionsFor: (p: Patient) => Session[] }) {
+function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; patients: Patient[]; patient?: Patient; sessionsFor: (p: Patient) => Session[] }) {
   return (
     <aside className="sticky top-0 hidden h-dvh w-[17rem] shrink-0 flex-col bg-forest text-plaster lg:flex">
       <div className="px-5 pt-5 pb-6">
@@ -190,14 +190,14 @@ function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; pati
         <NavLink to={{ name: 'patients' }} active={route.name === 'patients'} icon={Users}>All patients</NavLink>
         <p className="mt-5 mb-1 px-3 text-[13px] font-bold text-plaster/60">Patient files · {patients.length}</p>
         {patients.map((p) => (
-          route.name !== 'patients' && p.id === patient.id
+          patient && route.name !== 'patients' && p.id === patient.id
             ? <PatientFolder key={p.id} patient={p} sessions={sessionsFor(p)} route={route} />
             : <ClosedFolder key={p.id} patient={p} sessions={sessionsFor(p)} />
         ))}
       </nav>
       <div className="flex flex-col gap-4 border-t border-plaster/15 px-5 py-4 text-[13px] text-plaster/75">
         <AccountBlock />
-        <p>{sessionsFor(patient).length > 0 && <><DataChip simulated={patient.simulated} /> · </>}Chest and wrist sensors, 100 Hz</p>
+        <p>{patient && sessionsFor(patient).length > 0 && <><DataChip simulated={patient.simulated} /> · </>}Chest and wrist sensors, 100 Hz</p>
       </div>
     </aside>
   )
@@ -252,7 +252,8 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
 export function Shell({ route, patients, patient, crumbs, sessionsFor, header, mood, children }: {
   route: Route
   patients: Patient[]
-  patient: Patient
+  /** the patient in view; none when the account has no patients */
+  patient?: Patient
   crumbs: Crumb[]
   sessionsFor: (p: Patient) => Session[]
   /** What hangs on the wall: the page or patient header, ending on the horizon. */
@@ -275,7 +276,7 @@ export function Shell({ route, patients, patient, crumbs, sessionsFor, header, m
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1240px] flex-1 px-5 pt-8 pb-16 sm:px-8">{children}</main>
-        {patient.simulated && (
+        {patient?.simulated && (
           <footer className="mx-auto w-full max-w-[1240px] px-5 pb-8 sm:px-8">
             <p className="border-t border-wall pt-4 text-sm text-forest-2">
               <span className="font-bold text-forest">Simulated data.</span> These sessions were generated to build and test the

@@ -47,6 +47,11 @@ The API (`server/api.ts`) runs inside `npm run dev` and `npm run preview` as a V
   Profile & settings has a **Connect a phone** QR code with a 6-letter code (valid 10 minutes);
   the phone app's side of it, signing in by scanning, comes next. Until then, phone uploads
   without a sign-in go to the owner's account.
+- **Deleting a patient** (bottom of Profile & settings, after a confirmation) takes them and
+  their sessions off the dashboard. Recordings only that account holds (`phone/`, `phone-demo/`,
+  `fake/`, the phone's raw lines) are moved to `<account>/deleted/<id>-<time>/` on the server, so
+  a slip can be recovered; sessions in shared files (the committed `data/sample`, `data/raw`)
+  can't be removed for one account, so that patient is hidden instead (`hidden.json`).
 - State lives in `data/state/` (git-ignored; `REMOTION_STATE` to move it): `accounts.json`,
   `signins.json`, and one folder per account. No database: demos only have to last an hour.
 

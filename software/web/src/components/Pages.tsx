@@ -1,11 +1,11 @@
 /*
   The pages that came with patient profiles: the patient list and the profile page.
 */
-import { Plus, RefreshCw, Smartphone } from 'lucide-react'
-import { Popover } from 'radix-ui'
+import { Plus, RefreshCw, Smartphone, Trash2 } from 'lucide-react'
+import { AlertDialog, Popover } from 'radix-ui'
 import QRCode from 'qrcode'
 import { type FormEvent, useEffect, useId, useState } from 'react'
-import { addPatient, pairCode, useAccount } from '../lib/account'
+import { addPatient, deletePatient, pairCode, useAccount } from '../lib/account'
 import { day, pct, TARGET_NAME, TARGET_REACH, TARGETS, type Trend, trendOf } from '../lib/stats'
 import { go, href } from '../lib/route'
 import type { Patient } from '../lib/patients'
@@ -134,6 +134,9 @@ export function PatientsPage({ patients, sessionsFor }: { patients: Patient[]; s
               </tr>
             </thead>
             <tbody>
+              {!patients.length && (
+                <tr><td colSpan={4} className="px-5 py-10 text-center text-[16px] text-forest-2">No patients yet. Add one with Add patient.</td></tr>
+              )}
               {patients.map((p) => {
                 const ss = sessionsFor(p)
                 const last = ss[ss.length - 1]
@@ -242,6 +245,67 @@ function ConnectPhone({ patient }: { patient: Patient }) {
   )
 }
 
+/*
+  Delete the patient, after a confirmation that names them and what goes with them. Their
+  sessions leave the dashboard; on the server, recordings only this account holds are kept
+  aside (server/accounts.ts, deletePatient), so a slip can still be recovered by the team.
+*/
+function DeletePatient({ patient, sessions }: { patient: Patient; sessions: number }) {
+  const { refresh } = useAccount()
+  const [open, setOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function confirm() {
+    setBusy(true); setError(null)
+    try {
+      await deletePatient(patient.id)
+      await refresh()
+      setOpen(false)
+      go({ name: 'patients' })
+    } catch (e) {
+      setError((e as Error).message)
+      setBusy(false)
+    }
+  }
+
+  // "Elena Rossi’s profile and all 6 sessions"
+  const what = `${patient.name}’s profile` + (sessions === 0 ? '' : sessions === 1 ? ' and their 1 session' : ` and all ${sessions} sessions`)
+  return (
+    <Panel label="Delete patient" className="p-5 sm:p-6 xl:col-span-2">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-[60ch]">
+          <h2 className="font-display text-[1.25rem] font-medium">Delete patient</h2>
+          <p className="mt-1 text-[15px] text-pretty text-forest-2">Removes {what} from this dashboard.</p>
+        </div>
+        <AlertDialog.Root open={open} onOpenChange={(o) => { if (!busy) { setOpen(o); setError(null) } }}>
+          <AlertDialog.Trigger className={cn('inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border-[1.5px] border-forest/30 px-4 text-[15px] font-bold text-forest transition-colors duration-150 hover:border-forest/60 hover:bg-wash', FOCUS)}>
+            <Trash2 className="size-4" aria-hidden /> Delete {patient.name.split(' ')[0]}
+          </AlertDialog.Trigger>
+          <AlertDialog.Portal>
+            <AlertDialog.Overlay className="fixed inset-0 z-50 bg-forest/40" />
+            <AlertDialog.Content className="fixed top-1/2 left-1/2 z-50 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[14px] bg-plaster p-6 font-text text-forest shadow-[0_2px_4px_rgb(31_45_39/0.08),0_14px_32px_-18px_rgb(31_45_39/0.5)]">
+              <AlertDialog.Title className="font-display text-[1.4rem] leading-tight font-medium">Delete {patient.name}?</AlertDialog.Title>
+              <AlertDialog.Description className="mt-2 text-[16px] text-pretty">
+                {what} will be removed from this dashboard. This can’t be undone here.
+              </AlertDialog.Description>
+              {error && <p role="alert" className="mt-3 font-bold text-terra-deep">{error}</p>}
+              <div className="mt-5 flex flex-wrap justify-end gap-2">
+                <AlertDialog.Cancel disabled={busy} className={cn('h-10 cursor-pointer rounded-lg px-4 font-semibold hover:bg-wash disabled:opacity-55', FOCUS)}>Keep {patient.name.split(' ')[0]}</AlertDialog.Cancel>
+                {/* not AlertDialog.Action: that would close the dialog before the delete is done */}
+                <button type="button" onClick={() => void confirm()} disabled={busy}
+                  className={cn('inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg bg-forest px-4 font-semibold text-plaster hover:bg-forest-deep disabled:cursor-wait disabled:opacity-70', FOCUS)}>
+                  <Trash2 className="size-4" aria-hidden /> {busy ? 'Deleting…' : `Delete ${patient.name.split(' ')[0]}`}
+                </button>
+              </div>
+            </AlertDialog.Content>
+          </AlertDialog.Portal>
+        </AlertDialog.Root>
+      </div>
+    </Panel>
+  )
+}
+
 export function ProfilePage({ patient, sessions }: { patient: Patient; sessions: Session[] }) {
   const first = sessions[0], last = sessions[sessions.length - 1]
   const limits = [...new Set(sessions.map((s) => s.thresholdDeg))]
@@ -278,6 +342,7 @@ export function ProfilePage({ patient, sessions }: { patient: Patient; sessions:
           <Field label="Sensors">Chest (trunk angle) and wrist (rotation speed), 100 samples a second</Field>
         </dl>
       </Panel>
+      <DeletePatient patient={patient} sessions={sessions.length} />
     </div>
   )
 }
