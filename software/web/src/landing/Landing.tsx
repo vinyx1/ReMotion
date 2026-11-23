@@ -578,7 +578,7 @@ function Evidence() {
           <div>
             <h3>Our own number</h3>
             <p>
-              How often ReMotion agrees with a blind label from side-view video. Target: about 90% over about 60 reps
+              How often ReMotion agrees with a blind label from side-view video. Target: about 9 in 10, over about 60 reps
               from three or more testers.
             </p>
           </div>
