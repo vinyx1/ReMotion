@@ -507,7 +507,7 @@ export function AllExercises({ patient, sessions }: { patient: Patient; sessions
   return (
     <section aria-labelledby="all-title" className="pt-1">
       {/* the summary, with the month of practice beside it (below it on narrow screens) */}
-      <div className="grid gap-x-10 gap-y-6 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start">
+      <div className="grid gap-x-10 gap-y-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
         <div className="min-w-0">
           <h2 id="all-title" className="font-display text-[1.6rem] leading-[1.15] font-medium tracking-[-0.01em] sm:text-[1.9rem]">Overview</h2>
           <div className="mt-3">

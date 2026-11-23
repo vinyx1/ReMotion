@@ -1,8 +1,9 @@
 /*
   Which days a patient practised, as a month: a quiet instrument beside the Overview, not a
-  date picker. The count leads ("6 days in November"); each practised day is a filled forest
-  dot under its number, today an open ring, and the rest stay plain. Every exercise counts.
-  Terracotta stays out: it means leaning, and this is only about showing up.
+  date picker. The count leads ("6 days in November"); a practised day is a solid forest
+  disc, and practised days next to each other in a week are joined by a soft band, so a
+  streak reads at a glance. Today is a ring, days still to come are faded. Every exercise
+  counts. Terracotta stays out: it means leaning, and this is only about showing up.
 */
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -45,11 +46,12 @@ export function PracticeCalendar({ sessions }: { sessions: Session[] }) {
   const todayKey = keyOf(today)
 
   const nav = 'grid size-9 cursor-pointer place-items-center rounded-lg text-forest-2 transition-colors duration-150 hover:bg-wash hover:text-forest disabled:cursor-default disabled:opacity-30 disabled:hover:bg-transparent'
+  const done = (d: Date | null) => !!d && perDay.has(keyOf(d))
   return (
-    <section aria-label="Days practised" className="rounded-xl border border-wall bg-panel px-4 pt-3 pb-4">
+    <section aria-label="Days practised" className="rounded-xl border border-wall bg-panel px-5 pt-4 pb-5">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-[15px] font-bold" aria-live="polite">{MONTH.format(firstDay)}</h3>
-        <div className="-mr-1.5 flex">
+        <h3 className="font-display text-[19px] font-semibold text-forest" aria-live="polite">{MONTH.format(firstDay)}</h3>
+        <div className="-mr-2 flex">
           <button type="button" onClick={() => setShown((v) => v - 1)} disabled={shown <= min} aria-label="Previous month" className={cn(nav, FOCUS)}>
             <ChevronLeft className="size-4" aria-hidden />
           </button>
@@ -59,26 +61,38 @@ export function PracticeCalendar({ sessions }: { sessions: Session[] }) {
         </div>
       </div>
 
-      <p className="mt-1 text-[14px] text-forest-2">
-        <span className="font-readout text-[1.35rem] leading-none text-forest tabular-nums">{practised}</span>{' '}
+      <p className="mt-1 flex items-baseline gap-2 text-[15px] text-pretty text-forest-2">
+        <span className="font-display text-[2rem] leading-none font-semibold text-forest tabular-nums">{practised}</span>
         {practised === 1 ? 'day' : 'days'} practised in {MONTH_ONLY.format(firstDay)}
       </p>
 
-      <div role="grid" aria-label={`Practice in ${MONTH.format(firstDay)}`} className="mt-3 grid grid-cols-7 gap-y-1 text-center">
-        {WEEKDAYS.map((w, i) => <span key={i} role="columnheader" aria-hidden className="pb-1 text-[11px] font-bold text-forest-2">{w}</span>)}
+      <div role="grid" aria-label={`Practice in ${MONTH.format(firstDay)}`} className="mt-4 grid grid-cols-7 gap-y-1.5 text-center">
+        {WEEKDAYS.map((w, i) => <span key={i} role="columnheader" aria-hidden className="pb-1 text-[12px] font-bold text-forest-2">{w}</span>)}
         {cells.map((d, i) => {
           if (!d) return <span key={`gap-${i}`} aria-hidden />
-          const k = keyOf(d), n = perDay.get(k) ?? 0, isToday = k === todayKey
+          const k = keyOf(d), n = perDay.get(k) ?? 0, isToday = k === todayKey, future = k > todayKey
+          const col = i % 7
+          // the streak band: joins this day to a practised neighbour in the same week
+          const joinLeft = n > 0 && col > 0 && done(cells[i - 1])
+          const joinRight = n > 0 && col < 6 && done(cells[i + 1])
           const label = `${DAY.format(d)}: ${n === 0 ? 'no practice' : n === 1 ? '1 session' : `${n} sessions`}${isToday ? ', today' : ''}`
           return (
-            <span key={k} role="gridcell" aria-label={label} title={label} className="flex flex-col items-center gap-[3px] py-0.5">
-              <span className={cn('font-readout text-[12.5px] leading-none tabular-nums', n ? 'font-semibold text-forest' : 'text-forest-2', isToday && 'font-semibold text-forest')}>{d.getDate()}</span>
-              {/* the mark: practised = filled dot, today = ring, otherwise nothing */}
-              <span aria-hidden className={cn('size-[7px] rounded-full',
-                n ? 'bg-forest' : isToday ? 'ring-[1.5px] ring-eucalyptus ring-inset' : 'bg-transparent')} />
+            <span key={k} role="gridcell" aria-label={label} title={label} className="relative grid h-9 place-items-center">
+              {joinLeft && <span aria-hidden className="absolute inset-y-1 left-0 w-1/2 bg-wall/70" />}
+              {joinRight && <span aria-hidden className="absolute inset-y-1 right-0 w-1/2 bg-wall/70" />}
+              <span aria-hidden className={cn(
+                'relative grid size-8 place-items-center rounded-full text-[14px] tabular-nums',
+                n ? 'bg-forest font-bold text-plaster' : future ? 'text-forest-2/45' : 'text-forest-2',
+                isToday && (n ? 'ring-2 ring-eucalyptus ring-offset-2 ring-offset-panel' : 'font-bold text-forest ring-2 ring-eucalyptus ring-inset'),
+              )}>{d.getDate()}</span>
             </span>
           )
         })}
+      </div>
+
+      <div aria-hidden className="mt-4 flex items-center gap-4 border-t border-wall pt-3 text-[12.5px] text-forest-2">
+        <span className="flex items-center gap-1.5"><span className="size-3 rounded-full bg-forest" />Practised</span>
+        <span className="flex items-center gap-1.5"><span className="size-3 rounded-full ring-2 ring-eucalyptus ring-inset" />Today</span>
       </div>
     </section>
   )
