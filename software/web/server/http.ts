@@ -6,7 +6,9 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 
 export class HttpError extends Error {
   status: number
-  constructor(status: number, message: string) { super(message); this.status = status }
+  /** For a 429: seconds until a retry may work (sent as Retry-After). */
+  retryAfterS?: number
+  constructor(status: number, message: string, retryAfterS?: number) { super(message); this.status = status; this.retryAfterS = retryAfterS }
 }
 
 export function readBody(req: IncomingMessage, limit = 200_000): Promise<string> {

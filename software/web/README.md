@@ -70,6 +70,14 @@ The API (`server/api.ts`) runs inside `npm run dev` and `npm run preview` as a V
 | `REMOTION_STATE` | Where accounts and demos live (default `data/state`) |
 | `REMOTION_OWNER_DATA` | The owner's data folder (default the repo's `data/`) |
 | `REMOTION_PYTHON` | The Python to run (default `.venv/bin/python`, else `python3`) |
+| `TRUST_PROXY` | Set to `1` behind a proxy that adds `X-Forwarded-For` (Railway), so rate limits see the visitor's address. Leave it unset otherwise: the header could be faked |
+
+**Security** (`server/security.ts`): per-address rate limits on every API call, failed sign-ins
+limited per address and per email (5 per 15 minutes, then 429 with `Retry-After`), limits on demo
+accounts, phone codes, Claude summaries, new patients and phone uploads, a same-origin check on
+browser POSTs, security headers on every response (CSP, no framing, no sniffing, HSTS over https),
+passwords checked with async scrypt (an unknown email costs the same time), a size cap per phone
+session, and request timeouts. `npm start` refuses paths outside `dist/` and survives malformed URLs.
 
 ### The summary (optional)
 

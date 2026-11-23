@@ -12,5 +12,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), tailwindcss(), remotionApi()],
+    // the dev server (npm run dev -- --host, e.g. over a phone hotspot) must not hand out
+    // anything but the site: Vite's own deny list plus the summary cache in node_modules/.cache
+    server: { fs: { deny: ['.env', '.env.*', '*.{crt,pem}', '**/node_modules/.cache/**', '**/.git/**'] } },
   }
 })

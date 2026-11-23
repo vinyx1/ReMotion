@@ -19,7 +19,7 @@
   (POST /api/phone/pair); its token comes with every batch, and decides the account and the
   patient. Uploads without a valid token are refused.
 */
-import { appendFile, mkdir } from 'node:fs/promises'
+import { appendFile, mkdir, stat } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { join } from 'node:path'
 import { type Account, accountDir, dataDir, exportSessions } from './accounts.ts'
@@ -30,6 +30,7 @@ const PATIENT = /^[a-z0-9-]{1,32}$/
 const RUN = /^\d{8}_\d{6}$/
 const MAX_BODY = 4_000_000                  // ~40 s of samples at 100 Hz, far more than one batch
 const MAX_LINE = 200
+const MAX_RUN_BYTES = 60_000_000             // one run's raw lines: about 2 hours at 100 Hz, so a phone can't fill the disk
 // the dashboard's exercises (software/dashboard/export.py EXERCISES); the forward reach is the default
 const EXERCISES = ['forward-reach', 'sideways-reach', 'hand-to-mouth', 'forearm-rotation']
 const DEFAULT_EXERCISE = 'forward-reach'
@@ -81,6 +82,8 @@ export async function phoneLines(req: IncomingMessage, res: ServerResponse, acco
   if (b.lines.length) {
     const file = incoming(account, b)
     await mkdir(join(file, '..'), { recursive: true })
+    const size = (await stat(file).catch(() => null))?.size ?? 0
+    if (size > MAX_RUN_BYTES) return send(res, 413, { error: 'This session is too long to keep. Start a new one.' })
     await appendFile(file, b.lines.join('\n') + '\n')
     if (b.lines.some((l) => l.startsWith('R,') || l.startsWith('S,'))) convertSoon(account, b)
   }

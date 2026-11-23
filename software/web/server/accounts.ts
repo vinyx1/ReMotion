@@ -19,7 +19,8 @@
   deleted an hour after it was requested; sweep() runs every minute. There is no database:
   demo data only has to last an hour, and the owner's sessions are files as before.
 */
-import { createHash, randomBytes, randomInt, scryptSync, timingSafeEqual } from 'node:crypto'
+import { createHash, randomBytes, randomInt, scrypt, scryptSync, timingSafeEqual } from 'node:crypto'
+import { promisify } from 'node:util'
 import { existsSync } from 'node:fs'
 import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -93,10 +94,15 @@ function hashPassword(password: string, salt = randomBytes(16).toString('hex')) 
   return { salt, hash: scryptSync(password, salt, 32).toString('hex') }
 }
 
-function passwordMatches(a: Account, password: string) {
-  const h = Buffer.from(hashPassword(password, a.salt).hash, 'hex')
-  const want = Buffer.from(a.hash, 'hex')
-  return h.length === want.length && timingSafeEqual(h, want)
+const scryptAsync = promisify(scrypt) as (password: string, salt: string, len: number) => Promise<Buffer>
+/** A stand-in hash, so an unknown email takes as long to refuse as a wrong password (no account probing by timing). */
+const DUMMY = hashPassword(randomBytes(12).toString('hex'))
+
+/** Checked off the main thread: a slow hash done synchronously froze every other request while it ran. */
+async function passwordMatches(a: Account | undefined, password: string) {
+  const h = await scryptAsync(password.slice(0, 1024), a?.salt ?? DUMMY.salt, 32)
+  const want = Buffer.from(a?.hash ?? DUMMY.hash, 'hex')
+  return Boolean(a) && h.length === want.length && timingSafeEqual(h, want)
 }
 
 const WORDS = ['reach', 'green', 'blue', 'upright', 'wrist', 'table', 'steady', 'button', 'chair', 'morning']
@@ -233,7 +239,8 @@ const live = (a: Account) => a.expiresAt === null || a.expiresAt > Date.now()
 export async function signIn(email: string, password: string, remember: boolean) {
   await init()
   const a = accounts.find((x) => x.email === email.trim().toLowerCase())
-  if (!a || !live(a) || !passwordMatches(a, password)) return null
+  const matches = await passwordMatches(a, password)       // always run, even for an unknown email
+  if (!a || !live(a) || !matches) return null
   return startSignIn(a, remember)
 }
 

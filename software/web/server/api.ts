@@ -20,6 +20,10 @@
 
   Signing in sets an HttpOnly cookie; the browser never sees the token's meaning, and the
   server keeps only its hash (server/accounts.ts).
+
+  Every request passes server/security.ts first: a per-address rate limit, a same-origin check
+  for browser POSTs, and the security headers. Sign-in, demos, phone codes, summaries, new
+  patients and phone uploads have their own limits (LIMITS there).
 */
 import { readFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -32,6 +36,7 @@ import {
   addCookie, clearSessionCookie, cookie, COOKIE, DEMO_COOKIE, HttpError, origin, readJson, send, setSessionCookie,
 } from './http.ts'
 import { phoneLines } from './phone.ts'
+import { clientAddress, LIMITS, sameOrigin, securityHeaders } from './security.ts'
 import { summarize } from './summary.ts'
 
 /** The phone's token, from "Authorization: Bearer <token>". */
@@ -40,18 +45,6 @@ function bearer(req: IncomingMessage) {
   return h?.startsWith('Bearer ') ? h.slice(7).trim() : undefined
 }
 
-/** Code tries per address per hour: 6 letters from 31 can't be guessed at this rate. */
-const PAIR_TRIES_PER_HOUR = 30
-const pairTries = new Map<string, number[]>()
-
-/** At most this many demo requests per address per hour (a public page could otherwise fill the server). */
-const DEMOS_PER_HOUR = 20
-const demoRequests = new Map<string, number[]>()
-
-function clientAddress(req: IncomingMessage) {
-  const fwd = req.headers['x-forwarded-for']
-  return (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0].trim() ?? req.socket.remoteAddress ?? '?'
-}
 
 async function me(a: Account) {
   return { email: a.email, kind: a.kind, expiresAt: a.expiresAt, patients: await patients(a) }
@@ -73,10 +66,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     // one live demo per browser: asking again fills in the same demo (a fresh password; the old one isn't kept)
     const mine = await demoForClaim(cookie(req, DEMO_COOKIE))
     if (mine) return send(res, 200, await freshDemoPassword(mine))
-    const ip = clientAddress(req)
-    const recent = (demoRequests.get(ip) ?? []).filter((t) => t > Date.now() - 3_600_000)
-    if (recent.length >= DEMOS_PER_HOUR) throw new HttpError(429, 'Too many demo logins from here. Try again later.')
-    demoRequests.set(ip, [...recent, Date.now()])
+    LIMITS.demos.take(clientAddress(req), 'Too many demo logins from here. Try again later.')
     try {
       const { claim, ...demo } = await createDemo()
       addCookie(req, res, DEMO_COOKIE, claim, (demo.expiresAt - Date.now()) / 1000)
@@ -87,10 +77,19 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   }
 
   if (path === '/api/login' && post) {
-    const b = await readJson(req)
+    const b = await readJson(req, 4_000)
     if (typeof b.email !== 'string' || typeof b.password !== 'string') throw new HttpError(400, 'Send an email and a password.')
-    const s = await signIn(b.email, b.password, b.remember === true)
-    if (!s) throw new HttpError(401, 'Incorrect email or password.')
+    // failed sign-ins are limited per address and per email; a success clears the email's count
+    const ip = clientAddress(req), email = b.email.trim().toLowerCase().slice(0, 254)
+    const wait = Math.max(LIMITS.loginPerAddress.wait(ip), LIMITS.loginPerEmail.wait(email))
+    if (wait > 0) throw new HttpError(429, `Too many tries. Wait ${Math.ceil(wait / 60)} min, then try again.`, wait)
+    const s = await signIn(email, b.password, b.remember === true)
+    if (!s) {
+      LIMITS.loginPerAddress.hit(ip)
+      LIMITS.loginPerEmail.hit(email)
+      throw new HttpError(401, 'Incorrect email or password.')
+    }
+    LIMITS.loginPerEmail.reset(email)
     setSessionCookie(req, res, s.token, s.cookieMaxAgeS)
     return send(res, 200, await me(s.account))
   }
@@ -129,7 +128,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 
   if (path === '/api/patients' && post) {
     const a = await signedIn(req)
-    const b = await readJson(req)
+    LIMITS.newPatients.take(a.id, 'Too many new patients for now. Try again later.')
+    const b = await readJson(req, 4_000)
     if (typeof b.name !== 'string') throw new HttpError(400, 'Send the patient’s name.')
     try { return send(res, 200, await addPatient(a, b.name)) } catch (e) { throw new HttpError(400, (e as Error).message) }
   }
@@ -152,15 +152,16 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     return send(res, 200, await me(a))
   }
 
-  if (path === '/api/summary') return summarize(req, res, await signedIn(req))
+  if (path === '/api/summary') {
+    const a = await signedIn(req)
+    LIMITS.summaries.take(a.id, 'Too many summaries at once. Wait a minute.')
+    return summarize(req, res, a)
+  }
 
   // ---- the phone app: signs in as one patient with the code from their profile
   if (path === '/api/phone/pair' && post) {
-    const ip = clientAddress(req)
-    const recent = (pairTries.get(ip) ?? []).filter((t) => t > Date.now() - 3_600_000)
-    if (recent.length >= PAIR_TRIES_PER_HOUR) throw new HttpError(429, 'Too many tries. Wait a while, then try again.')
-    pairTries.set(ip, [...recent, Date.now()])
-    const b = await readJson(req)
+    LIMITS.pairTries.take(clientAddress(req), 'Too many tries. Wait a while, then try again.')
+    const b = await readJson(req, 4_000)
     const c = typeof b.code === 'string' ? await claimCode(b.code) : null
     if (!c) throw new HttpError(404, 'That code didn’t work. Codes last 10 minutes: ask for a new one.')
     return send(res, 200, { token: c.token, patient: c.patient, kind: c.account.kind, expiresAt: c.account.expiresAt })
@@ -173,7 +174,10 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (path === '/api/phone/me' && req.method === 'GET') {
       return send(res, 200, { patient: d.patient, kind: d.account.kind, expiresAt: d.account.expiresAt })
     }
-    if (path === '/api/phone/lines') return phoneLines(req, res, d.account, d.patient.id)
+    if (path === '/api/phone/lines') {
+      LIMITS.phoneBatches.take(`${d.account.id}/${d.patient.id}/${token}`, 'Sending too fast. Slow down.')
+      return phoneLines(req, res, d.account, d.patient.id)
+    }
   }
 
   throw new HttpError(404, 'No such API.')
@@ -182,10 +186,16 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 /** Handle a request under /api; anything else is left alone (returns false). */
 export async function api(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
   if (!req.url?.startsWith('/api/')) return false
+  securityHeaders(req, res)
   try {
+    LIMITS.api.take(clientAddress(req), 'Too many requests. Slow down.')
+    if (!req.url.startsWith('/api/phone/')) sameOrigin(req)       // the phone app uses a token, not cookies
     await route(req, res)
   } catch (e) {
-    if (e instanceof HttpError) send(res, e.status, { error: e.message })
+    if (e instanceof HttpError) {
+      if (e.retryAfterS) res.setHeader('Retry-After', String(e.retryAfterS))
+      send(res, e.status, { error: e.message })
+    }
     else {
       console.error('[api]', e)
       send(res, 500, { error: 'Something went wrong on the server.' })

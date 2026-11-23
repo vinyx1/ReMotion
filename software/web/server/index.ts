@@ -9,10 +9,11 @@
 */
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
-import { createServer } from 'node:http'
-import { extname, join, normalize } from 'node:path'
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import { extname, join, normalize, sep } from 'node:path'
 import { init } from './accounts.ts'
 import { api } from './api.ts'
+import { securityHeaders } from './security.ts'
 
 const DIST = join(import.meta.dirname, '../dist')
 const PORT = Number(process.env.PORT ?? 8080)
@@ -25,12 +26,26 @@ const TYPES: Record<string, string> = {
 
 await init()
 
-createServer(async (req, res) => {
-  if (await api(req, res)) return
+const server = createServer(async (req, res) => {
+  try {
+    if (await api(req, res)) return
+    await page(req, res)
+  } catch (e) {
+    // never let one bad request take the server down
+    console.error('[server]', e)
+    if (!res.headersSent) { res.statusCode = 500; res.end() }
+  }
+})
+
+async function page(req: IncomingMessage, res: ServerResponse) {
+  securityHeaders(req, res, true)
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.statusCode = 405; return res.end() }
-  const path = decodeURIComponent((req.url ?? '/').split('?')[0])
+  let path: string
+  try { path = decodeURIComponent((req.url ?? '/').split('?')[0]) } catch { res.statusCode = 400; return res.end() }   // a malformed %-escape
+  if (path.includes('\0')) { res.statusCode = 400; return res.end() }
   let file = normalize(join(DIST, path))
-  if (!file.startsWith(DIST)) { res.statusCode = 403; return res.end() }
+  // inside dist/ only: compare with the separator, or /dist-other would pass a plain prefix check
+  if (file !== DIST && !file.startsWith(DIST + sep)) { res.statusCode = 403; return res.end() }
   // the app's pages (/, /dashboard, /pair) are index.html; real files are served as they are
   const info = await stat(file).catch(() => null)
   if (!info?.isFile()) file = join(DIST, 'index.html')
@@ -39,4 +54,11 @@ createServer(async (req, res) => {
   res.setHeader('Cache-Control', path.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache')
   if (req.method === 'HEAD') return res.end()
   createReadStream(file).on('error', () => { res.statusCode = 500; res.end() }).pipe(res)
-}).listen(PORT, () => console.log(`ReMotion on http://localhost:${PORT}`))
+}
+
+// slow-request defences: a client must send its headers within 15 s and the whole request within 60 s
+server.headersTimeout = 15_000
+server.requestTimeout = 60_000
+server.keepAliveTimeout = 5_000
+server.maxHeadersCount = 100
+server.listen(PORT, () => console.log(`ReMotion on http://localhost:${PORT}`))
