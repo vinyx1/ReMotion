@@ -48,6 +48,11 @@ data/*.csv
 data/fake/
 # Sessions sent by the phone app (data/phone, data/phone-demo, and the server's data/phone-incoming)
 data/phone*/
+# Validation videos stay in the team drive; their CSVs and label sheets can be committed (docs/TESTING.md)
+data/validation/**/*.mov
+data/validation/**/*.MOV
+data/validation/**/*.mp4
+data/validation/**/*.MP4
 # The dashboard server's accounts, sign-ins and demo sandboxes (software/web/server/accounts.ts)
 data/state/
 
