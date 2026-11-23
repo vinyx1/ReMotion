@@ -95,6 +95,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _signIn = MutableStateFlow(SignInState())
     /** The sign-in screen: busy, and what went wrong or why the phone was signed out. */
     val signIn: StateFlow<SignInState> = _signIn.asStateFlow()
+    private val _hello = MutableStateFlow<String?>(null)
+    /** Set right after a sign-in: the first name the "Hello" screen greets, until it's done. */
+    val hello: StateFlow<String?> = _hello.asStateFlow()
     private val ids = AtomicLong()
     private val writes = Dispatchers.IO.limitedParallelism(1)   // commands go out in order
 
@@ -147,6 +150,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 val who = "${l.server}|${l.patientId}"
                 if (prefs.getString(KEY_HISTORY_OWNER, who) != who) _past.value = withContext(Dispatchers.IO) { history.clear() }
                 prefs.edit().putString(KEY_HISTORY_OWNER, who).apply()
+                _hello.value = l.firstName
                 _login.value = l
                 _signIn.value = SignInState()
                 link?.let { startUploader(it) }
@@ -262,6 +266,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setPlan(plan: List<Int>) = send("P" + plan.joinToString(","))
 
     fun dismissFinished() { _finished.value = null }
+
+    fun dismissHello() { _hello.value = null }
 
     fun setShowSamples(show: Boolean) = _ui.update { s ->
         s.copy(showSamples = show, log = if (show) s.log else s.log.filter { it.kind != LogLine.Kind.SAMPLE })
