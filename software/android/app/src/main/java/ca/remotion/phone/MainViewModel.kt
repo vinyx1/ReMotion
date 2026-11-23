@@ -48,6 +48,8 @@ data class UiState(
     /** From the device's last I line: its lean limit (degrees) and reps per block. */
     val threshold: Float = 0f,
     val plan: List<Int> = emptyList(),
+    /** The device's last E line (e.g. why calibration was rejected); "" until there is one. */
+    val deviceError: String = "",
     /** The firmware answered G, X or ? with "unknown command": it needs updating. */
     val oldFirmware: Boolean = false,
     val showSamples: Boolean = false,
@@ -316,7 +318,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     leaned = msg.compensatedReps, streaming = msg.streaming, threshold = msg.threshold, plan = msg.plan)
                 is DeviceError -> {
                     val old = msg.message.removePrefix("unknown command: ") in setOf("G", "X", "?")
-                    s.copy(oldFirmware = s.oldFirmware || old)
+                    s.copy(oldFirmware = s.oldFirmware || old, deviceError = msg.message)
                 }
                 is Comment -> when {
                     msg.text == "sample stream off" -> s.copy(streaming = false)

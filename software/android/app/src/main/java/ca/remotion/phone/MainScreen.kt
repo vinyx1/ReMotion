@@ -85,9 +85,10 @@ private fun App(s: UiState, past: List<PastSession>, finished: PastSession?, log
     AnimatedContent(place, transitionSpec = { fadeThrough() }, label = "place") { shown ->
         Surface(Modifier.fillMaxSize(), color = Plaster) {
             if (shown == 4) {
-                DemoScreen(s, login, exercise,
-                    onStart = { plan -> vm.runDemo(plan); setDemo(false); setSettings(false) },   // to the patient's screen, where the session plays
-                    onEnd = { vm.send(Protocol.STOP) }, onDemoDevice = vm::startDemo, onBack = { setDemo(false) })
+                // the demo runs on its own screen; only Back leaves it
+                DemoScreen(s, login, exercise, finished,
+                    onStart = vm::runDemo, onRetry = { vm.send(Protocol.START) }, onEnd = { vm.send(Protocol.STOP) },
+                    onDismissFinished = vm::dismissFinished, onAddReach = vm::addDemoRep, onDemoDevice = vm::startDemo, onBack = { setDemo(false) })
             } else if (shown == 2) {
                 SettingsScreen(s, login, vm, onClose = { setSettings(false) }, onDemo = { setDemo(true) })
             } else if (shown == 3) {

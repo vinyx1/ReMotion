@@ -27,6 +27,13 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
@@ -43,8 +50,10 @@ import androidx.compose.ui.unit.sp
   ./demo.sh (software/tools/demo.py). Left, what has to be right before a demo (device,
   lean limit, dashboard, who's signed in, which exercise). Right, one card per demo: its
   blocks with and without the buzzer, how long it takes, what to tell the audience, and
-  Start, which sets the device's plan and starts the session at once (calibration first, so
-  the person should already be sitting upright and still). Works with the demo device too.
+  Start. The demo then runs on this screen: a 5-second "sit upright and still" countdown
+  (tapping the phone would spoil the calibration), calibration, each reach with the buzzer
+  on or off, then the result. A rejected calibration says why and offers Try again. Only
+  Back leaves the screen. Works with the demo device too.
 */
 
 /** One demo: reps per block (PRACTICE, BASELINE, TRAINING, POST), as in demo.py's DEMOS. */
@@ -64,10 +73,40 @@ private val DEMOS = listOf(
 /** The blocks in order, and whether the buzzer is on in each (only TRAINING). */
 private val BLOCKS = listOf("Warm-up" to false, "On your own" to false, "With the buzzer" to true, "On your own again" to false)
 
+/** Seconds of "sit upright and still" before calibration starts, so tapping Start doesn't spoil it. */
+private const val COUNTDOWN_S = 5
+
 @Composable
-fun DemoScreen(s: UiState, login: Login?, exercise: Exercise, onStart: (List<Int>) -> Unit, onEnd: () -> Unit,
+fun DemoScreen(s: UiState, login: Login?, exercise: Exercise, finished: PastSession?,
+               onStart: (List<Int>) -> Unit, onRetry: () -> Unit, onEnd: () -> Unit, onDismissFinished: () -> Unit, onAddReach: () -> Unit,
                onDemoDevice: () -> Unit, onBack: () -> Unit) {
+    // The demo runs here, on this screen: only Back leaves it. Start (or Try again) first counts
+    // down, then sets the plan and starts calibration; the yellow button works too.
+    var pending by remember { mutableStateOf<(() -> Unit)?>(null) }      // what to send when the countdown ends
+    var countdown by remember { mutableIntStateOf(0) }
+    var chosen by remember { mutableStateOf<DemoRun?>(null) }
+    var hideFailure by remember { mutableStateOf(false) }
+    LaunchedEffect(pending) {
+        val go = pending ?: return@LaunchedEffect
+        for (i in COUNTDOWN_S downTo 1) { countdown = i; delay(1000) }
+        countdown = 0
+        pending = null
+        go()
+    }
+    LaunchedEffect(s.state) { if (s.state != "CALIB_FAILED") hideFailure = false }
+    // the demo picked here (during its countdown the device still has the old plan); otherwise
+    // whichever demo's plan the device has, e.g. after the yellow button started it
+    val current = chosen ?: DEMOS.firstOrNull { it.plan == s.plan }
+    val failed = s.state == "CALIB_FAILED" && !hideFailure
+    val live = pending != null || s.sessionRunning || failed || finished != null
     val ready = s.connected != null && !s.sessionRunning
+
+    fun begin(d: DemoRun) {
+        chosen = d
+        onDismissFinished()
+        pending = { onStart(d.plan) }
+    }
+
     Row(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 24.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(28.dp)) {
 
@@ -98,23 +137,119 @@ fun DemoScreen(s: UiState, login: Login?, exercise: Exercise, onStart: (List<Int
                 })
             Check(login != null, "Patient", login?.let { it.patientName + if (it.demo) " (1-hour demo account)" else "" } ?: "Nobody: sign in on the first screen")
             Check(true, "Exercise", "${exercise.title}. Change it on the Get set up screen.")
-            Text("Start begins with 3 s of calibration straight away, so sit upright and still, with the chest and wrist sensors on, before you tap it. " +
-                "The device keeps the demo’s plan afterwards, so pressing the yellow button runs it again; Full session puts the real plan back.",
+            Text("Start counts down $COUNTDOWN_S seconds, then calibrates for 3: sit upright and still, sensors on, until the first reach. " +
+                "The device keeps the demo’s plan afterwards, so the yellow button runs it again; Full session puts the real plan back.",
                 style = BodyStyle.copy(fontSize = 15.sp, lineHeight = 21.sp), color = Forest2, modifier = Modifier.padding(top = 4.dp))
         }
 
-        // ---- right: the demos
+        // ---- right: the demos, or the one running
         Column(Modifier.weight(1.15f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (s.sessionRunning) {
-                Row(Modifier.fillMaxWidth().background(Wash, RoundedCornerShape(12.dp)).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("A session is running.", style = BodyStyle, color = Forest, modifier = Modifier.weight(1f))
-                    OutlinedButton(onClick = onEnd) { Text("End it") }
-                }
+            if (live) {
+                LivePanel(s, current, finished, countdown = if (pending != null) countdown else 0,
+                    onCancel = { pending = null; countdown = 0 },
+                    onRetry = { pending = onRetry },
+                    onAgain = { current?.let(::begin) },
+                    onEnd = onEnd, onAddReach = onAddReach,
+                    onBackToDemos = { onDismissFinished(); hideFailure = true })
+            } else {
+                DEMOS.forEach { d -> DemoCard(d, current = s.plan == d.plan, enabled = ready) { begin(d) } }
             }
-            DEMOS.forEach { d -> DemoCard(d, current = s.plan == d.plan, enabled = ready) { onStart(d.plan) } }
         }
     }
 }
+
+/** The demo as it runs: the countdown, calibration, each reach, then the result. */
+@Composable
+private fun LivePanel(s: UiState, d: DemoRun?, finished: PastSession?, countdown: Int,
+                      onCancel: () -> Unit, onRetry: () -> Unit, onAgain: () -> Unit, onEnd: () -> Unit, onAddReach: () -> Unit,
+                      onBackToDemos: () -> Unit) {
+    val shape = RoundedCornerShape(14.dp)
+    Column(Modifier.fillMaxWidth().background(Panel, shape).border(1.dp, Wall, shape).padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(d?.name ?: "Session", style = LabelStyle.copy(fontSize = 16.sp), color = Forest2)
+        when {
+            countdown > 0 -> {
+                Big("Sit upright and still")
+                Line("Calibration starts in $countdown s. Back against the chair, sensors on, hand on HOME.")
+                OutlinedButton(onClick = onCancel) { Text("Cancel") }
+            }
+            s.state == "CALIBRATING" -> {
+                Big("Calibrating: stay still")
+                Line("3 seconds. The device is learning how you sit upright.")
+            }
+            s.state == "CALIB_FAILED" -> {
+                Big("Calibration didn’t take")
+                Line(when {
+                    "no gravity" in s.deviceError -> "The chest sensor isn’t answering. Check the cable between the wrist and chest boxes, unplug and replug the device, then try again."
+                    "moved too much" in s.deviceError -> "There was movement during the 3 seconds. Sit back, hands still, and try again."
+                    else -> s.deviceError.ifEmpty { "Sit upright and still, then try again." }
+                })
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    DarkButton("Try again", onRetry)
+                    OutlinedButton(onClick = onBackToDemos, modifier = Modifier.heightIn(min = 48.dp)) { Text("All demos") }
+                }
+                Line("The yellow button on the mat tries again too.", quiet = true)
+            }
+            s.sessionRunning -> {
+                val buzzer = s.phase == "TRAINING"
+                Text((if (s.state == "REST") "Rest" else blockLabel(s.phase)) + " · " + if (buzzer) "buzzer on" else "no buzzer",
+                    style = BodyStyle.copy(fontSize = 15.sp, fontWeight = if (buzzer) FontWeight.Bold else FontWeight.Normal), color = Forest,
+                    modifier = Modifier.background(if (buzzer) Wall else Wash, RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp))
+                if (s.blockSize > 0) {
+                    val now = (s.blockDone + if (s.state in listOf("WAIT_HOME", "CUED", "REACHING")) 1 else 0).coerceIn(1, s.blockSize)
+                    Big("Reach $now of ${s.blockSize}")
+                }
+                Line(when (s.state) {
+                    "WAIT_HOME" -> "Hand on the white HOME button until a light comes on."
+                    "CUED", "REACHING" -> if (s.target.isEmpty()) "Reach for the lit button." else "Reach for the ${s.target.lowercase()} button."
+                    "RETURNING" -> "Back to HOME."
+                    "REST" -> "A short rest before the next block."
+                    else -> "Getting ready."
+                })
+                if (s.leaning && buzzer) {
+                    Text("Leaning: the buzzer is sounding", style = BodyStyle.copy(fontWeight = FontWeight.Bold), color = TerraDeep)
+                }
+                s.lastRep?.let { r ->
+                    Line("Last reach: peak lean ${"%.1f".format(r.peakDeg)}°, " + if (r.compensated) "leaned (marked compensated)" else "upright")
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedButton(onClick = onEnd, modifier = Modifier.heightIn(min = 48.dp)) { Text("End session") }
+                    if (s.demo) TextButton(onClick = onAddReach, enabled = s.state == "WAIT_HOME") { Text("Add a reach (demo)") }
+                }
+            }
+            finished != null -> {
+                Big("Done: ${finished.upright} of ${finished.reaches} upright")
+                val leaned = finished.reaches - finished.upright
+                Line(if (leaned == 0) "No leans. The dashboard has every reach." else "$leaned leaned. The dashboard shows which ones and by how much.")
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (d != null) DarkButton("Run it again", onAgain)
+                    OutlinedButton(onClick = onBackToDemos, modifier = Modifier.heightIn(min = 48.dp)) { Text("All demos") }
+                }
+            }
+        }
+    }
+}
+
+private fun blockLabel(phase: String) = when (phase) {
+    "PRACTICE" -> "Warm-up"
+    "BASELINE" -> "On your own"
+    "TRAINING" -> "With the buzzer"
+    "POST" -> "On your own again"
+    else -> "Starting"
+}
+
+@Composable
+private fun Big(text: String) = Text(text, style = CoachStyle.copy(fontSize = 30.sp, lineHeight = 34.sp), color = Forest)
+
+@Composable
+private fun Line(text: String, quiet: Boolean = false) =
+    Text(text, style = BodyStyle.copy(fontSize = 16.sp, lineHeight = 22.sp), color = if (quiet) Forest2 else Forest)
+
+@Composable
+private fun DarkButton(label: String, onClick: () -> Unit) =
+    Button(onClick = onClick, shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Forest, contentColor = Plaster),
+        modifier = Modifier.heightIn(min = 48.dp)) { Text(label, style = LabelStyle.copy(fontSize = 17.sp)) }
 
 @Composable
 private fun Check(ok: Boolean, label: String, detail: String) {
