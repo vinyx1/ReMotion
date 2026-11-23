@@ -61,7 +61,7 @@ export function SignIn({ note, onSignedIn }: { note?: string; onSignedIn: (me: M
         <a href="/" className={cn('rounded-md font-display text-[1.6rem] font-semibold tracking-[-0.02em] text-forest', FOCUS)}>Re:Motion</a>
       </header>
       <main className="mx-auto grid w-full max-w-[1120px] flex-1 items-center gap-10 px-6 pt-10 pb-16 sm:px-10 lg:grid-cols-[1fr_minmax(0,33rem)] lg:gap-14">
-        <section className="max-w-[34rem]">
+        <section className="signin-rise max-w-[34rem]">
           <h1 className="font-display text-[2.4rem] leading-[1.06] font-medium tracking-[-0.02em] text-balance text-forest sm:text-[3.25rem]">
             Sign in to the dashboard
           </h1>
@@ -73,8 +73,8 @@ export function SignIn({ note, onSignedIn }: { note?: string; onSignedIn: (me: M
           </p>
         </section>
 
-        <form onSubmit={onSubmit} noValidate aria-describedby={note ? ids.status : undefined}
-          className="flex flex-col gap-5 rounded-[18px] border border-transparent bg-plaster p-6 shadow-[0_0_0_1px_rgb(31_45_39/0.1),0_2px_4px_rgb(31_45_39/0.08),0_16px_36px_-18px_rgb(31_45_39/0.45)] sm:p-8">
+        <form onSubmit={onSubmit} noValidate aria-describedby={note ? ids.status : undefined} style={{ '--i': 1 } as React.CSSProperties}
+          className="signin-rise flex flex-col gap-5 rounded-[18px] border border-transparent bg-plaster p-6 shadow-[0_0_0_1px_rgb(31_45_39/0.1),0_2px_4px_rgb(31_45_39/0.08),0_16px_36px_-18px_rgb(31_45_39/0.45)] sm:p-8">
           {note && (
             <p id={ids.status} role="status" className="rounded-[10px] bg-wash px-4 py-3 text-[15px] leading-snug font-bold text-forest">{note}</p>
           )}
