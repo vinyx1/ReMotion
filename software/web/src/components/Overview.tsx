@@ -18,6 +18,7 @@ import { href } from '../lib/route'
 import { EXERCISES, exerciseOf } from '../lib/exercises'
 import type { Patient } from '../lib/patients'
 import { TrendPill } from './PatientHeader'
+import { PracticeCalendar } from './PracticeCalendar'
 import { ExerciseBadge } from './ExerciseIcon'
 import { cn } from '../lib/utils'
 import type { Session } from '../types'
@@ -505,9 +506,15 @@ export function AllExercises({ patient, sessions }: { patient: Patient; sessions
   const payload = { exercises: rows.map(({ ss }) => summaryPayload(ss)) }
   return (
     <section aria-labelledby="all-title" className="pt-1">
-      <h2 id="all-title" className="font-display text-[1.6rem] leading-[1.15] font-medium tracking-[-0.01em] sm:text-[1.9rem]">Overview</h2>
-      <div className="mt-3">
-        <AISummary auto plain payload={payload} />
+      {/* the summary, with the month of practice beside it (below it on narrow screens) */}
+      <div className="grid gap-x-10 gap-y-6 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start">
+        <div className="min-w-0">
+          <h2 id="all-title" className="font-display text-[1.6rem] leading-[1.15] font-medium tracking-[-0.01em] sm:text-[1.9rem]">Overview</h2>
+          <div className="mt-3">
+            <AISummary auto plain payload={payload} />
+          </div>
+        </div>
+        <PracticeCalendar sessions={sessions} />
       </div>
       <div className="min-w-0">
         <ul className="@container mt-7 flex flex-col divide-y divide-wall overflow-hidden rounded-xl border border-wall bg-panel">

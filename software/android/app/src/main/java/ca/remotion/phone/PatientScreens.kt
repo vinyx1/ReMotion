@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -279,43 +280,76 @@ private fun MatButton(name: String, color: Color, lit: Boolean) {
 
 // ---------------------------------------------------------------- the scoreboard (right)
 
+/*
+  This week, as a count and a track. The count leads ("3 days practised"); under it the seven
+  days sit on one hairline, Monday to Sunday: a practised day is a filled forest mark with a
+  tick, today (not yet done) an open eucalyptus ring, a day gone by a small dot, a day still
+  to come a fainter one. Nothing is red or missing-looking: this is about showing up.
+*/
 @Composable
 private fun ColumnScope.WeekScore(past: List<PastSession>) {
     val week = History.week(past)
     val today = LocalDate.now()
+    val days = week.count { it.second }
     Text("This week", style = LabelStyle, color = Forest2)
-    Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+    if (days > 0) {
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold, fontSize = 40.sp, fontFeatureSettings = "tnum")) { append("$days") }
+                append(if (days == 1) " day practised" else " days practised")
+            },
+            style = BodyStyle.copy(lineHeight = 44.sp), color = Forest, modifier = Modifier.padding(top = 2.dp),
+        )
+    } else if (past.isNotEmpty()) {
+        Text("No practice yet this week", style = BodyStyle, color = Forest, modifier = Modifier.padding(top = 6.dp))
+    }
+    WeekTrack(week, today, Modifier.padding(top = 14.dp))
+    if (past.isNotEmpty()) {
+        Spacer(Modifier.weight(1f))
+        Box(Modifier.fillMaxWidth().height(1.dp).background(Wall))
+        Text(lastTime(past), style = BodyStyle, color = Forest, modifier = Modifier.padding(top = 12.dp))
+    }
+}
+
+private val DAY_INITIAL = 20.dp
+private val TRACK_GAP = 8.dp
+private val MARK = 28.dp
+
+@Composable
+private fun WeekTrack(week: List<Pair<LocalDate, Boolean>>, today: LocalDate, modifier: Modifier = Modifier) {
+    Row(
+        modifier.fillMaxWidth().drawBehind {
+            // the hairline the days sit on, from Monday's mark to Sunday's
+            val y = (DAY_INITIAL + TRACK_GAP + MARK / 2).toPx()
+            val step = size.width / 7
+            drawLine(Wall, Offset(step / 2, y), Offset(size.width - step / 2, y), strokeWidth = 1.5.dp.toPx())
+        },
+    ) {
         week.forEach { (day, done) ->
             val isToday = day == today
             Column(
-                Modifier.weight(1f).height(54.dp).clip(RoundedCornerShape(9.dp))
-                    .background(if (done) Forest else Panel)
-                    .border(if (isToday) 2.5.dp else 1.dp, if (isToday || done) Forest else Wall, RoundedCornerShape(9.dp))
-                    .semantics(mergeDescendants = true) {
-                        contentDescription = day.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() } +
-                            (if (isToday) ", today" else "") + if (done) ", practised" else ""
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceEvenly,
+                Modifier.weight(1f).semantics(mergeDescendants = true) {
+                    contentDescription = day.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() } +
+                        (if (isToday) ", today" else "") + if (done) ", practised" else ""
+                },
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(day.dayOfWeek.name.take(1), style = LabelStyle.copy(fontSize = 14.sp), color = if (done) Plaster else Forest)
-                if (done) CheckMark(Plaster, 16.dp) else Spacer(Modifier.height(16.dp))
+                Text(day.dayOfWeek.name.take(1), style = LabelStyle.copy(fontSize = 15.sp),
+                    color = if (isToday || done) Forest else Forest2, modifier = Modifier.height(DAY_INITIAL))
+                Spacer(Modifier.height(TRACK_GAP))
+                Box(Modifier.size(MARK), contentAlignment = Alignment.Center) {
+                    when {
+                        done -> Box(Modifier.size(MARK).clip(CircleShape).background(Forest), contentAlignment = Alignment.Center) {
+                            CheckMark(Plaster, 15.dp)
+                        }
+                        isToday -> Box(Modifier.size(MARK).clip(CircleShape).background(Plaster).border(2.dp, Eucalyptus, CircleShape))
+                        day.isBefore(today) -> Box(Modifier.size(8.dp).clip(CircleShape).background(Forest2.copy(alpha = 0.45f)))
+                        else -> Box(Modifier.size(6.dp).clip(CircleShape).background(Wall))
+                    }
+                }
             }
         }
     }
-    val days = week.count { it.second }
-    Text(
-        buildAnnotatedString {
-            if (days == 0) append("No practice yet this week")
-            else {
-                withStyle(SpanStyle(fontWeight = FontWeight.Bold, fontSize = 26.sp, fontFeatureSettings = "tnum")) { append("$days") }
-                append(if (days == 1) " day practised" else " days practised")
-            }
-        },
-        style = BodyStyle, color = Forest, modifier = Modifier.padding(top = 10.dp),
-    )
-    Spacer(Modifier.weight(1f))
-    Box(Modifier.fillMaxWidth().height(1.dp).background(Wall))
-    Text(lastTime(past), style = BodyStyle, color = Forest, modifier = Modifier.padding(top = 12.dp))
 }
 
 @Composable
@@ -469,8 +503,9 @@ private fun reaches(n: Int) = if (n == 1) "reach" else "reaches"
 /** "3 of 4" that never breaks across lines. */
 private fun of(a: Int, b: Int) = "$a\u00A0of\u00A0$b"
 
+/** How the last session went, and the one before. Only called once there is one. */
 private fun lastTime(past: List<PastSession>): String {
-    val last = past.lastOrNull() ?: return "After your first session, how it went shows up here."
+    val last = past.last()
     val before = past.dropLast(1).lastOrNull()
     val line = "Last time you stayed upright in ${of(last.upright, last.reaches)} ${reaches(last.reaches)}."
     return if (before == null) line else "$line " + compare(last, before)

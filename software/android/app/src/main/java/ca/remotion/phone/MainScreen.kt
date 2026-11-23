@@ -60,27 +60,31 @@ fun MainScreen(vm: MainViewModel) {
     val finished by vm.finished.collectAsStateWithLifecycle()
     val login by vm.login.collectAsStateWithLifecycle()
     val signIn by vm.signIn.collectAsStateWithLifecycle()
+    val hello by vm.hello.collectAsStateWithLifecycle()
     var settings by rememberSaveable { mutableStateOf(false) }
     var intro by rememberSaveable { mutableStateOf(true) }      // once per launch, not on rotation
     Crossfade(intro, animationSpec = tween(260), label = "intro") { opening ->
         if (opening) Intro(onDone = { intro = false })
         else CompositionLocalProvider(LocalFirstName provides (login?.firstName ?: "")) {
-            App(s, past, finished, login, signIn, vm, settings) { settings = it }
+            App(s, past, finished, login, signIn, hello, vm, settings) { settings = it }
         }
     }
 }
 
 @Composable
 private fun App(s: UiState, past: List<PastSession>, finished: PastSession?, login: Login?, signIn: SignInState,
-                vm: MainViewModel, settings: Boolean, setSettings: (Boolean) -> Unit) {
+                hello: String?, vm: MainViewModel, settings: Boolean, setSettings: (Boolean) -> Unit) {
     val context = LocalContext.current
     if (settings) BackHandler { setSettings(false) }
-    // three places: settings, the sign-in screen (until the phone has a patient), the patient's screen
-    val place = if (settings) 2 else if (login == null) 0 else 1
+    // four places: settings, the sign-in screen (until the phone has a patient), "Hello" just
+    // after signing in, the patient's screen
+    val place = if (settings) 2 else if (login == null) 0 else if (hello != null) 3 else 1
     AnimatedContent(place, transitionSpec = { fadeThrough() }, label = "place") { shown ->
         Surface(Modifier.fillMaxSize(), color = Plaster) {
             if (shown == 2) {
                 SettingsScreen(s, login, vm, onClose = { setSettings(false) })
+            } else if (shown == 3) {
+                Hello(hello ?: "", onDone = vm::dismissHello)
             } else if (shown == 0) {
                 SignInScreen(signIn, onScan = { scanCode(context, vm) }, onCode = vm::signInWith, onSettings = { setSettings(true) })
             } else {

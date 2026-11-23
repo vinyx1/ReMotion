@@ -97,6 +97,7 @@ reach times, by-target counts).
 | `src/components/Figure3D.tsx` | The 3D seated figure (fixed camera) |
 | `src/lib/figure.ts` | Figure geometry: real trunk tilt and timing, illustrative arm |
 | `src/components/Overview.tsx` | Peak lean per target, reach time trend |
+| `src/components/PracticeCalendar.tsx` | The month beside the Overview summary: which days the patient practised |
 | `src/components/RepDetail.tsx` | Trunk and wrist traces for one rep |
 | `src/components/AllSessions.tsx` | Session table |
 | `src/index.css` | Design tokens (colours, fonts) |
