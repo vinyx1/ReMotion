@@ -36,8 +36,6 @@ async function call<T>(path: string, body?: object): Promise<T> {
 
 export const getMe = () => call<Me>('/api/me')
 export const requestDemo = () => call<{ email: string; password: string; expiresAt: number }>('/api/demo', {})
-/** Sign this browser in to the demo it already has (one live demo per browser). */
-export const continueDemo = () => call<Me>('/api/demo/continue', {})
 export const signIn = (email: string, password: string, remember: boolean) => call<Me>('/api/login', { email, password, remember })
 export const signOut = () => call('/api/logout', {})
 export const endDemo = () => call('/api/demo/end', {})
