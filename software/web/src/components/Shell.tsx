@@ -185,15 +185,16 @@ function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; pati
   const openId = patient && route.name !== 'patients' ? patient.id : null
 
   /*
-    Opening a patient brings their folder into view in the list, top first, if it's out of
-    sight; one already in view stays put. Only the list scrolls, never the page (the sidebar
+    Opening a patient scrolls the list only when their name tab is (even partly) out of sight,
+    bringing it to the top; a name you could see and click stays where it is, even if the
+    opened folder now runs past the bottom. Only the list scrolls, never the page (the sidebar
     is sticky); smooth unless the reader asked for reduced motion.
   */
   useEffect(() => {
     const list = nav.current
-    const folder = list?.querySelector<HTMLElement>('[data-open-folder]')
-    if (!list || !folder || !openId) return
-    const l = list.getBoundingClientRect(), f = folder.getBoundingClientRect()
+    const tab = list?.querySelector<HTMLElement>('[data-open-folder] > a')
+    if (!list || !tab || !openId) return
+    const l = list.getBoundingClientRect(), f = tab.getBoundingClientRect()
     if (f.top >= l.top && f.bottom <= l.bottom) return
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     list.scrollTo({ top: list.scrollTop + (f.top - l.top) - 8, behavior: reduce ? 'auto' : 'smooth' })
