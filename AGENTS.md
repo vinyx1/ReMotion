@@ -12,6 +12,7 @@ Four people work on this repo in parallel, often through AI agents that can't se
 
 ### Every session
 
+0. **Yousuf-Hamoda (or an agent working for him): read [`docs/HANDOFF.md`](docs/HANDOFF.md) first.** It says how to set up and test the phone app and dashboard, and what to build next (hand to mouth and forearm rotation in the firmware).
 1. **Sync and read before you read code.** `git pull --rebase`, then read [`docs/STATUS.md`](docs/STATUS.md) and the open issues (`gh issue list`, or the Issues tab on GitHub). Issues are where known problems live: if you're about to work in an area, read its open issues first so you don't rediscover or re-break something already reported.
 2. **Claim before you write code.** Assign yourself an issue (`gh issue edit <n> --add-assignee @me`), or create one and assign it. That *is* the claim; no permission needed. Small stuff is exempt: reading, typos, anything under ~10 minutes.
 3. **Stay in your area** (table below). Found a problem in someone else's area? Report it (see below) rather than reaching in.
@@ -93,7 +94,7 @@ Same two IMUs and the same idea in every exercise: the arm does a task while the
 | 1 | **Forward reach** | Reach from HOME to the lit target in front, press it, return | Target **button press** | Trunk leans forward | **Building now** (sections 2 to 6) |
 | 2 | **Sideways reach** | Same as forward, but the **mat is turned 90°** along the table edge on the reaching side (HOME near the hand, targets stepping outward). Chair still faces the table: turning the chair instead would just make it a forward reach again | Target **button press** | Trunk leans sideways (the trunk angle is axis-independent, so this already works) | Planned |
 | 3 | **Hand to mouth** (drinking motion) | Lift the hand from HOME to the mouth and back | **Wrist IMU angle**: forearm tips up past a "hand at mouth" angle. No target button; LEDs only cue | Trunk/head bends down to meet the hand | Planned |
-| 4 | **Forearm rotation** (supination / pronation) | Turn the forearm palm-down to palm-up and back, elbow at the side | **Wrist gyro**: forearm has rotated past a target angle. No target button; LEDs only cue | Trunk tilts sideways / elbow swings out to fake the turn | Planned |
+| 4 | **Forearm rotation** (supination / pronation) | Turn the forearm palm-down to palm-up and back, elbow at the side | **Wrist gyro**: forearm has rotated past a target angle. No target button; LEDs only cue | Trunk tilts sideways / elbow swings out to fake the turn | In the app and dashboard; firmware mode next (`docs/HANDOFF.md`) |
 
 Why buttons stay for the reaches but not for 3 and 4: the IMUs measure angles, not hand position, so only a press can confirm a reach got to its target (a short reach with a straight back would otherwise look clean). Hand to mouth and forearm rotation have angle goals the wrist IMU measures directly.
 

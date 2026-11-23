@@ -9,7 +9,8 @@ dashboard has more than one patient to show:
     sim-a  improves: early sessions lean on most reps, by the end most are clean
     sim-b  holds steady at about a third of reps leaning
     sim-c  gets worse: leans more as the weeks go on
-sim-a also does a few hand-to-mouth sessions and sim-b a few sideways reaches, so
+sim-a also does a few hand-to-mouth sessions, sim-b a few sideways reaches and sim-c a
+few forearm rotations, so
 the dashboard has patients with more than one exercise. Those go in an exercise
 sub-folder, data/fake/<id>/<exercise>/, which is how export.py tells them apart.
 (They are made by the same reach generator: the dashboard ignores their targets.)
@@ -57,6 +58,7 @@ PATIENTS = [
 EXTRA_EXERCISES = {
     "sim-a": [{"exercise": "hand-to-mouth", "sessions": 4, "seed": 21, "first": datetime(2026, 11, 7, 15, 0), "start": 0.5, "end": 0.2}],
     "sim-b": [{"exercise": "sideways-reach", "sessions": 4, "seed": 27, "first": datetime(2026, 11, 8, 11, 0), "start": 0.4, "end": 0.35}],
+    "sim-c": [{"exercise": "forearm-rotation", "sessions": 4, "seed": 33, "first": datetime(2026, 11, 9, 10, 0), "start": 0.45, "end": 0.25}],
 }
 
 

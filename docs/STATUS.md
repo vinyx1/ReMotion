@@ -8,10 +8,11 @@ Deadlines: fully working **Nov 20** · symposium demo **Wed Nov 25**.
 
 | Area | State |
 |---|---|
-| Hardware / firmware | Schematic done (`hardware/kicad/`), bring-up sketches in `firmware/tests/` |
-| Signal processing | Logger, protocol parser and fake-session generator in `software/tools/` |
-| Dashboard | React app in `software/web/` (overview, rep detail, 3D replay), fed by `software/dashboard/export.py` |
-| Testing | Validation plan in `AGENTS.md` section 9; `docs/TESTING.md` not written yet |
+| Hardware / firmware | Forward reach works on the device (tilt filter, phone commands G / X / ?). Hand to mouth and forearm rotation need firmware modes: **`docs/HANDOFF.md`** |
+| Signal processing | Logger, protocol parser, fake sessions, demo launcher (`software/tools/`); validation tool (`software/analysis/`) |
+| Phone app | `software/android/`: sign-in by code, four exercises, Get set up, coaching, Demo mode; tested on a Galaxy S22 with the device |
+| Dashboard | React app and server in `software/web/`: accounts and 1-hour demos, every exercise with its own tab, trends and 3D replay |
+| Testing | Runbook `docs/TESTING.md`; validation recordings next |
 
 ## Findings
 
@@ -24,6 +25,7 @@ Things that turned out to be true (or false) and that others should know. Date a
 Choices between options, with the reason. Date and name each one.
 
 - _2026-11-23 (Yousuf-Hamoda):_ Trunk angle read high after calibration. Two causes: smoothing the *angle* (noise can only add to an angle, so it settles above the truth) and reach jolts (the accelerometer can't tell a push from a tilt). Fix: complementary filter on the gravity vector (gyro turns it each sample, `ACCEL_WEIGHT` 0.01 pulls it toward the accelerometer, skipped when `|a|` is more than 1 m/s² off gravity), gyro offset from calibration, calibration skips its first 0.5 s and allows 0.25 m/s² wobble (was 0.5). Simulation with 2.5 m/s² jolts: upright reach jolts 13° -> 2.4° peak, time falsely over 10° 810 ms -> 110 ms (under the 200 ms sustain). Same maths in `imu_test`. Check on real recordings; if calibration now fails often, raise `CALIB_MAX_STD_MS2`.
+- _2026-11-23 (vinyx1):_ Forearm rotation (pronation / supination) is the fourth exercise in the app and dashboard. App: "Turn your forearm" in the exercise choice (all four fit a Galaxy S22), its own setup drawing (the hand turning palm down to palm up, an arc around it), coaching ("Turn your palm up, elbow at your side", "Turn your palm back down onto the white button"), the Home-only mat, and "turns" as the count. Dashboard: Elena (sim-c, a demo patient) has 4 sample sessions, so the overview, the exercise tab, the trends and the AI summary show it; the 3D replay turns the forearm palm down to palm up, elbow at the side, timed by the rep, with the phase named ("Turning palm up"). The device itself needs a firmware mode for it, like hand to mouth: written up for Yousuf in `docs/HANDOFF.md` (an `M<n>` exercise command is the suggestion; a contract change to agree first).
 - _2026-11-23 (vinyx1):_ The phone app has a Demo mode (Settings → Demo mode), the app's version of `./demo.sh` / `software/tools/demo.py`: a ready-to-demo checklist (device, lean limit, dashboard, patient, exercise) and one card per demo (Buzzer check 0,0,5,0; No buzzer 0,5,0,0; Before and after 0,3,5,3; Full session 3,15,30,15) with its blocks, time and what to say; Start counts down 5 s ("sit upright and still": tapping the phone spoiled the calibration), then sends the plan (`P`) and starts the session (`G`); the demo then runs on the demo screen (calibrating, each reach with the buzzer on or off, the result, Try again after a rejected calibration), and only Back leaves it. No protocol change.
 - _2026-11-23 (vinyx1):_ The sideways reach gets the 3D rep replay: the mat along the table edge with targets stepping out, the hand reaching out to the side, the trunk leaning towards the reaching side by the logged angle, seen from the front. The direction is drawn (the chest sensor measures how far it tilts, not which way), and the replay says so under the figure. The phone app now makes the sideways reach a reach to the **right** ("Reach to the right", "Turn the mat along the table edge, on your right", "leaned to the right"); its front-view drawing shows the mat on the right like a mirror.
 - _2026-11-23 (Yousuf-Hamoda):_ Short demos: `python -m software.tools.demo` picks a plan with one key (buzzer check 0,0,5,0; before/after 0,3,5,3; full), starts with `G`, stops at the `S` line and re-exports the owner's dashboard. Firmware skips the 30 s rest after a block of fewer than 10 reps (`MIN_REPS_BEFORE_REST`), so demo plans don't stall; the default 3/15/30/15 plan still rests twice. No protocol change.

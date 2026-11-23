@@ -124,7 +124,7 @@ export function RepDetail({ sessions, sessionId, repN, onPick }: {
   const trunk = tr ? sampleAt(tr.t, tr.trunkDeg, t) : 0
   const over = trunk > session.thresholdDeg
   const wrist = tr ? sampleAt(tr.t, tr.wristDps, t) : 0
-  const phase = tr ? (t >= end ? 'Back on HOME' : phaseName(tr.state[indexAt(tr.t, t)], ex.figure === 'mouth' ? 'mouth' : 'reach')) : ''
+  const phase = tr ? (t >= end ? 'Back on HOME' : phaseName(tr.state[indexAt(tr.t, t)], ex.figure === 'mouth' ? 'mouth' : ex.figure === 'turn' ? 'turn' : 'reach')) : ''
 
   // play, restart, speed and scrub: one clock for the figure and the traces
   const controls = (
@@ -224,6 +224,11 @@ export function RepDetail({ sessions, sessionId, repN, onPick }: {
               </div>
               <p className="pointer-events-none absolute top-4 right-5 rounded-md bg-plaster/10 px-2.5 py-1 text-sm font-semibold text-plaster">{phase}</p>
             </div>
+            {ex.figure === 'turn' && (
+              <p className="border-t border-wall px-4 py-2 text-[13px] leading-snug text-pretty text-forest-2">
+                The wrist sensor measures how fast the forearm turns; the replay draws the turn from palm down to palm up, timed by the rep.
+              </p>
+            )}
             {ex.figure === 'side' && (
               <p className="border-t border-wall px-4 py-2 text-[13px] leading-snug text-pretty text-forest-2">
                 The chest sensor measures how far the trunk tilts, not which way, so the replay draws the lean towards the reaching side.

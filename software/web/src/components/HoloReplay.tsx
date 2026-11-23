@@ -18,7 +18,7 @@
 import { Edges, Grid, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useMemo, useRef } from 'react'
-import { HOME, HOME_X, pose, progress, SEAT_HEIGHT, SHOULDER_HALF_WIDTH, TABLE, TARGET_X, targetAt, type V3 } from '../lib/figure'
+import { HOME, HOME_X, pose, progress, SEAT_HEIGHT, SHOULDER_HALF_WIDTH, TABLE, TARGET_X, targetAt, TURN_WRIST, type V3 } from '../lib/figure'
 import { sampleAt } from '../lib/utils'
 import { type BodyInput, SkinnedHumanoid } from '../landing/SkinnedHumanoid'
 import type { Target, Trace } from '../types'
@@ -111,9 +111,12 @@ export function HoloReplay({ trace, t, target, threshold, peakDeg, motion = 'rea
     the mat shows only HOME, and there is no hand trail (the path is the figure's own).
     'side': the sideways reach: the mat along the table edge, the hand out to the side,
     the trunk leaning towards the reaching side; seen from the front.
+    'turn': forearm rotation: the elbow at the side, the forearm level, the hand turning palm
+    down to palm up, arriving at the logged time; seen from in front and to the side.
   */
-  motion?: 'reach' | 'mouth' | 'side'
+  motion?: 'reach' | 'mouth' | 'side' | 'turn'
 }) {
+  const turning = motion === 'turn'
   const toMouth = motion === 'mouth'
   const side = motion === 'side'
   const trunk = sampleAt(trace.t, trace.trunkDeg, t)
@@ -121,12 +124,12 @@ export function HoloReplay({ trace, t, target, threshold, peakDeg, motion = 'rea
 
   const p = useMemo(() => pose(trunk, t, trace.reachEndS, target, side), [trunk, t, trace.reachEndS, target, side])
   const shake = tremble(trace, t)
-  const hand = add(toMouth ? HOME : p.hand, shake)
+  const hand = add(toMouth ? HOME : turning ? TURN_WRIST : p.hand, shake)
 
   // the hand's last 0.6 s, as a fading trail
   const trail = useMemo(() => {
     const out: { at: V3; age: number }[] = []
-    if (toMouth) return out
+    if (toMouth || turning) return out
     for (let k = 1; k <= 18; k++) {
       const tk = t - k * 0.035
       if (tk < trace.t[0]) break
@@ -134,13 +137,14 @@ export function HoloReplay({ trace, t, target, threshold, peakDeg, motion = 'rea
       out.push({ at: add(pk.hand, tremble(trace, tk)), age: k / 18 })
     }
     return out
-  }, [t, trace, target, toMouth, side])
+  }, [t, trace, target, toMouth, turning, side])
 
   // what the 3D man is asked to do this frame (read by SkinnedHumanoid every frame)
   const liveBody = useRef<BodyInput>({ lean: 0, wrist: hand, alarm: 0 })
   liveBody.current = {
     lean: (trunk * Math.PI) / 180, wrist: hand, alarm: over ? 1 : 0, mouth: toMouth ? progress(t, trace.reachEndS) : undefined,
     sideways: side ? progress(t, trace.reachEndS) : undefined,
+    turn: turning ? progress(t, trace.reachEndS) : undefined,
   }
   const ghostPose = useMemo(() => pose(peakDeg, 0, trace.reachEndS, target, side), [peakDeg, trace.reachEndS, target, side])
   // when the logged trunk was at its highest: the ghost appears from there
@@ -151,15 +155,16 @@ export function HoloReplay({ trace, t, target, threshold, peakDeg, motion = 'rea
   }, [trace])
   const ghostBody = useRef<BodyInput>({ lean: 0, wrist: ghostPose.hand, alarm: 0 })
   ghostBody.current = {
-    lean: (peakDeg * Math.PI) / 180, wrist: toMouth ? HOME : ghostPose.hand, alarm: peakDeg > threshold ? 1 : 0, fade: ghostFade(t, peakT),
+    lean: (peakDeg * Math.PI) / 180, wrist: toMouth ? HOME : turning ? TURN_WRIST : ghostPose.hand, alarm: peakDeg > threshold ? 1 : 0, fade: ghostFade(t, peakT),
     mouth: toMouth ? progress(peakT, trace.reachEndS) : undefined,
     sideways: side ? 0 : undefined,
+    turn: turning ? progress(peakT, trace.reachEndS) : undefined,
   }
 
   return (
     <Canvas
       dpr={[1, 2]}
-      camera={{ position: side ? [3.0, 1.15, 1.25] : [0.42, 1.0, 3.25], fov: 30 }}   // sideways reach: from the front, so the reach and the lean read
+      camera={{ position: side ? [3.0, 1.15, 1.25] : turning ? [2.1, 1.25, 2.4] : [0.42, 1.0, 3.25], fov: 30 }}   // sideways reach: from the front, so the reach and the lean read
       onCreated={({ gl }) => gl.setClearColor(STAGE)}
       aria-label="Holographic replay of the reach: trunk tilt and wrist movement from the logged samples"
       role="img"
@@ -167,9 +172,9 @@ export function HoloReplay({ trace, t, target, threshold, peakDeg, motion = 'rea
       <Grid position={[0.3, 0, 0]} args={[4, 4]} cellSize={0.1} cellThickness={0.6} cellColor="#2b3d35"
         sectionSize={0.5} sectionThickness={1} sectionColor="#4f6f5f" fadeDistance={4.5} fadeStrength={1.2} infiniteGrid />
       {/* drag to turn the view around the figure; no zoom (the wheel keeps scrolling the page) and no panning, so he stays centred */}
-      <OrbitControls target={side ? [0.2, 0.7, 0.18] : [0.32, 0.68, 0]} enablePan={false} enableZoom={false} enableDamping dampingFactor={0.12}
+      <OrbitControls target={side ? [0.2, 0.7, 0.18] : turning ? [0.22, 0.74, 0.12] : [0.32, 0.68, 0]} enablePan={false} enableZoom={false} enableDamping dampingFactor={0.12}
         minPolarAngle={0.25} maxPolarAngle={Math.PI / 2 - 0.05} rotateSpeed={0.7} />
-      <Room target={target} targets={!toMouth} side={side} />
+      <Room target={target} targets={!toMouth && !turning} side={side} />
 
       <Suspense fallback={null}>
         {/* the peak lean, as a ghost that fades soon after he leans back */}

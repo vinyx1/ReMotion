@@ -197,11 +197,15 @@ private fun LivePanel(s: UiState, d: DemoRun?, finished: PastSession?, countdown
                     modifier = Modifier.background(if (buzzer) Wall else Wash, RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp))
                 if (s.blockSize > 0) {
                     val now = (s.blockDone + if (s.state in listOf("WAIT_HOME", "CUED", "REACHING")) 1 else 0).coerceIn(1, s.blockSize)
-                    Big("Reach $now of ${s.blockSize}")
+                    Big("${LocalExercise.current.one.replaceFirstChar { it.uppercase() }} $now of ${s.blockSize}")
                 }
                 Line(when (s.state) {
                     "WAIT_HOME" -> "Hand on the white HOME button until a light comes on."
-                    "CUED", "REACHING" -> if (s.target.isEmpty()) "Reach for the lit button." else "Reach for the ${s.target.lowercase()} button."
+                    "CUED", "REACHING" -> when (LocalExercise.current) {
+                        Exercise.MOUTH -> "Lift the hand to the mouth."
+                        Exercise.ROTATION -> "Turn the palm up, elbow at the side."
+                        else -> if (s.target.isEmpty()) "Reach for the lit button." else "Reach for the ${s.target.lowercase()} button."
+                    }
                     "RETURNING" -> "Back to HOME."
                     "REST" -> "A short rest before the next block."
                     else -> "Getting ready."
@@ -210,11 +214,11 @@ private fun LivePanel(s: UiState, d: DemoRun?, finished: PastSession?, countdown
                     Text("Leaning: the buzzer is sounding", style = BodyStyle.copy(fontWeight = FontWeight.Bold), color = TerraDeep)
                 }
                 s.lastRep?.let { r ->
-                    Line("Last reach: peak lean ${"%.1f".format(r.peakDeg)}°, " + if (r.compensated) "leaned (marked compensated)" else "upright")
+                    Line("Last ${LocalExercise.current.one}: peak lean ${"%.1f".format(r.peakDeg)}°, " + if (r.compensated) "leaned (marked compensated)" else "upright")
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedButton(onClick = onEnd, modifier = Modifier.heightIn(min = 48.dp)) { Text("End session") }
-                    if (s.demo) TextButton(onClick = onAddReach, enabled = s.state == "WAIT_HOME") { Text("Add a reach (demo)") }
+                    if (s.demo) TextButton(onClick = onAddReach, enabled = s.state == "WAIT_HOME") { Text("Add a ${LocalExercise.current.one} (demo)") }
                 }
             }
             finished != null -> {

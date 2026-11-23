@@ -191,14 +191,29 @@ private fun DrawScope.sideScene(t: Float, exercise: Exercise) {
         }
     }
 
-    // the arm: resting on the table's edge; then out to the blue button, or up to the mouth
+    // the arm: resting on the table's edge; then out to the blue button, up to the mouth, or turning
     val k = show(t)
     val shoulder = p(66f, 66f)
+    if (exercise == Exercise.ROTATION) {
+        // forearm rotation: elbow at the side, forearm level over HOME; the hand turns about the forearm.
+        // Seen from the side, a flat hand is thin palm down and palm up and widest half-way, when the
+        // thumb points up; its colour turns from the back of the hand (dark) to the palm (light).
+        drawLine(Forest, shoulder, p(70f, 98f), 9 * u, StrokeCap.Round)
+        drawLine(Forest, p(70f, 98f), p(118f, 80f), 9 * u, StrokeCap.Round)
+        val tall = 4f + 18f * kotlin.math.sin(Math.PI.toFloat() * k)
+        val palm = k > 0.5f
+        drawRoundRect(if (palm) Plaster else Forest, p(118f, 80f - tall / 2), Size(24 * u, tall * u), CornerRadius(3 * u))
+        drawRoundRect(Forest, p(118f, 80f - tall / 2), Size(24 * u, tall * u), CornerRadius(3 * u), style = Stroke(2f * u))
+        // the turn, as an arc around the hand while it turns
+        if (k > 0.02f && k < 0.98f) drawArc(Eucalyptus, startAngle = -90f, sweepAngle = 180f * k, useCenter = false,
+            topLeft = p(110f, 62f), size = Size(40 * u, 36 * u), style = Stroke(2.5f * u, cap = StrokeCap.Round))
+    } else {
     val (elbowTo, handTo) = if (exercise == Exercise.MOUTH) p(86f, 90f) to p(82f, 50f) else p(130f, 76f) to p(196f, 88f)
     val elbow = lerp(p(76f, 100f), elbowTo, k)
     val hand = lerp(p(130f, 98f), handTo, k)
     drawLine(Forest, shoulder, elbow, 9 * u, StrokeCap.Round)
     drawLine(Forest, elbow, hand, 9 * u, StrokeCap.Round)
+    }
 
     // 3. the chest strap wraps on around the trunk, the sensor on the front
     val strap = part(t, 2 * STEP)

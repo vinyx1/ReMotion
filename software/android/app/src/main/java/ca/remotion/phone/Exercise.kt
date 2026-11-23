@@ -9,8 +9,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 
   The device itself runs the same session for all three today: the coach's words and the
   setup drawing change, and the trunk is watched the same way. Sideways reach works with the
-  current firmware (the mat is only turned). Hand to mouth on the real device still needs the
-  firmware's wrist-angle mode (no target button to press); the demo device plays it already.
+  current firmware (the mat is only turned). Hand to mouth and forearm rotation on the real
+  device still need firmware modes (rep done by the wrist's angle or turn, no target button to
+  press; docs/HANDOFF.md); the demo device plays them already.
 */
 enum class Exercise(
     val id: String,
@@ -23,7 +24,8 @@ enum class Exercise(
 ) {
     FORWARD("forward-reach", "Reach forward", "To the buttons in front", "reach", "reaches"),
     SIDEWAYS("sideways-reach", "Reach to the right", "Mat along the edge, on your right", "reach", "reaches"),
-    MOUTH("hand-to-mouth", "Hand to mouth", "As if to take a drink", "lift", "lifts");
+    MOUTH("hand-to-mouth", "Hand to mouth", "As if to take a drink", "lift", "lifts"),
+    ROTATION("forearm-rotation", "Turn your forearm", "Palm down, then palm up", "turn", "turns");
 
     fun reps(n: Int) = if (n == 1) one else many
 

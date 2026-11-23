@@ -18,10 +18,10 @@ export interface Exercise {
   /**
     What the 3D replay's figure does with its arm: 'reach' (HOME to the lit target on
     the mat), 'mouth' (HOME up to its own mouth), 'side' (out to the side, the mat along
-    the table edge, the trunk leaning that way), or null (no 3D replay yet: forearm
-    rotation needs a turning wrist).
+    the table edge, the trunk leaning that way), 'turn' (the forearm turning palm down to
+    palm up, elbow at the side), or null (no 3D replay).
   */
-  figure: 'reach' | 'mouth' | 'side' | null
+  figure: 'reach' | 'mouth' | 'side' | 'turn' | null
   /**
     Its identifying colour (icon, tab, overview row). Checked with the dataviz palette
     validator: every pair stays apart for colour-blind readers (worst ΔE 16.7) and each
@@ -34,7 +34,7 @@ export const EXERCISES: Record<ExerciseId, Exercise> = {
   'forward-reach': { id: 'forward-reach', name: 'Seated forward reach', short: 'Forward reach', targets: true, time: 'Reach time', figure: 'reach', color: '#2f8a5a' },
   'sideways-reach': { id: 'sideways-reach', name: 'Sideways reach', short: 'Sideways reach', targets: true, time: 'Reach time', figure: 'side', color: '#2f6fb0' },
   'hand-to-mouth': { id: 'hand-to-mouth', name: 'Hand to mouth', short: 'Hand to mouth', targets: false, time: 'Time to mouth', figure: 'mouth', color: '#b07a1e' },
-  'forearm-rotation': { id: 'forearm-rotation', name: 'Forearm rotation', short: 'Forearm rotation', targets: false, time: 'Turn time', figure: null, color: '#8a4fa0' },
+  'forearm-rotation': { id: 'forearm-rotation', name: 'Forearm rotation', short: 'Forearm rotation', targets: false, time: 'Turn time', figure: 'turn', color: '#8a4fa0' },
 }
 
 export const ORDER: ExerciseId[] = ['forward-reach', 'sideways-reach', 'hand-to-mouth', 'forearm-rotation']

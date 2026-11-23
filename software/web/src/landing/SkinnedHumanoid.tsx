@@ -41,6 +41,11 @@ export interface BodyInput {
     leans towards the reaching side (+z) instead of forward, and the arm reaches out sideways.
   */
   sideways?: number
+  /**
+    Forearm rotation: 0..1, palm down (0) to palm up (1). Set, the wrist stays at `wrist`, the
+    elbow at the side, and the hand turns about the forearm.
+  */
+  turn?: number
   /** 0..1: how strongly the torso shows the alarm (the lean is flagged) */
   alarm: number
   /** 0..1, hologram looks only: how visible the figure is (default 1). The replay fades its ghost out with it. */
@@ -325,6 +330,10 @@ export function SkinnedHumanoid({ body, look = 'clay' }: { body: React.MutableRe
       // the elbow drops and comes forward as the hand rises
       const hint = V(-0.2, -1, 0.7).lerp(V(0.35, -1, 0.55), m)
       right = arm('R', wristAt, hint, V(0.25, 0.2, -1), handDir)
+    } else if (body.current.turn !== undefined) {
+      // forearm rotation: the thumb swings from pointing in (palm down) over the top to pointing out (palm up)
+      const th = Math.PI * Math.max(0, Math.min(1, body.current.turn))
+      right = arm('R', start, V(-0.35, -1, 0.2), V(0, Math.sin(th), -Math.cos(th)), V(1, -0.08, 0))
     } else if (sw !== undefined) {
       // sideways reach: the elbow swings back and down, the hand turns to point out to the side
       const s = Math.max(0, Math.min(1, sw))

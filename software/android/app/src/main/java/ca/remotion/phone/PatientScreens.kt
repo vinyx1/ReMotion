@@ -215,6 +215,7 @@ private data class Say(val headline: String, val sub: String? = null, val warnin
 private fun say(s: UiState, warm: Boolean, e: Exercise): Say = when {
     warm -> when (e) {
         Exercise.MOUTH -> Say("Sit up straight", "You’re bending down to meet your hand. Bring your hand all the way up.", warning = true)
+        Exercise.ROTATION -> Say("Sit up straight", "You’re tilting to help the turn. Keep your elbow at your side.", warning = true)
         Exercise.SIDEWAYS -> Say("Sit up straight", "You’re leaning to your right. Let your arm do the reaching.", warning = true)
         Exercise.FORWARD -> Say("Sit back against the chair", "You’re leaning forward. Let your arm do the reaching.", warning = true)
     }
@@ -222,6 +223,8 @@ private fun say(s: UiState, warm: Boolean, e: Exercise): Say = when {
         "CALIBRATING" -> Say("Sit up straight and stay still", "The device is learning how you sit upright. It takes 3 seconds.")
         "WAIT_HOME" -> Say("Put your hand on the white button", "Keep it there until a light comes on.")
         "CUED", "REACHING" -> when (e) {
+            Exercise.ROTATION -> Say("Turn your palm up",
+                if (s.feedback) "Keep your elbow at your side. The buzzer sounds if you lean." else "Keep your elbow at your side and your back straight.")
             Exercise.MOUTH -> Say("Lift your hand up to your mouth",
                 if (s.feedback) "Keep your head up. The buzzer sounds if you bend down." else "Keep your head up and your back straight.")
             Exercise.SIDEWAYS -> Say(
@@ -233,7 +236,11 @@ private fun say(s: UiState, warm: Boolean, e: Exercise): Say = when {
                 if (s.feedback) "The buzzer sounds if you lean forward." else "Keep your back against the chair.",
             )
         }
-        "RETURNING" -> Say(if (e == Exercise.MOUTH) "Bring your hand back down to the white button" else "Bring your hand back to the white button")
+        "RETURNING" -> Say(when (e) {
+            Exercise.MOUTH -> "Bring your hand back down to the white button"
+            Exercise.ROTATION -> "Turn your palm back down onto the white button"
+            else -> "Bring your hand back to the white button"
+        })
         "REST" -> Say("Rest for a moment", restEndsAt = s.restEndsAt, next = s.nextBlock)
         else -> Say("Getting ready")
     }
@@ -288,7 +295,7 @@ private fun Mat(s: UiState) {
         horizontalArrangement = Arrangement.spacedBy(22.dp),
     ) {
         MatButton("Home", Panel, lit == "HOME")
-        if (LocalExercise.current != Exercise.MOUTH) {            // hand to mouth has no target to press
+        if (LocalExercise.current !in setOf(Exercise.MOUTH, Exercise.ROTATION)) {     // no target to press: only HOME
             MatButton("Green", ButtonGreen, lit == "GREEN")
             MatButton("Blue", ButtonBlue, lit == "BLUE")
             MatButton("Red", ButtonRed, lit == "RED")
@@ -390,9 +397,12 @@ private fun WeekTrack(week: List<Pair<LocalDate, Boolean>>, today: LocalDate, mo
 @Composable
 private fun ColumnScope.SessionScore(s: UiState, actions: PatientActions) {
     // the buttons stay at the bottom; with large system text the rest scrolls rather than pushing them off
+    // phones under 400 dp sideways (a Galaxy S22): the block's one-line explanation goes and the
+    // gaps shrink, so the last-reach card isn't cut off by the buttons
+    val short = LocalConfiguration.current.screenHeightDp < 400
     Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
     Text(blockName(s.phase), style = LabelStyle.copy(fontSize = 20.sp), color = Forest)
-    Text(if (s.state == "REST") "Finished. Well done." else blockLine(s.phase), style = BodyStyle.copy(fontSize = 16.sp), color = Forest2)
+    if (!short || s.state == "REST") Text(if (s.state == "REST") "Finished. Well done." else blockLine(s.phase), style = BodyStyle.copy(fontSize = 16.sp), color = Forest2)
     if (s.blockSize > 0) {
         val now = (s.blockDone + if (s.state in listOf("WAIT_HOME", "CUED", "REACHING")) 1 else 0).coerceIn(1, s.blockSize)
         val e = LocalExercise.current
@@ -402,11 +412,11 @@ private fun ColumnScope.SessionScore(s: UiState, actions: PatientActions) {
                     append("$n")
                     withStyle(SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Normal, color = Forest2)) { append(" of $of ${e.many}") }
                 },
-                style = NumberStyle, color = Forest, modifier = Modifier.padding(top = 8.dp).semantics { contentDescription = "${e.one.replaceFirstChar { it.uppercase() }} $n of $of" },
+                style = NumberStyle, color = Forest, modifier = Modifier.padding(top = if (short) 2.dp else 8.dp).semantics { contentDescription = "${e.one.replaceFirstChar { it.uppercase() }} $n of $of" },
             )
         }
     }
-    Spacer(Modifier.height(10.dp))
+    Spacer(Modifier.height(if (short) 6.dp else 10.dp))
     val shownRep = s.lastRep.takeIf { s.feedback && it?.phase == "TRAINING" }
     AnimatedContent(shownRep, transitionSpec = { swap() }, contentKey = { it?.rep }, label = "last reach") { rep ->
         if (rep != null) LastReach(rep, s.blockUpright, s.blockDone)
@@ -415,11 +425,13 @@ private fun ColumnScope.SessionScore(s: UiState, actions: PatientActions) {
         Text("Your results come at the end.", style = BodyStyle.copy(fontSize = 16.sp), color = Forest2)
     }
     }
-    if (s.demo) TextButton(onClick = actions.onAddReach, enabled = s.state == "WAIT_HOME", modifier = Modifier.fillMaxWidth()) {
+    if (s.demo) TextButton(onClick = actions.onAddReach, enabled = s.state == "WAIT_HOME",
+        modifier = Modifier.fillMaxWidth().then(if (short) Modifier.height(34.dp) else Modifier),
+        contentPadding = PaddingValues(vertical = if (short) 0.dp else 8.dp)) {
         Text("Add a ${LocalExercise.current.one} (demo)", fontSize = 16.sp)
     }
     if (s.oldFirmware) Text("To stop, press the yellow button.", style = BodyStyle.copy(fontSize = 16.sp), color = Forest)
-    else OutlinedButton(onClick = actions.onEnd, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+    else OutlinedButton(onClick = actions.onEnd, modifier = Modifier.fillMaxWidth().heightIn(min = if (short) 46.dp else 52.dp)) {
         Text("End session", fontSize = 17.sp, color = Forest)
     }
 }
@@ -428,15 +440,16 @@ private fun ColumnScope.SessionScore(s: UiState, actions: PatientActions) {
 @Composable
 private fun LastReach(rep: Rep, upright: Int, done: Int) {
     val up = !rep.compensated
+    val short = LocalConfiguration.current.screenHeightDp < 400
     Row(
         Modifier.fillMaxWidth().shadow(6.dp, RoundedCornerShape(14.dp), ambientColor = Forest, spotColor = Forest)
-            .clip(RoundedCornerShape(14.dp)).background(Panel).padding(horizontal = 12.dp, vertical = 10.dp),
+            .clip(RoundedCornerShape(14.dp)).background(Panel).padding(horizontal = 12.dp, vertical = if (short) 6.dp else 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        ResultIcon(upright = up, size = 30.dp)
+        ResultIcon(upright = up, size = if (short) 26.dp else 30.dp)
         Column(Modifier.padding(start = 10.dp)) {
-            Text(if (up) "Upright" else "Leaned", style = LabelStyle.copy(fontSize = 19.sp), color = if (up) Forest else TerraDeep)
-            Text("Last ${LocalExercise.current.one} · ${of(upright, done)} upright", style = BodyStyle.copy(fontSize = 15.sp, fontFeatureSettings = "tnum"), color = Forest)
+            Text(if (up) "Upright" else "Leaned", style = LabelStyle.copy(fontSize = if (short) 17.sp else 19.sp, lineHeight = if (short) 20.sp else 24.sp), color = if (up) Forest else TerraDeep)
+            Text((if (short) "" else "Last ${LocalExercise.current.one} · ") + "${of(upright, done)} upright", style = BodyStyle.copy(fontSize = 15.sp, fontFeatureSettings = "tnum"), color = Forest)
         }
     }
 }
@@ -460,6 +473,7 @@ private fun ColumnScope.DoneScore(done: PastSession, past: List<PastSession>) {
         ResultIcon(upright = false, size = 22.dp)
         Text("$leaned " + when (done.exercise) {
             Exercise.MOUTH -> "bent down"
+            Exercise.ROTATION -> "leaned to help the turn"
             Exercise.SIDEWAYS -> "leaned to the right"
             Exercise.FORWARD -> "leaned forward"
         }, style = BodyStyle.copy(fontFeatureSettings = "tnum"), color = TerraDeep, modifier = Modifier.padding(start = 8.dp))
@@ -483,7 +497,7 @@ private fun ColumnScope.ExercisePicker(chosen: Exercise, onChoose: (Exercise) ->
     Text("Today’s exercise", style = LabelStyle, color = Forest2, modifier = Modifier.semantics { heading() })
     Column(
         Modifier.padding(top = 10.dp).weight(1f).verticalScroll(rememberScrollState()).selectableGroup(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(if (LocalConfiguration.current.screenHeightDp < 400) 6.dp else 8.dp),
     ) {
         Exercise.entries.forEach { e -> ExerciseRow(e, e == chosen) { onChoose(e) } }
     }
@@ -495,12 +509,12 @@ private fun ExerciseRow(e: Exercise, chosen: Boolean, onClick: () -> Unit) {
     val fill by animateColorAsState(if (chosen) Panel else Plaster, tween(STATE_MS), label = "fill")
     val shape = RoundedCornerShape(12.dp)
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 52.dp).clip(shape).background(fill).border(if (chosen) 2.dp else 1.dp, edge, shape)
+        Modifier.fillMaxWidth().heightIn(min = if (LocalConfiguration.current.screenHeightDp < 400) 44.dp else 52.dp).clip(shape).background(fill).border(if (chosen) 2.dp else 1.dp, edge, shape)
             .selectable(selected = chosen, onClick = onClick, role = Role.RadioButton)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 14.dp, vertical = if (LocalConfiguration.current.screenHeightDp < 400) 5.dp else 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(26.dp).clip(CircleShape).background(if (chosen) Forest else Plaster)
+        Box(Modifier.size(if (LocalConfiguration.current.screenHeightDp < 400) 22.dp else 26.dp).clip(CircleShape).background(if (chosen) Forest else Plaster)
             .border(if (chosen) 0.dp else 2.dp, Forest2.copy(alpha = 0.6f), CircleShape), contentAlignment = Alignment.Center) {
             if (chosen) CheckMark(Plaster, 14.dp)
         }
@@ -508,7 +522,7 @@ private fun ExerciseRow(e: Exercise, chosen: Boolean, onClick: () -> Unit) {
         // names alone, so all three always fit; the setup drawing on the left shows the rest
         val short = LocalConfiguration.current.screenHeightDp < 400
         Column(Modifier.padding(start = 12.dp)) {
-            Text(e.title, style = LabelStyle.copy(fontSize = if (short) 17.sp else 18.sp, lineHeight = if (short) 21.sp else 22.sp), color = Forest)
+            Text(e.title, style = LabelStyle.copy(fontSize = if (short) 16.sp else 18.sp, lineHeight = if (short) 20.sp else 22.sp), color = Forest)
             if (!short) Text(e.blurb, style = BodyStyle.copy(fontSize = 14.sp, lineHeight = 18.sp), color = Forest2, maxLines = 2)
         }
     }

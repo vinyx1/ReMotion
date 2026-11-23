@@ -31,6 +31,12 @@ export const TARGET_X: Record<Target, number> = { GREEN: 0.37, BLUE: 0.47, RED: 
 /** Sideways reach: the mat turned 90° along the table edge, HOME by the hand, targets stepping out to the side. */
 export const SIDE_TARGET_Z: Record<Target, number> = { GREEN: 0.29, BLUE: 0.39, RED: 0.49 }
 
+/**
+  Forearm rotation: elbow at the side, forearm level in front just above HOME; the hand turns
+  palm down to palm up and back (the arm itself doesn't travel).
+*/
+export const TURN_WRIST: V3 = [HOME_X + 0.02, TABLE.height + 0.07, SHOULDER_HALF_WIDTH + 0.02]
+
 /** Where a target is on the table, for the forward or the sideways reach. */
 export const targetAt = (target: Target, side = false): V3 =>
   side ? [HOME_X, TABLE.height + 0.02, SIDE_TARGET_Z[target]] : [TARGET_X[target], TABLE.height + 0.02, SHOULDER_HALF_WIDTH]
