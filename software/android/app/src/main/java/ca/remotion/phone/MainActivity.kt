@@ -20,11 +20,19 @@ class MainActivity : ComponentActivity() {
         setContent { RemotionTheme { MainScreen(vm) } }
         // the device may already be plugged in: connect without asking the patient to tap anything
         vm.connectUsb(quiet = intent?.action != UsbManager.ACTION_USB_DEVICE_ATTACHED)
+        signInFrom(intent)
     }
 
     // The device was plugged in while the app was open (launchMode singleTop)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (intent.action == UsbManager.ACTION_USB_DEVICE_ATTACHED) vm.connectUsb()
+        signInFrom(intent)
+    }
+
+    /** Opened from the dashboard's /pair page (remotion://pair?code=…): sign in with that code. */
+    private fun signInFrom(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (uri.scheme == "remotion" && uri.host == "pair") vm.signInWith(uri.toString())
     }
 }

@@ -13,7 +13,10 @@
     POST /api/patients/<id>/pair      a code (and the link in the phone's QR code) for that patient
     POST /api/patients/<id>/delete    delete that patient (server/accounts.ts, deletePatient)
     POST /api/summary                 a Claude summary (server/summary.ts)
-    POST /api/phone/lines             lines from the phone app (server/phone.ts)
+    POST /api/phone/pair              { code } from a patient's profile -> { token, patient, kind, expiresAt } for the app
+    GET  /api/phone/me                the app's sign-in: { patient, kind, expiresAt }          401 if it ended
+    POST /api/phone/logout            the app signs out
+    POST /api/phone/lines             lines from the phone app (server/phone.ts), with its token
 
   Signing in sets an HttpOnly cookie; the browser never sees the token's meaning, and the
   server keeps only its hash (server/accounts.ts).
@@ -22,14 +25,24 @@ import { readFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import {
-  type Account, accountFor, addPatient, createDemo, deleteDemo, deletePatient, demoForClaim, freshDemoPassword, hiddenPatients,
-  ownerAccount, pairCode, patients, sessionsFile, signIn, signOut,
+  type Account, accountFor, addPatient, claimCode, createDemo, deleteDemo, deletePatient, demoForClaim, deviceFor,
+  freshDemoPassword, hiddenPatients, pairCode, patients, sessionsFile, signIn, signOut, signOutDevice,
 } from './accounts.ts'
 import {
   addCookie, clearSessionCookie, cookie, COOKIE, DEMO_COOKIE, HttpError, origin, readJson, send, setSessionCookie,
 } from './http.ts'
 import { phoneLines } from './phone.ts'
 import { summarize } from './summary.ts'
+
+/** The phone's token, from "Authorization: Bearer <token>". */
+function bearer(req: IncomingMessage) {
+  const h = req.headers.authorization
+  return h?.startsWith('Bearer ') ? h.slice(7).trim() : undefined
+}
+
+/** Code tries per address per hour: 6 letters from 31 can't be guessed at this rate. */
+const PAIR_TRIES_PER_HOUR = 30
+const pairTries = new Map<string, number[]>()
 
 /** At most this many demo requests per address per hour (a public page could otherwise fill the server). */
 const DEMOS_PER_HOUR = 20
@@ -141,11 +154,26 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 
   if (path === '/api/summary') return summarize(req, res, await signedIn(req))
 
-  if (path === '/api/phone/lines') {
-    // until phones sign in with a patient's QR code: the signed-in account, else the owner's
-    const a = (await accountFor(cookie(req, COOKIE))) ?? (await ownerAccount())
-    if (!a) throw new HttpError(503, 'No account to store phone sessions in yet (run server/set-owner.ts).')
-    return phoneLines(req, res, a)
+  // ---- the phone app: signs in as one patient with the code from their profile
+  if (path === '/api/phone/pair' && post) {
+    const ip = clientAddress(req)
+    const recent = (pairTries.get(ip) ?? []).filter((t) => t > Date.now() - 3_600_000)
+    if (recent.length >= PAIR_TRIES_PER_HOUR) throw new HttpError(429, 'Too many tries. Wait a while, then try again.')
+    pairTries.set(ip, [...recent, Date.now()])
+    const b = await readJson(req)
+    const c = typeof b.code === 'string' ? await claimCode(b.code) : null
+    if (!c) throw new HttpError(404, 'That code didn’t work. Codes last 10 minutes: ask for a new one.')
+    return send(res, 200, { token: c.token, patient: c.patient, kind: c.account.kind, expiresAt: c.account.expiresAt })
+  }
+  if (path.startsWith('/api/phone/')) {
+    const token = bearer(req)
+    const d = await deviceFor(token)
+    if (path === '/api/phone/logout' && post) { await signOutDevice(token); return send(res, 200, { ok: true }) }
+    if (!d) throw new HttpError(401, 'This phone isn’t signed in.')
+    if (path === '/api/phone/me' && req.method === 'GET') {
+      return send(res, 200, { patient: d.patient, kind: d.account.kind, expiresAt: d.account.expiresAt })
+    }
+    if (path === '/api/phone/lines') return phoneLines(req, res, d.account, d.patient.id)
   }
 
   throw new HttpError(404, 'No such API.')

@@ -48,6 +48,9 @@ dependencies {
     // USB serial (CDC-ACM) for the Arduino: https://github.com/mik3y/usb-serial-for-android
     implementation("com.github.mik3y:usb-serial-for-android:3.12.0")
 
+    // Scanning the QR code on a patient's profile (Google's scanner: no camera permission, works on any Play phone)
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
 }

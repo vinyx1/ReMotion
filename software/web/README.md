@@ -47,9 +47,12 @@ The API (`server/api.ts`) runs inside `npm run dev` and `npm run preview` as a V
   only a hash of its token. "Keep me signed in" lasts 30 days; otherwise until the browser
   closes. A demo's sign-in ends with the demo.
 - **Patients:** Add patient (patients page) gives a profile with no sessions. Each patient's
-  Profile & settings has a **Connect a phone** QR code with a 6-letter code (valid 10 minutes);
-  the phone app's side of it, signing in by scanning, comes next. Until then, phone uploads
-  without a sign-in go to the owner's account.
+  Profile & settings has a **Connect a phone** QR code with a 6-letter code (one use, valid 10
+  minutes). The phone app scans or types it (`POST /api/phone/pair`) and gets its own token (kept
+  hashed in `devices.json`), which every upload carries; the server files the sessions under that
+  patient. Uploads without a valid token are refused. The QR code links to `/pair?code=…`
+  (`src/Pair.tsx`) for phones that scan it with the camera app: it opens the app signed in, or
+  shows the code to type. A phone's sign-in ends with its demo, or when its patient is deleted.
 - **Deleting a patient** (bottom of Profile & settings, after a confirmation) takes them and
   their sessions off the dashboard. Recordings only that account holds (`phone/`, `phone-demo/`,
   `fake/`, the phone's raw lines) are moved to `<account>/deleted/<id>-<time>/` on the server, so

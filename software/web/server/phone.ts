@@ -13,8 +13,9 @@
   polls it, so a new rep appears within a few seconds. All the file and data logic stays
   in Python (logger.py, export.py).
 
-  Whose account: until the phone signs in by scanning a patient's QR code (next step), an
-  upload without a sign-in goes to the owner's account.
+  Whose: the phone signs in as one patient with the code from that patient's profile
+  (POST /api/phone/pair); its token comes with every batch, and decides the account and the
+  patient. Uploads without a valid token are refused.
 */
 import { appendFile, mkdir } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -65,10 +66,10 @@ function convertSoon(a: Account, b: Batch) {
   })
 }
 
-export async function phoneLines(req: IncomingMessage, res: ServerResponse, account: Account) {
+export async function phoneLines(req: IncomingMessage, res: ServerResponse, account: Account, patientId: string) {
   if (req.method === 'GET') return send(res, 200, { ok: true })       // the app's "can I reach you?"
   if (req.method !== 'POST') return send(res, 405, { error: 'POST lines here' })
-  const b = parse(await readJson(req, MAX_BODY))
+  const b = parse({ ...(await readJson(req, MAX_BODY)), patient: patientId })     // the sign-in says whose, not the phone
   if (typeof b === 'string') return send(res, 400, { error: b })
   if (b.lines.length) {
     const file = incoming(account, b)

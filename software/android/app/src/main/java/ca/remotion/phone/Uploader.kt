@@ -27,10 +27,14 @@ import java.util.Locale
 */
 class Uploader(
     baseUrl: String,
+    /** this phone's sign-in (Account.kt); the server files the lines under its patient */
+    private val token: String,
     private val patient: String,
     private val demo: Boolean,
     scope: CoroutineScope,
     private val onStatus: (Status) -> Unit,
+    /** the server said the sign-in has ended (a demo's hour is up, the patient was deleted) */
+    private val onSignedOut: () -> Unit,
 ) {
     data class Status(val address: String, val sent: Int = 0, val waiting: Int = 0, val error: String? = null)
 
@@ -65,7 +69,10 @@ class Uploader(
         scope.launch(Dispatchers.IO) { flush() }
     }
 
+    @Volatile private var signedOut = false
+
     private fun flush() {
+        if (signedOut) return
         // one batch is lines of one run, in order
         val batch = synchronized(waiting) {
             val r = waiting.firstOrNull()?.first
@@ -103,8 +110,10 @@ class Uploader(
             c.readTimeout = 5000
             c.doOutput = true
             c.setRequestProperty("Content-Type", "application/json")
+            c.setRequestProperty("Authorization", "Bearer $token")
             c.outputStream.use { it.write(body) }
             val code = c.responseCode
+            if (code == 401) { signedOut = true; job.cancel(); onSignedOut(); return }
             if (code != 200) throw IllegalStateException("the dashboard answered $code")
         } finally {
             c.disconnect()

@@ -23,6 +23,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicLong
 
+data class SignInState(val busy: Boolean = false, val error: String? = null)
+
 /** One line in the log: from the device, or a command we sent. */
 data class LogLine(val id: Long, val text: String, val kind: Kind) {
     enum class Kind { SENT, SAMPLE, REP, REP_LEANED, END, STATUS, ERROR, COMMENT, OTHER }
@@ -86,6 +88,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     @Volatile private var overSinceMs = -1L        // sample time the trunk went past the limit
     @Volatile private var uploader: Uploader? = null
     private val prefs = app.getSharedPreferences("settings", Context.MODE_PRIVATE)
+
+    private val _login = MutableStateFlow(Account.load(app))
+    /** Who this phone is signed in as (a patient on a dashboard); null until it signs in with a code. */
+    val login: StateFlow<Login?> = _login.asStateFlow()
+    private val _signIn = MutableStateFlow(SignInState())
+    /** The sign-in screen: busy, and what went wrong or why the phone was signed out. */
+    val signIn: StateFlow<SignInState> = _signIn.asStateFlow()
     private val ids = AtomicLong()
     private val writes = Dispatchers.IO.limitedParallelism(1)   // commands go out in order
 
@@ -108,6 +117,72 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
         }
         ContextCompat.registerReceiver(app, usbEvents, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        // a sign-in can end while the app is closed (a demo's hour, a deleted patient): check
+        _login.value?.let { l ->
+            viewModelScope.launch(Dispatchers.IO) {
+                if (Account.stillSignedIn(l) == false) withContext(Dispatchers.Main) { endSignIn(l) }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- signing in
+
+    /**
+      Sign in with what the patient scanned or typed: the QR code's link, the /pair page's app
+      link, or the 6-letter code (then the dashboard address from Settings).
+    */
+    fun signInWith(text: String) {
+        val app = getApplication<Application>()
+        val target = Account.parse(text, _ui.value.dashboard.trim().ifEmpty { DEFAULT_DASHBOARD })
+            ?: return run {
+                _signIn.value = SignInState(error = if (text.isBlank()) "The camera couldn’t scan here. Type the code instead."
+                                                    else "That isn’t a Re:Motion code. It’s 6 letters and numbers, like ABC 123.")
+            }
+        _signIn.value = SignInState(busy = true)
+        viewModelScope.launch {
+            try {
+                val l = withContext(Dispatchers.IO) { Account.pair(target.first, target.second) }
+                Account.save(app, l)
+                // a different patient on this phone starts a fresh week
+                val who = "${l.server}|${l.patientId}"
+                if (prefs.getString(KEY_HISTORY_OWNER, who) != who) _past.value = withContext(Dispatchers.IO) { history.clear() }
+                prefs.edit().putString(KEY_HISTORY_OWNER, who).apply()
+                _login.value = l
+                _signIn.value = SignInState()
+                link?.let { startUploader(it) }
+            } catch (e: Exception) {
+                _signIn.value = SignInState(error = (e as? SignInError)?.message ?: "Couldn’t sign in (${e.message}).")
+            }
+        }
+    }
+
+    /** "Sign out of this phone" in Settings. */
+    fun signOutPhone() {
+        val l = _login.value ?: return
+        viewModelScope.launch(Dispatchers.IO) { Account.signOut(l) }
+        endSignIn(l, note = null)
+    }
+
+    /** The sign-in ended (here, or on the server): back to the sign-in screen, with why. */
+    private fun endSignIn(l: Login, note: String? = if (l.demo) "Your demo has ended. Scan a new code to sign in again."
+                                                    else "This phone was signed out. Scan your code to sign in again.") {
+        if (_login.value != l) return
+        Account.clear(getApplication())
+        _login.value = null
+        uploader?.close(viewModelScope)
+        uploader = null
+        _ui.update { it.copy(upload = null) }
+        _signIn.value = SignInState(error = note)
+    }
+
+    /** Sends the device's lines to the signed-in patient's dashboard; without a sign-in they stay on the phone. */
+    private fun startUploader(l: DeviceLink) {
+        val who = _login.value ?: return
+        uploader?.close(viewModelScope)
+        uploader = Uploader(who.server, who.token, who.patientId, demo = l is DemoLink, scope = viewModelScope,
+            onStatus = { st -> _ui.update { it.copy(upload = st) } },
+            onSignedOut = { viewModelScope.launch { endSignIn(who) } })
+        _ui.update { it.copy(upload = Uploader.Status(who.server)) }
     }
 
     /** Find the device on USB, ask for permission if needed, then open it. Quiet: say nothing if it isn't there. */
@@ -147,23 +222,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun open(l: DeviceLink) {
         // The uploader and a fresh screen come first, so not even the device's first lines are missed
-        val address = _ui.value.dashboard.trim().ifEmpty { DEFAULT_DASHBOARD }
-        val up = try {
-            Uploader(address, PATIENT_ID, demo = l is DemoLink, scope = viewModelScope) { st -> _ui.update { it.copy(upload = st) } }
-        } catch (e: Exception) {
-            null
-        }
-        _ui.update {
-            UiState(connected = l.name, demo = l is DemoLink, dashboard = it.dashboard, showSamples = it.showSamples,
-                upload = up?.let { Uploader.Status(address) },
-                message = if (up == null) "\"$address\" isn't a web address, so nothing goes to the dashboard. Disconnect to fix it." else null)
-        }
-        uploader = up
+        _ui.update { UiState(connected = l.name, demo = l is DemoLink, dashboard = it.dashboard, showSamples = it.showSamples) }
+        startUploader(l)
         try {
             l.start(onLine = ::onLine, onClosed = { reason -> viewModelScope.launch { if (link === l) disconnect(reason) } })
         } catch (e: Exception) {
             l.close()
-            up?.close(viewModelScope)
+            uploader?.close(viewModelScope)
             uploader = null
             _ui.update { UiState(message = "Couldn't open the device: ${e.message}", dashboard = it.dashboard, showSamples = it.showSamples) }
             return
@@ -306,10 +371,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private val BLOCK_START = Regex("""^(PRACTICE|BASELINE|TRAINING|POST) block: (\d+) reps""")
         private val REST = Regex("""^rest (\d+) s before the (PRACTICE|BASELINE|TRAINING|POST) block""")
         private const val KEY_DASHBOARD = "dashboard"
-        /** With the phone on a cable, `adb reverse tcp:5173 tcp:5173` makes this the Mac's dashboard. */
+        private const val KEY_HISTORY_OWNER = "historyFor"
+        /**
+          Where a typed code is sent (a scanned QR code carries its own address). With the phone on a
+          cable, `adb reverse tcp:5173 tcp:5173` makes this the Mac's dashboard; once it's online,
+          its address goes in Settings.
+        */
         const val DEFAULT_DASHBOARD = "http://localhost:5173"
-        /** Whose sessions these are: the dashboard's patient id (software/web/src/lib/patients.ts). */
-        const val PATIENT_ID = "vincent"
-        const val PATIENT_NAME = "Vincent Jiang"
     }
 }

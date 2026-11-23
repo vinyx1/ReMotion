@@ -38,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,7 +75,8 @@ import java.time.LocalTime
   training block: baseline and post measure how the patient reaches without it.
 */
 
-private val FirstName = MainViewModel.PATIENT_NAME.substringBefore(' ')
+/** The signed-in patient's first name, for "Good morning, Elena" and "Well done, Elena". */
+val LocalFirstName = staticCompositionLocalOf { "" }
 
 /** Which screen the patient is on. Done carries its session so it can still be drawn while fading out. */
 private sealed interface Screen {
@@ -232,7 +234,7 @@ private fun ColumnScope.SessionCoach(s: UiState, warm: Boolean) {
 
 @Composable
 private fun ColumnScope.DoneCoach(done: PastSession, onDone: () -> Unit) {
-    Instruction("Well done, $FirstName", "You finished ${done.reaches} ${if (done.reaches == 1) "reach" else "reaches"}. Your results are on the right, and your therapist can see them too.")
+    Instruction("Well done, ${LocalFirstName.current}", "You finished ${done.reaches} ${if (done.reaches == 1) "reach" else "reaches"}. Your results are on the right, and your therapist can see them too.")
     Spacer(Modifier.weight(1f))
     PrimaryButton("Done", onDone)
 }
@@ -436,10 +438,11 @@ private fun CheckMark(color: Color, size: Dp) {
     }
 }
 
+@Composable
 private fun greeting(): String {
     val h = LocalTime.now().hour
     val part = if (h < 12) "Good morning" else if (h < 17) "Good afternoon" else "Good evening"
-    return "$part, $FirstName"
+    return "$part, ${LocalFirstName.current}"
 }
 
 private fun secondsLeft(until: Long) = ((until - System.currentTimeMillis() + 999) / 1000).toInt().coerceAtLeast(0)
