@@ -99,6 +99,7 @@ fun PatientApp(s: UiState, past: List<PastSession>, finished: PastSession?, acti
     // getting set up comes before every session: "I'm ready" moves on to "Press the yellow button"
     var ready by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(s.sessionRunning) { if (s.sessionRunning) ready = false }
+    LaunchedEffect(s.connected) { if (s.connected == null) ready = false }        // unplugged: set up again
     val screen = when {
         finished != null -> Screen.Done(finished)
         s.connected == null -> Screen.PlugIn
