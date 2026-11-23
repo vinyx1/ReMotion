@@ -36,6 +36,11 @@ export interface BodyInput {
     hand still meets it when the trunk leans. Leave unset for a reach.
   */
   mouth?: number
+  /**
+    The sideways reach: 0..1, how far the hand is towards the side target. Set, the trunk
+    leans towards the reaching side (+z) instead of forward, and the arm reaches out sideways.
+  */
+  sideways?: number
   /** 0..1: how strongly the torso shows the alarm (the lean is flagged) */
   alarm: number
   /** 0..1, hologram looks only: how visible the figure is (default 1). The replay fades its ghost out with it. */
@@ -257,21 +262,25 @@ export function SkinnedHumanoid({ body, look = 'clay' }: { body: React.MutableRe
       if (!root.visible) return
     }
     const a = body.current.lean
+    const sw = body.current.sideways
+    // the lean's direction: forward, or towards the reaching side for the sideways reach
+    const upAt = (x: number) => (sw === undefined ? fromAngle(x) : V(0, Math.cos(x), Math.sin(x)))
+    const faceAt = (x: number) => (sw === undefined ? frontOf(x) : V(1, 0, 0))
     for (const b of Object.values(bones)) b.bone.quaternion.copy(b.rest)
     root.position.set(0, 0, 0)
     root.updateMatrixWorld(true)
 
     // trunk
     const spineAngles = rig.spine.map((_, i) => a * (0.55 + 0.45 * (i / Math.max(1, rig.spine.length - 1))))
-    aim(bones[rig.pelvis], fromAngle(a * 0.3), frontOf(a * 0.3))
+    aim(bones[rig.pelvis], upAt(a * 0.3), faceAt(a * 0.3))
     // seat the hips: midpoint of the hip joints onto HIP
     const R = rig.side('R'), L = rig.side('L')
     const hipMid = wp(bones[R.thigh].bone).add(wp(bones[L.thigh].bone)).multiplyScalar(0.5)
     root.position.add(HIP.clone().sub(hipMid))
     root.updateMatrixWorld(true)
-    rig.spine.forEach((n, i) => aim(bones[n], fromAngle(spineAngles[i]), frontOf(spineAngles[i])))
-    aim(bones[rig.neck], fromAngle(a * 0.9), frontOf(a * 0.9))
-    aim(bones[rig.head], fromAngle(a * 0.75), frontOf(a * 0.75))
+    rig.spine.forEach((n, i) => aim(bones[n], upAt(spineAngles[i]), faceAt(spineAngles[i])))
+    aim(bones[rig.neck], upAt(a * 0.9), faceAt(a * 0.9))
+    aim(bones[rig.head], upAt(a * 0.75), faceAt(a * 0.75))
 
     // legs: thigh tipped so the shin, hanging near vertical, puts the ankle at ANKLE_Y
     for (const s of ['R', 'L'] as const) {
@@ -316,6 +325,11 @@ export function SkinnedHumanoid({ body, look = 'clay' }: { body: React.MutableRe
       // the elbow drops and comes forward as the hand rises
       const hint = V(-0.2, -1, 0.7).lerp(V(0.35, -1, 0.55), m)
       right = arm('R', wristAt, hint, V(0.25, 0.2, -1), handDir)
+    } else if (sw !== undefined) {
+      // sideways reach: the elbow swings back and down, the hand turns to point out to the side
+      const s = Math.max(0, Math.min(1, sw))
+      right = arm('R', start, V(-0.2, -1, 0.7).lerp(V(-0.5, -1, -0.1), s),
+        V(0.25, 0.2, -1).lerp(V(1, 0.35, 0), s), V(1, -0.22, 0).lerp(V(0.3, -0.3, 1), s).normalize())
     } else {
       right = arm('R', start, V(-0.2, -1, 0.7), V(0.25, 0.2, -1), V(1, -0.22, 0))
     }

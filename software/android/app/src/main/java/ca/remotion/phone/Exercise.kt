@@ -22,7 +22,7 @@ enum class Exercise(
     val many: String,
 ) {
     FORWARD("forward-reach", "Reach forward", "Reach out in front to the buttons", "reach", "reaches"),
-    SIDEWAYS("sideways-reach", "Reach to the side", "The mat turned along the table edge", "reach", "reaches"),
+    SIDEWAYS("sideways-reach", "Reach to the right", "The mat along the table edge, on your right", "reach", "reaches"),
     MOUTH("hand-to-mouth", "Hand to mouth", "Lift your hand up as if to drink", "lift", "lifts");
 
     fun reps(n: Int) = if (n == 1) one else many

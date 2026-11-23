@@ -2,9 +2,12 @@
   Geometry of the seated figure in the 3D replay (metres).
   What is measured and what is drawn:
 
-    REAL   trunk tilt = the logged trunk angle (drawn as a forward lean)
+    REAL   trunk tilt = the logged trunk angle (drawn as a forward lean; for the
+           sideways reach, as a lean towards the reaching side: the sensor gives
+           how far, not which way)
     REAL   timing of cue, leaving HOME and target press
     DRAWN  the arm: the hand travels HOME -> target over the logged reach time
+           (sideways reach: the mat lies along the table edge, targets stepping out)
 
   Three.js axes: x = forward (towards the table), y = up, z = sideways
   (+z = the reaching side, towards the camera).
@@ -25,6 +28,12 @@ const RETURN_S = 0.5
 export const TABLE = { near: 0.2, far: 0.85, height: 0.72 }
 export const HOME_X = 0.27
 export const TARGET_X: Record<Target, number> = { GREEN: 0.37, BLUE: 0.47, RED: 0.57 }
+/** Sideways reach: the mat turned 90° along the table edge, HOME by the hand, targets stepping out to the side. */
+export const SIDE_TARGET_Z: Record<Target, number> = { GREEN: 0.29, BLUE: 0.39, RED: 0.49 }
+
+/** Where a target is on the table, for the forward or the sideways reach. */
+export const targetAt = (target: Target, side = false): V3 =>
+  side ? [HOME_X, TABLE.height + 0.02, SIDE_TARGET_Z[target]] : [TARGET_X[target], TABLE.height + 0.02, SHOULDER_HALF_WIDTH]
 
 const add = (a: V3, b: V3): V3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
 const sub = (a: V3, b: V3): V3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
@@ -62,9 +71,9 @@ export function progress(t: number, reachEndS: number): number {
 /** Where HOME is: the hand's resting place on the mat. */
 export const HOME: V3 = [HOME_X, TABLE.height + 0.02, SHOULDER_HALF_WIDTH]
 
-function handPosition(t: number, reachEndS: number, target: Target): V3 {
+function handPosition(t: number, reachEndS: number, target: Target, side: boolean): V3 {
   const home = HOME
-  const goal: V3 = [TARGET_X[target], TABLE.height + 0.02, SHOULDER_HALF_WIDTH]
+  const goal = targetAt(target, side)
   const f = progress(t, reachEndS)
   const moving = t > 0 && t < reachEndS + RETURN_S
   const lift = moving ? HAND_LIFT * Math.sin(Math.PI * f) : 0
@@ -72,24 +81,24 @@ function handPosition(t: number, reachEndS: number, target: Target): V3 {
 }
 
 /** Where every joint is at time t (seconds since leaving HOME) for a given trunk angle. */
-export function pose(trunkDeg: number, t: number, reachEndS: number, target: Target): Pose {
+export function pose(trunkDeg: number, t: number, reachEndS: number, target: Target, side = false): Pose {
   const a = (trunkDeg * Math.PI) / 180
   const hip: V3 = [0, SEAT_HEIGHT, 0]
-  const up: V3 = [Math.sin(a), Math.cos(a), 0]
+  const up: V3 = side ? [0, Math.cos(a), Math.sin(a)] : [Math.sin(a), Math.cos(a), 0]
   const chest = add(hip, scale(up, TRUNK_LENGTH))
   const shoulder = add(chest, [0, 0, SHOULDER_HALF_WIDTH])
   const otherShoulder = add(chest, [0, 0, -SHOULDER_HALF_WIDTH])
   const head = add(chest, scale(up, NECK_LENGTH))
 
   // Two-link arm: the elbow sits where an upper arm and a forearm of fixed length meet
-  const wanted = handPosition(t, reachEndS, target)
+  const wanted = handPosition(t, reachEndS, target, side)
   const toHand = sub(wanted, shoulder)
   const d = Math.min(len(toHand), UPPER_ARM + FOREARM - 1e-3)
   const u = norm(toHand)
   const hand = add(shoulder, scale(u, d))
   const along = (UPPER_ARM ** 2 - FOREARM ** 2 + d ** 2) / (2 * d)
   const out = Math.sqrt(Math.max(UPPER_ARM ** 2 - along ** 2, 0))
-  const downAndOut: V3 = [0, -1, 0.7]               // elbow drops and points out to the side
+  const downAndOut: V3 = side ? [-0.4, -1, 0] : [0, -1, 0.7]   // elbow drops and points out (back, for a sideways reach)
   const bend = norm(sub(downAndOut, scale(u, dot(downAndOut, u))))
   const elbow = add(add(shoulder, scale(u, along)), scale(bend, out))
 
