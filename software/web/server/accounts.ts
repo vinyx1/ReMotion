@@ -6,6 +6,7 @@
 
     STATE/accounts.json           every account: email, password hash, kind, expiry
     STATE/signins.json            who is signed in: a hash of each cookie's token, never the token
+    STATE/devices.json            phones signed in as a patient (by a code from the patient's profile), by token hash
     STATE/accounts/<id>/
         patients.json             the account's patients (id and name)
         sessions.json             its sessions, written by `python -m software.dashboard.export --data`
@@ -52,9 +53,12 @@ export interface Account {
 export interface PatientEntry { id: string; name: string }
 
 interface SignIn { accountId: string; expiresAt: number }
+/** A phone signed in as one patient. Lasts as long as the account (a demo's hour), or until the patient is deleted. */
+interface Device { accountId: string; patientId: string; createdAt: number }
 
 let accounts: Account[] = []
 let signins: Record<string, SignIn> = {}          // sha256(token) -> sign-in
+let devices: Record<string, Device> = {}          // sha256(token) -> phone
 const pairCodes = new Map<string, { accountId: string; patientId: string; expiresAt: number }>()
 
 // ---------------------------------------------------------------- files
@@ -72,6 +76,7 @@ async function writeJsonFile(path: string, value: unknown) {
 
 const saveAccounts = () => writeJsonFile(join(STATE, 'accounts.json'), accounts)
 const saveSignins = () => writeJsonFile(join(STATE, 'signins.json'), signins)
+const saveDevices = () => writeJsonFile(join(STATE, 'devices.json'), devices)
 
 export const accountDir = (a: Account) => join(STATE, 'accounts', a.id)
 export const dataDir = (a: Account) => (a.kind === 'owner' ? OWNER_DATA : join(accountDir(a), 'data'))
@@ -124,6 +129,7 @@ export function init(): Promise<void> {
     await mkdir(STATE, { recursive: true })
     accounts = await readJsonFile(join(STATE, 'accounts.json'), [])
     signins = await readJsonFile(join(STATE, 'signins.json'), {})
+    devices = await readJsonFile(join(STATE, 'devices.json'), {})
     await sweep()
     setInterval(() => { void sweep() }, 60_000).unref()
     void template()                                      // the demos' starting point, made in the background
@@ -263,8 +269,10 @@ export async function deleteDemo(a: Account) {
   accounts = accounts.filter((x) => x.id !== a.id)
   for (const [k, s] of Object.entries(signins)) if (s.accountId === a.id) delete signins[k]
   for (const [code, p] of pairCodes) if (p.accountId === a.id) pairCodes.delete(code)
+  for (const [k, d] of Object.entries(devices)) if (d.accountId === a.id) delete devices[k]
   await saveAccounts()
   await saveSignins()
+  await saveDevices()
   await rm(accountDir(a), { recursive: true, force: true })
 }
 
@@ -321,6 +329,9 @@ export async function deletePatient(a: Account, patientId: string): Promise<void
     if (!known.sessions.some((s) => s.patient === patientId)) throw new Error('No such patient.')
   }
   await writeJsonFile(patientsFile(a), list.filter((p) => p.id !== patientId))
+  // their phone is signed out
+  for (const [k, d] of Object.entries(devices)) if (d.accountId === a.id && d.patientId === patientId) delete devices[k]
+  await saveDevices()
 
   const trash = join(accountDir(a), 'deleted', `${patientId}-${new Date().toISOString().replace(/[:.]/g, '-')}`)
   const moves: [string, string][] = ['fake', 'phone', 'phone-demo'].map((root) => [join(dataDir(a), root, patientId), join(trash, root)])
@@ -353,6 +364,42 @@ export async function pairCode(a: Account, patientId: string) {
   const expiresAt = Date.now() + PAIR_MS
   pairCodes.set(code, { accountId: a.id, patientId, expiresAt })
   return { code, expiresAt }
+}
+
+/**
+  The phone's side of the QR code: a code from a patient's profile becomes that phone's
+  sign-in as the patient (a token it keeps; the server keeps its hash). Each code works once.
+*/
+export async function claimCode(raw: string) {
+  await init()
+  const code = raw.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  const p = pairCodes.get(code)
+  if (!p || p.expiresAt < Date.now()) return null
+  pairCodes.delete(code)
+  const a = accounts.find((x) => x.id === p.accountId)
+  const patient = a && live(a) ? (await patients(a)).find((x) => x.id === p.patientId) : undefined
+  if (!a || !patient) return null
+  const token = randomBytes(32).toString('base64url')
+  devices[tokenHash(token)] = { accountId: a.id, patientId: patient.id, createdAt: Date.now() }
+  await saveDevices()
+  return { token, account: a, patient }
+}
+
+/** The account and patient a phone's token is signed in as, if it still is. */
+export async function deviceFor(token: string | undefined) {
+  await init()
+  if (!token) return null
+  const d = devices[tokenHash(token)]
+  const a = d && accounts.find((x) => x.id === d.accountId)
+  if (!d || !a || !live(a)) return null
+  const patient = (await patients(a)).find((x) => x.id === d.patientId)
+  return patient ? { account: a, patient } : null
+}
+
+export async function signOutDevice(token: string | undefined) {
+  if (!token) return
+  delete devices[tokenHash(token)]
+  await saveDevices()
 }
 
 // ---------------------------------------------------------------- sessions

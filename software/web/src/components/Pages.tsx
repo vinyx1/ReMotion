@@ -1,7 +1,7 @@
 /*
   The pages that came with patient profiles: the patient list and the profile page.
 */
-import { Plus, RefreshCw, Smartphone, Trash2 } from 'lucide-react'
+import { Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { AlertDialog, Popover } from 'radix-ui'
 import QRCode from 'qrcode'
 import { type FormEvent, useEffect, useId, useState } from 'react'
@@ -222,7 +222,7 @@ function ConnectPhone({ patient }: { patient: Patient }) {
         <div className="flex max-w-[46ch] flex-col gap-3 text-[16px] text-forest">
           <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-pretty marker:font-bold">
             <li>Open the Re:Motion app on {first}’s phone.</li>
-            <li>Tap <span className="font-bold">Scan code</span> and point the phone at this square.</li>
+            <li>Tap <span className="font-bold">Scan the code</span> and point the phone at this square.</li>
             <li>The app signs in as {patient.name}, and the sessions it records appear here.</li>
           </ol>
           {pair && !expired && (
@@ -236,9 +236,7 @@ function ConnectPhone({ patient }: { patient: Patient }) {
             className={cn('inline-flex h-10 w-fit cursor-pointer items-center gap-2 rounded-lg border-[1.5px] border-forest/30 px-4 text-[15px] font-bold text-forest transition-colors duration-150 hover:border-forest/60 hover:bg-wash', FOCUS)}>
             <RefreshCw className="size-4" aria-hidden /> New code
           </button>
-          <p className="flex items-start gap-2 text-[14px] text-forest-2">
-            <Smartphone className="mt-0.5 size-4 shrink-0" aria-hidden /> Scanning to sign in arrives in the phone app’s next update.
-          </p>
+
         </div>
       </div>
     </Panel>

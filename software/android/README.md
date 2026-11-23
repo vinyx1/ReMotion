@@ -1,6 +1,10 @@
 # ReMotion phone app (Android)
 
-Runs a session from an Android phone plugged into the device's USB-C port (USB OTG), instead of a laptop, and sends everything to the dashboard over Wi-Fi. Sessions go to the patient **Vincent Jiang** (id `vincent`, set in `MainViewModel.kt`).
+Runs a session from an Android phone plugged into the device's USB-C port (USB OTG), instead of a laptop, and sends everything to the dashboard over Wi-Fi.
+
+## Signing in
+
+The phone signs in as one patient with the code on that patient's **Profile & settings** page on the dashboard: **Scan the code** (Google's code scanner, no camera permission) or type its 6 letters. A scanned QR code carries the dashboard's address; a typed code goes to the address in Settings. Scanning the QR code with the phone's own camera opens the dashboard's `/pair` page, whose "Open the Re:Motion app" button (`remotion://pair?code=…`) signs the app in too. The server swaps the code (one use, 10 minutes) for this phone's token (`Account.kt`); every upload carries it, and the server files the sessions under that patient, whatever the phone says. The greeting uses the patient's first name. If the sign-in ends (a demo's hour, the patient deleted, Sign out of this phone in Settings), the app goes back to the sign-in screen and says why. A different patient signing in starts a fresh week on the phone.
 
 ## The patient's screen
 
@@ -22,7 +26,7 @@ Behind **Settings** on the patient screen:
 - **Live samples:** turns the `D` stream on or off (`D1` / `D0`). **Show samples** only changes what the log shows.
 - **Session length:** full (3 · 15 · 30 · 15) or a short demo (5 reaches with the buzzer), sent as `P`.
 - **Use the demo device:** a pretend device on the phone. Start a session, then **Add a reach** plays one in real time, clean or leaned at random (about 40%, decided like the firmware: past the limit for 200 ms). It answers the same commands as the firmware and follows the block plan, with 5 s rests where the firmware rests 30 s. Demo sessions are marked simulated on the dashboard. `DemoLinkTest` runs 300 demo reaches on a virtual clock.
-- **Sending to the dashboard:** every line goes, about once a second, to `<dashboard address>/api/phone/lines` (`software/web/server/phone.ts`). The server keeps the raw lines, turns each finished rep into the usual session files with the logger (`data/phone/vincent/`, or `data/phone-demo/vincent/` for demo mode) and re-exports `sessions.json`; the dashboard picks it up within about 5 s. If the dashboard can't be reached, the app keeps the lines and sends them when it can.
+- **Sending to the dashboard:** every line goes, about once a second, to `<dashboard>/api/phone/lines` with the phone's token (`software/web/server/phone.ts`); without a sign-in nothing is sent. The server keeps the raw lines, turns each finished rep into the usual session files with the logger (`data/phone/vincent/`, or `data/phone-demo/vincent/` for demo mode) and re-exports `sessions.json`; the dashboard picks it up within about 5 s. If the dashboard can't be reached, the app keeps the lines and sends them when it can.
 
 `Protocol.kt` reads the lines the same way as `software/tools/protocol.py`; change both (and the firmware) together.
 
@@ -48,7 +52,7 @@ From `software/android/`, with the phone connected (`adb devices` lists it):
 ./gradlew testDebugUnitTest     # parser and demo-device tests
 ```
 
-The release build is shrunk and optimised by R8 (2 MB instead of 14 MB) and signed with the debug key, so it installs over a debug build and keeps the phone's history; a Play Store release would need a real signing key. `proguard-rules.pro` keeps the USB drivers, which usb-serial-for-android finds by reflection.
+The release build is shrunk and optimised by R8 (2 MB instead of 14 MB) and signed with the debug key, so it installs over a debug build and keeps the phone's history; a Play Store release would need a real signing key. `proguard-rules.pro` keeps the USB drivers and ML Kit's scanner parts, which both libraries build by reflection (without it, Scan the code crashed the release build).
 
 **Motion** (`Motion.kt`): Material's fade-through between screens (home, session, done, settings), a crossfade when the coach says something new or a count changes, a 150 ms fade for the lit button and the warm wall. Nothing slides, so text never moves under an older reader's eyes. All of it follows the phone's Remove animations setting.
 

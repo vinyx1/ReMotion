@@ -37,6 +37,12 @@ class History(context: Context) {
         emptyList()                                       // first run, or an unreadable file
     }
 
+    /** Forget every session (a different patient signed in on this phone). */
+    fun clear(): List<PastSession> {
+        file.delete()
+        return emptyList()
+    }
+
     fun add(session: PastSession): List<PastSession> {
         val all = (load() + session).takeLast(MAX)
         val a = JSONArray()
