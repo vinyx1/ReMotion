@@ -13,7 +13,7 @@ import './landing.css'
 
 import { ArrowDown, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { SessionsFile, Target } from '../types'
+import type { Target } from '../types'
 import { FallbackFigure } from './FallbackFigure'
 import { LIMIT_DEG, type SceneInput } from './lean'
 
@@ -458,52 +458,61 @@ function Story({ reducedMotion }: { reducedMotion: boolean }) {
 
 // ---------- information sections ----------
 
+/*
+  "Is it getting better?" answered with one example patient: Margaret (simulated, from
+  software/dashboard/fake_history.py, sim-a's forward reach), whose share of leaned reaches
+  falls over three weeks. Built in, so the deployed page shows it without any data file; the
+  caption says it's simulated. A dashed least-squares line shows the direction through the
+  session-to-session noise.
+*/
+const EXAMPLE = [
+  { day: 'Nov 2', pct: 33 }, { day: 'Nov 4', pct: 43 }, { day: 'Nov 6', pct: 33 }, { day: 'Nov 9', pct: 24 },
+  { day: 'Nov 11', pct: 5 }, { day: 'Nov 13', pct: 29 }, { day: 'Nov 16', pct: 19 }, { day: 'Nov 18', pct: 5 },
+]
+
 function Progress() {
-  const [data, setData] = useState<SessionsFile | null>(null)
-  useEffect(() => {
-    fetch('/sessions.json', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then(setData)
-      .catch(() => setData(null))
-  }, [])
-  const sessions = data?.sessions ?? []
-  const simulated = sessions.some((s) => s.simulated)
-  const W = 640, H = 240, pad = 36
-  const xs = (i: number) => pad + (i / Math.max(1, sessions.length - 1)) * (W - pad * 2)
-  const ys = (pct: number) => H - pad - (pct / 100) * (H - pad * 2)
+  const W = 640, H = 260, left = 52, right = 24, top = 20, bottom = 40, max = 50
+  const xs = (i: number) => left + (i / (EXAMPLE.length - 1)) * (W - left - right)
+  const ys = (pct: number) => top + (1 - pct / max) * (H - top - bottom)
+  // straight line of best fit through the sessions
+  const n = EXAMPLE.length, mx = (n - 1) / 2, my = EXAMPLE.reduce((a, p) => a + p.pct, 0) / n
+  const slope = EXAMPLE.reduce((a, p, i) => a + (i - mx) * (p.pct - my), 0) / EXAMPLE.reduce((a, _, i) => a + (i - mx) ** 2, 0)
+  const fit = (i: number) => my + slope * (i - mx)
 
   return (
     <section className="lp-section lp-progress" aria-labelledby="progress-h">
       <div className="lp-wrap lp-split">
         <div>
-          <h2 id="progress-h" className="lp-h2">The question a therapist asks: is it getting better?</h2>
+          <p className="lp-kicker">The question a therapist asks</p>
+          <h2 id="progress-h" className="lp-h2">Is it getting better?</h2>
           <p>
-            The dashboard turns each session into the numbers that matter between appointments: how often the trunk
-            took over, how far it leaned, and how long each reach took, rep by rep and week by week.
+            Between appointments, ReMotion records every reach at home. The dashboard turns that into an answer: how
+            often the trunk leaned in to help, how far it went, and how long each reach took, session by session.
           </p>
           <a className="lp-btn" href="/dashboard">Try the demo <ArrowRight aria-hidden className="size-5" /></a>
         </div>
         <figure className="lp-chart">
-          {sessions.length > 1 ? (
-            <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Percent of reps compensated across ${sessions.length} sessions, from ${Math.round(sessions[0].summary.pctCompensated)}% to ${Math.round(sessions[sessions.length - 1].summary.pctCompensated)}%`}>
-              {[0, 25, 50, 75].map((v) => (
-                <g key={v}>
-                  <line x1={pad} x2={W - pad} y1={ys(v)} y2={ys(v)} className="lp-grid" />
-                  <text x={pad - 8} y={ys(v) + 5} className="lp-axis" textAnchor="end">{v}%</text>
-                </g>
-              ))}
-              <polyline className="lp-line" points={sessions.map((s, i) => `${xs(i)},${ys(s.summary.pctCompensated)}`).join(' ')} />
-              {sessions.map((s, i) => (
-                <circle key={s.id} cx={xs(i)} cy={ys(s.summary.pctCompensated)} r="5.5" className="lp-dot" />
-              ))}
-              <text x={xs(0)} y={H - 8} className="lp-axis">{sessions[0].label.split(',')[0]}</text>
-              <text x={xs(sessions.length - 1)} y={H - 8} className="lp-axis" textAnchor="end">{sessions[sessions.length - 1].label.split(',')[0]}</text>
-            </svg>
-          ) : (
-            <div className="lp-chart-empty">Session data appears here once <code>sessions.json</code> is exported.</div>
-          )}
+          <div className="lp-chart-head">
+            <p className="lp-chart-who">Margaret · forward reach</p>
+            <p className="lp-chart-stat">About <strong>1 in 3</strong> reaches leaned at first, <strong>1 in 20</strong> by week three</p>
+          </div>
+          <svg viewBox={`0 0 ${W} ${H}`} role="img"
+            aria-label="Share of reaches where the trunk leaned, per session, from 33% on November 2 to 5% on November 18, trending down">
+            {[0, 25, 50].map((v) => (
+              <g key={v}>
+                <line x1={left} x2={W - right} y1={ys(v)} y2={ys(v)} className="lp-grid" />
+                <text x={left - 10} y={ys(v) + 5} className="lp-axis" textAnchor="end">{v}%</text>
+              </g>
+            ))}
+            <line x1={xs(0)} y1={ys(fit(0))} x2={xs(n - 1)} y2={ys(fit(n - 1))} className="lp-trend" />
+            <polyline className="lp-line" points={EXAMPLE.map((p, i) => `${xs(i)},${ys(p.pct)}`).join(' ')} />
+            {EXAMPLE.map((p, i) => <circle key={p.day} cx={xs(i)} cy={ys(p.pct)} r="5.5" className="lp-dot" />)}
+            <text x={xs(0)} y={H - 10} className="lp-axis">{EXAMPLE[0].day}</text>
+            <text x={xs(n - 1)} y={H - 10} className="lp-axis" textAnchor="end">{EXAMPLE[n - 1].day}</text>
+          </svg>
           <figcaption>
-            Reps compensated per session{simulated ? <strong className="lp-sim"> · Simulated data</strong> : null}
+            Share of reaches where the trunk leaned past the limit, each session. The dashed line is the trend.
+            <strong className="lp-sim"> Simulated example patient.</strong>
           </figcaption>
         </figure>
       </div>

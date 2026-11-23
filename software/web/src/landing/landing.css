@@ -261,6 +261,15 @@ html.lp-root {
 .lp-section p { max-width: 62ch; color: var(--color-forest-2); font-size: 1.125rem; line-height: 1.6; margin: 0 0 1.75rem; }
 
 .lp-chart { margin: 0; }
+.lp-kicker { margin: 0 0 0.75rem !important; font-size: 0.95rem !important; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-eucalyptus) !important; }
+.lp-progress .lp-h2 { text-wrap: balance; }
+.lp-progress p { text-wrap: pretty; }
+.lp-chart-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.lp-chart-head p { margin: 0 !important; }
+.lp-chart-who { font-size: 0.95rem !important; font-weight: 700; color: var(--color-forest-2) !important; }
+.lp-chart-stat { font-family: var(--font-display); font-size: clamp(1.3rem, 2vw, 1.6rem) !important; line-height: 1.25 !important; color: var(--color-forest) !important; text-wrap: balance; }
+.lp-chart-stat strong { font-weight: 600; }
+.lp-trend { stroke: var(--color-eucalyptus); stroke-width: 2.5; stroke-dasharray: 7 7; stroke-linecap: round; }
 .lp-chart svg { width: 100%; height: auto; }
 .lp-grid { stroke: var(--color-wall); stroke-width: 1; }
 .lp-axis { font-family: var(--font-readout); font-size: 14px; fill: var(--color-forest-2); }
