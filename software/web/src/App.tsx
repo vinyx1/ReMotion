@@ -8,6 +8,7 @@
   The look is Rehab Studio (DESIGN.md) at working density.
 */
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Loader } from './components/Loader'
 import { SignIn } from './components/SignIn'
 import { AccountContext, type AccountApi, ApiError, endDemo, getMe, type Me, signOut } from './lib/account'
 import { PatientHeader } from './components/PatientHeader'
@@ -85,7 +86,7 @@ export default function App() {
     endDemo: () => { void endDemo().finally(() => { location.hash = ''; setAuth({ status: 'out', note: 'The demo was ended and deleted.' }) }) },
   }), [me])
 
-  if (auth.status === 'checking') return <Message title="Loading…"><p role="status">Checking who’s signed in.</p></Message>
+  if (auth.status === 'checking') return <Loader label="Checking who’s signed in" />
   if (auth.status === 'error') {
     return <Message title="The dashboard couldn’t start"><p>The server answered with an error ({auth.message}). Reload the page to try again.</p></Message>
   }
