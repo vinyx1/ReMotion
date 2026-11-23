@@ -38,8 +38,11 @@ The API (`server/api.ts`) runs inside `npm run dev` and `npm run preview` as a V
 - **Demo accounts:** "Request a 1-hour demo login" on the sign-in page makes a temporary account
   and fills its email and password into the form. It starts with two example patients
   (Margaret Chen, Elena Rossi) and is deleted, with anything added to it, an hour after it was
-  requested. **End demo** deletes it straight away (for the next visitor at the table). At most
-  100 live demos, 20 requests per address per hour, and 15 new Claude summaries per demo.
+  requested. **End demo** deletes it straight away (for the next visitor at the table). **One
+  live demo per browser:** requesting again while one runs offers "Continue that demo" (an
+  HttpOnly `rm_demo` cookie holds a claim token; the server keeps its hash) instead of a second
+  account; End demo frees the browser. At most 100 live demos, 20 requests per address per
+  hour, and 15 new Claude summaries per demo.
 - **Signing in** sets an HttpOnly, SameSite=Lax cookie (Secure over https). The server keeps
   only a hash of its token. "Keep me signed in" lasts 30 days; otherwise until the browser
   closes. A demo's sign-in ends with the demo.

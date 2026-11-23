@@ -3,7 +3,9 @@
   below) and in production (server/index.ts).
 
     GET  /api/me                      who's signed in, and their patients          401 if no one
-    POST /api/demo                    a new 1-hour demo account: { email, password, expiresAt }
+    POST /api/demo                    a new 1-hour demo account: { email, password, expiresAt }; one live demo per
+                                      browser: if this browser has one, 409 { email, expiresAt } instead
+    POST /api/demo/continue           sign this browser in to the demo it already has
     POST /api/login                   { email, password, remember } -> sign-in cookie
     POST /api/logout                  sign out
     POST /api/demo/end                sign out and delete this demo account now
@@ -21,10 +23,12 @@ import { readFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import {
-  type Account, accountFor, addPatient, createDemo, deleteDemo, deletePatient, hiddenPatients, ownerAccount, pairCode,
-  patients, sessionsFile, signIn, signOut,
+  type Account, accountFor, addPatient, createDemo, deleteDemo, deletePatient, demoForClaim, hiddenPatients, ownerAccount,
+  pairCode, patients, sessionsFile, signIn, signOut, startSignIn,
 } from './accounts.ts'
-import { clearSessionCookie, cookie, COOKIE, HttpError, origin, readJson, send, setSessionCookie } from './http.ts'
+import {
+  addCookie, clearSessionCookie, cookie, COOKIE, DEMO_COOKIE, HttpError, origin, readJson, send, setSessionCookie,
+} from './http.ts'
 import { phoneLines } from './phone.ts'
 import { summarize } from './summary.ts'
 
@@ -54,15 +58,30 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   if (path === '/api/me' && req.method === 'GET') return send(res, 200, await me(await signedIn(req)))
 
   if (path === '/api/demo' && post) {
+    // one live demo per browser: a second request gets the first one back to continue
+    const mine = await demoForClaim(cookie(req, DEMO_COOKIE))
+    if (mine) {
+      return send(res, 409, { error: 'This browser already has a demo login running.', email: mine.email, expiresAt: mine.expiresAt })
+    }
     const ip = clientAddress(req)
     const recent = (demoRequests.get(ip) ?? []).filter((t) => t > Date.now() - 3_600_000)
     if (recent.length >= DEMOS_PER_HOUR) throw new HttpError(429, 'Too many demo logins from here. Try again later.')
     demoRequests.set(ip, [...recent, Date.now()])
     try {
-      return send(res, 200, await createDemo())
+      const { claim, ...demo } = await createDemo()
+      addCookie(req, res, DEMO_COOKIE, claim, (demo.expiresAt - Date.now()) / 1000)
+      return send(res, 200, demo)
     } catch (e) {
       throw new HttpError(503, e instanceof Error ? e.message : 'Couldn’t make a demo account.')
     }
+  }
+
+  if (path === '/api/demo/continue' && post) {
+    const mine = await demoForClaim(cookie(req, DEMO_COOKIE))
+    if (!mine) throw new HttpError(404, 'This browser has no demo running. Request a new demo login.')
+    const s = await startSignIn(mine, false)
+    setSessionCookie(req, res, s.token, s.cookieMaxAgeS)
+    return send(res, 200, await me(mine))
   }
 
   if (path === '/api/login' && post) {
@@ -85,6 +104,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     if (a.kind !== 'demo') throw new HttpError(400, 'Only a demo account can be ended.')
     await deleteDemo(a)
     clearSessionCookie(req, res)
+    addCookie(req, res, DEMO_COOKIE, '', 0)          // this browser may request a new demo now
     return send(res, 200, { ok: true })
   }
 
