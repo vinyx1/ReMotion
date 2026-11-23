@@ -88,7 +88,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const b = await readJson(req)
     if (typeof b.email !== 'string' || typeof b.password !== 'string') throw new HttpError(400, 'Send an email and a password.')
     const s = await signIn(b.email, b.password, b.remember === true)
-    if (!s) throw new HttpError(401, 'That email and password don’t match an account. A demo login lasts an hour.')
+    if (!s) throw new HttpError(401, 'Incorrect email or password.')
     setSessionCookie(req, res, s.token, s.cookieMaxAgeS)
     return send(res, 200, await me(s.account))
   }
