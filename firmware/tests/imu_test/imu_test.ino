@@ -32,7 +32,8 @@
 
   Uses the same trunk-angle maths as the main sketch:
     base  = average accelerometer direction while upright (normalised)
-    angle = acos( dot(a, base) / |a| )   in degrees, then smoothed.
+    gravity estimate = turned by the chest gyro each sample, nudged toward the accelerometer
+    angle = acos( dot(gravity, base) )   in degrees
 
   Libraries: Adafruit MPU6050 (+ Adafruit Unified Sensor, Adafruit BusIO)
 */
@@ -51,8 +52,11 @@ const uint32_t I2C_CLOCK_HZ     = 100000;   // 100 kHz for long cables
 const uint32_t SAMPLE_PERIOD_US = 10000;    // 100 Hz sampling
 const uint32_t PRINT_PERIOD_MS  = 100;      // print 10 times per second
 const uint32_t CALIB_MS         = 3000;     // calibration length
-const float    TRUNK_ALPHA      = 0.15;     // smoothing (0..1, bigger = less smoothing)
-const float    MIN_ACCEL_MS2    = 2.0;      // ignore samples with almost no gravity reading
+const uint32_t CALIB_SETTLE_MS  = 500;      // ignore the first 0.5 s (the button press jostles it)
+const float    ACCEL_WEIGHT     = 0.01;     // tilt filter: pull toward the accelerometer (same as main sketch)
+const float    ACCEL_TRUST_MS2  = 1.0;      // only use the accelerometer when |a| is this close to gravity
+const float    GRAVITY_MS2      = 9.81;
+const float    MIN_ACCEL_MS2    = 2.0;      // calibration must see at least this much gravity
 const float    RAD_TO_DEGREES   = 57.29578;
 const bool     SHOW_WRIST_ACCEL = false;    // true = also print wrist ax/ay/az (Serial Monitor)
 
@@ -66,6 +70,9 @@ uint32_t calibStartMs = 0;
 float sumX = 0, sumY = 0, sumZ = 0;
 uint16_t calibCount = 0;
 float baseX = 0, baseY = 0, baseZ = 1;   // unit vector "upright"
+float gravX = 0, gravY = 0, gravZ = 1;   // filtered gravity direction (unit vector)
+float gyroSumX = 0, gyroSumY = 0, gyroSumZ = 0;
+float biasX = 0, biasY = 0, biasZ = 0;   // chest gyro offset when still, rad/s
 
 // Live values
 float trunkDeg = 0;
@@ -82,6 +89,7 @@ void startCalibration() {
   calibrating = true;
   calibStartMs = millis();
   sumX = sumY = sumZ = 0;
+  gyroSumX = gyroSumY = gyroSumZ = 0;
   calibCount = 0;
   Serial.println("# calibrating: keep the chest IMU still for 3 s...");
 }
@@ -142,14 +150,20 @@ void loop() {
   wristAx = wa.acceleration.x; wristAy = wa.acceleration.y; wristAz = wa.acceleration.z;
 
   // ---- Calibration: average the accel vector ----
+  float cx = cg.gyro.x, cy = cg.gyro.y, cz = cg.gyro.z;   // chest gyro, rad/s
   if (calibrating) {
-    sumX += ax; sumY += ay; sumZ += az;
-    calibCount++;
+    if (millis() - calibStartMs >= CALIB_SETTLE_MS) {
+      sumX += ax; sumY += ay; sumZ += az;
+      gyroSumX += cx; gyroSumY += cy; gyroSumZ += cz;
+      calibCount++;
+    }
     if (millis() - calibStartMs >= CALIB_MS) {
       float mx = sumX / calibCount, my = sumY / calibCount, mz = sumZ / calibCount;
       float len = sqrt(mx * mx + my * my + mz * mz);
-      if (len > MIN_ACCEL_MS2) {
+      if (calibCount > 0 && len > MIN_ACCEL_MS2) {
         baseX = mx / len; baseY = my / len; baseZ = mz / len;
+        gravX = baseX; gravY = baseY; gravZ = baseZ;
+        biasX = gyroSumX / calibCount; biasY = gyroSumY / calibCount; biasZ = gyroSumZ / calibCount;
         calibrated = true;
         trunkDeg = 0;
         Serial.println("# calibration done");
@@ -161,13 +175,25 @@ void loop() {
   }
 
   // ---- Trunk angle from the calibrated upright direction ----
-  float mag = sqrt(ax * ax + ay * ay + az * az);
-  if (calibrated && mag > MIN_ACCEL_MS2) {
-    float cosAngle = (ax * baseX + ay * baseY + az * baseZ) / mag;
+  // Complementary filter (see readSensors() in reach_tracker.ino for the why)
+  if (calibrated) {
+    cx -= biasX; cy -= biasY; cz -= biasZ;
+    float dt = SAMPLE_PERIOD_US / 1000000.0;
+    float nx = gravX - (cy * gravZ - cz * gravY) * dt;   // turn by the gyro: g -= (w x g) dt
+    float ny = gravY - (cz * gravX - cx * gravZ) * dt;
+    float nz = gravZ - (cx * gravY - cy * gravX) * dt;
+    float mag = sqrt(ax * ax + ay * ay + az * az);
+    if (fabs(mag - GRAVITY_MS2) < ACCEL_TRUST_MS2) {     // not mid-jolt: nudge toward the accelerometer
+      nx += ACCEL_WEIGHT * (ax / mag - nx);
+      ny += ACCEL_WEIGHT * (ay / mag - ny);
+      nz += ACCEL_WEIGHT * (az / mag - nz);
+    }
+    float len = sqrt(nx * nx + ny * ny + nz * nz);
+    gravX = nx / len; gravY = ny / len; gravZ = nz / len;
+    float cosAngle = gravX * baseX + gravY * baseY + gravZ * baseZ;
     if (cosAngle > 1.0)  cosAngle = 1.0;
     if (cosAngle < -1.0) cosAngle = -1.0;
-    float angle = acos(cosAngle) * RAD_TO_DEGREES;
-    trunkDeg += TRUNK_ALPHA * (angle - trunkDeg);
+    trunkDeg = acos(cosAngle) * RAD_TO_DEGREES;
   }
 
   // ---- Print at 10 Hz ----
