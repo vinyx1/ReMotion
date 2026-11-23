@@ -57,10 +57,10 @@ fun SignInScreen(state: SignInState, onScan: () -> Unit, onCode: (String) -> Uni
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical))
                 .padding(start = 32.dp, end = 28.dp, top = 24.dp, bottom = 20.dp),
         ) {
-            Text("Welcome to Re:Motion", style = LabelStyle.copy(fontSize = 19.sp), color = Forest)
+            Text("Welcome to ReMotion", style = LabelStyle.copy(fontSize = 19.sp), color = Forest)
             Spacer(Modifier.heightIn(min = 10.dp))
             Text("Sign in with your code", style = CoachStyle, color = Forest, modifier = Modifier.semantics { heading() })
-            Text("Your therapist shows it on your Re:Motion profile. Scan it, or type its 6 letters.",
+            Text("Your therapist shows it on your ReMotion profile. Scan it, or type its 6 letters.",
                 style = CoachSubStyle, color = Forest, modifier = Modifier.padding(top = 12.dp))
             Spacer(Modifier.weight(1f))
             PrimaryButton(if (state.busy) "Signing in…" else "Scan the code", onScan)

@@ -16,7 +16,8 @@
   Lean is measured and labelled the same way in every block; only the buzzer
   changes. BASELINE vs POST is the result. Targets are dealt from a shuffled
   deck so every block has the same number of GREEN, BLUE and RED reaches.
-  A 30 s rest comes before TRAINING and before POST.
+  A 30 s rest comes before TRAINING and before POST (skipped after a block of
+  fewer than 10 reps, so short demo plans run straight through).
 
   Board: Arduino UNO R4 Minima   (FQBN arduino:renesas_uno:minima)
   Libraries: Wire, Adafruit MPU6050 (+ Adafruit Unified Sensor, Adafruit BusIO)
@@ -93,10 +94,16 @@ const bool     STREAM_SAMPLES_DEFAULT = true;  // print D lines at startup (D0/D
 
 // Trunk angle
 const uint32_t CALIB_MS           = 3000;    // sit still this long to calibrate
-const float    CALIB_MAX_STD_MS2  = 0.5;     // reject calibration if accel wobbles more than
-                                             // this (m/s^2 standard deviation, ~3 deg of tilt)
-const float    TRUNK_ALPHA        = 0.15;    // smoothing: trunkDeg += 0.15 * (angle - trunkDeg)
-const float    MIN_ACCEL_MS2      = 2.0;     // skip a sample if |a| is this small (free fall / glitch)
+const uint32_t CALIB_SETTLE_MS    = 500;     // ignore the first 0.5 s (pressing START jostles them)
+const float    CALIB_MAX_STD_MS2  = 0.25;    // reject calibration if accel wobbles more than
+                                             // this (m/s^2 standard deviation, ~1.5 deg of tilt)
+const float    ACCEL_WEIGHT       = 0.01;    // tilt filter: how hard each sample pulls the gravity
+                                             // estimate toward the accelerometer (0.01 at 100 Hz:
+                                             // the gyro rules for ~1 s, the accelerometer after)
+const float    ACCEL_TRUST_MS2    = 1.0;     // only use the accelerometer when |a| is this close to
+                                             // gravity (not mid-jolt); otherwise gyro only
+const float    GRAVITY_MS2        = 9.81;
+const float    MIN_ACCEL_MS2      = 2.0;     // calibration must see at least this much gravity
 
 // Lean decision
 const float    DEFAULT_THRESHOLD_DEG = 10.0; // lean limit; change over serial with T<deg>
@@ -112,6 +119,7 @@ const float    BURST_EXIT_DPS     = 30.0;    // end of a burst (hysteresis)
 const uint32_t HOME_HOLD_MS       = 1000;    // hold HOME this long before a target lights
 const uint32_t REACH_TIMEOUT_MS   = 15000;   // give up on a rep after this long
 const uint32_t REST_MS            = 30000;   // rest before TRAINING and before POST
+const uint8_t  MIN_REPS_BEFORE_REST = 10;    // short (demo) blocks skip the rest
 const uint32_t DEBOUNCE_MS        = 20;      // arcade microswitches bounce
 
 // LEDs and buzzer
@@ -161,9 +169,12 @@ float wristDps = 0;                   // wrist rotation speed, deg/s
 bool  inBurst = false;                // wrist currently in a movement burst
 bool  haveBaseline = false;
 float baseX = 0, baseY = 0, baseZ = 1;   // "upright" direction (unit vector)
+float gravX = 0, gravY = 0, gravZ = 1;   // where gravity points now, filtered (unit vector)
+float biasX = 0, biasY = 0, biasZ = 0;   // chest gyro reading when still (rad/s), subtracted
 
 // Calibration sums
 float calSumX, calSumY, calSumZ, calSumSq;
+float calGyroX, calGyroY, calGyroZ;
 uint16_t calCount;
 
 // Session / rep bookkeeping
@@ -336,23 +347,43 @@ void readSensors() {
     inBurst = false;
   }
 
-  // ---- Chest: accelerometer = direction of gravity ----
+  // ---- Chest: tilt from gravity, with a complementary filter ----
+  // The accelerometer shows where gravity is, but every jolt of a reach looks like tilt.
+  // The gyro shows how the chest turned (ignores jolts, but drifts slowly).
+  // So: turn the gravity estimate by the gyro, then nudge it a little toward the accelerometer.
+  // Filtering the vector (not the angle) matters: noise can only ever ADD to an angle, so
+  // smoothing angles leaves it reading too high; noise in a vector cancels out.
   float ax = ca.acceleration.x, ay = ca.acceleration.y, az = ca.acceleration.z;  // m/s^2
+  float cx = cg.gyro.x, cy = cg.gyro.y, cz = cg.gyro.z;                          // rad/s
 
-  if (state == CALIBRATING) {
+  if (state == CALIBRATING && millis() - stateStartMs >= CALIB_SETTLE_MS) {
     calSumX += ax; calSumY += ay; calSumZ += az;
     calSumSq += ax * ax + ay * ay + az * az;
+    calGyroX += cx; calGyroY += cy; calGyroZ += cz;
     calCount++;
   }
+  if (!haveBaseline) return;
+
+  cx -= biasX; cy -= biasY; cz -= biasZ;
+  float dt = SAMPLE_PERIOD_US / 1000000.0;
+  // Gravity stays put in the room, so seen from the sensor it turns the other way: g -= (w x g) dt
+  float nx = gravX - (cy * gravZ - cz * gravY) * dt;
+  float ny = gravY - (cz * gravX - cx * gravZ) * dt;
+  float nz = gravZ - (cx * gravY - cy * gravX) * dt;
 
   float mag = sqrt(ax * ax + ay * ay + az * az);
-  if (haveBaseline && mag > MIN_ACCEL_MS2) {
-    float cosAngle = (ax * baseX + ay * baseY + az * baseZ) / mag;
-    if (cosAngle > 1.0)  cosAngle = 1.0;         // rounding can push it just past 1
-    if (cosAngle < -1.0) cosAngle = -1.0;
-    float angle = acos(cosAngle) * RAD_TO_DEGREES;
-    trunkDeg += TRUNK_ALPHA * (angle - trunkDeg);   // exponential low-pass
+  if (fabs(mag - GRAVITY_MS2) < ACCEL_TRUST_MS2) {   // not mid-jolt: pull toward the accelerometer
+    nx += ACCEL_WEIGHT * (ax / mag - nx);
+    ny += ACCEL_WEIGHT * (ay / mag - ny);
+    nz += ACCEL_WEIGHT * (az / mag - nz);
   }
+  float len = sqrt(nx * nx + ny * ny + nz * nz);
+  gravX = nx / len; gravY = ny / len; gravZ = nz / len;
+
+  float cosAngle = gravX * baseX + gravY * baseY + gravZ * baseZ;
+  if (cosAngle > 1.0)  cosAngle = 1.0;           // rounding can push it just past 1
+  if (cosAngle < -1.0) cosAngle = -1.0;
+  trunkDeg = acos(cosAngle) * RAD_TO_DEGREES;
 }
 
 // Finish calibration. Returns true if the patient sat still enough.
@@ -382,6 +413,8 @@ bool finishCalibration() {
   }
 
   baseX = mx / meanLen; baseY = my / meanLen; baseZ = mz / meanLen;
+  gravX = baseX; gravY = baseY; gravZ = baseZ;   // start the filter at upright
+  biasX = calGyroX / n; biasY = calGyroY / n; biasZ = calGyroZ / n;   // gyro offset while still
   haveBaseline = true;
   trunkDeg = 0;
   Serial.print("# calibration OK (std ");
@@ -479,7 +512,7 @@ void finishPhase(uint32_t now) {
     playBeeps(3, BEEP_HZ, 200, 150);              // 3 beeps = session complete
     Serial.println("# all blocks done");
     endSession(now);
-  } else if (PHASE_REST_FIRST[next]) {
+  } else if (PHASE_REST_FIRST[next] && phaseReps[phase] >= MIN_REPS_BEFORE_REST) {
     phase = next;                                 // the block we are resting before
     allLedsOff();
     Serial.print("# rest ");
@@ -495,6 +528,7 @@ void finishPhase(uint32_t now) {
 
 void startCalibration(uint32_t now) {
   calSumX = calSumY = calSumZ = calSumSq = 0;
+  calGyroX = calGyroY = calGyroZ = 0;
   calCount = 0;
   repCount = 0;                // a new session starts counting from zero
   compensatedCount = 0;

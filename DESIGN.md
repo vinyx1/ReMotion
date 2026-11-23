@@ -1,5 +1,5 @@
 ---
-name: Re:Motion
+name: ReMotion
 description: A wearable that measures how a reach was done, shown as a daylit rehab room you can lean in.
 colors:
   plaster: "#eef0ec"
@@ -229,7 +229,7 @@ components:
     textColor: "{colors.forest-2}"
 ---
 
-# Design System: Re:Motion
+# Design System: ReMotion
 
 ## Overview
 
@@ -294,7 +294,7 @@ A low-chroma green room with dark forest ink, and one warm hue held back for the
 - **Body** (400, 1.125rem, 1.6, max 62ch): section copy. Story-step copy runs larger (1.2rem, 1.55, max 34ch) and the hero lede runs clamp(1.15rem, 1.5vw, 1.35rem) at 40ch. The base text size is 1.0625rem, 1.55.
 - **Label** (700, 0.95rem): readout label, spec terms, small headings inside bands.
 - **Readout** (Mono 400, clamp(3rem, 5vw, 4.25rem), 1.0, tabular): the live angle. The degree sign is set at 0.6em, raised. Small mono (0.9 to 0.95rem, or 14 to 15px in SVG) carries limits, axis ticks and paper IDs.
-- **Wordmark**: "Re:Motion" in Literata 600, 1.6rem, -0.02em. It is the one display use above 500.
+- **Wordmark**: "ReMotion" in Literata 600, 1.6rem, -0.02em. It is the one display use above 500.
 
 ### Named Rules
 **The Measured Number Rule.** Any number the device measures, or any limit it applies (angles, limits, percentages on axes, chart ticks), is set in Atkinson Hyperlegible Mono with tabular figures.
@@ -340,7 +340,7 @@ Solid, calm and plainly clickable.
 The system avoids cards. Content sits in full-bleed bands: plaster, forest-drenched (evidence) or wall (close). Lists are divided by top hairlines. The only framed containers are the schematic image (white, 1px wall border, 12px) and the dashed placeholder slots.
 
 ### Navigation
-- **Style:** the Re:Motion wordmark at top left. On the right, plain text links with no underline at rest and an underline on hover, plus the forest Dashboard button. Transparent over the stage, solid plaster with a wall hairline after it. Padding goes from 20px to 12px vertically as it turns solid (200ms).
+- **Style:** the ReMotion wordmark at top left. On the right, plain text links with no underline at rest and an underline on hover, plus the forest Dashboard button. Transparent over the stage, solid plaster with a wall hairline after it. Padding goes from 20px to 12px vertically as it turns solid (200ms).
 - **Mobile:** below 760px only the wordmark and the Dashboard button remain.
 
 ### Readout Plate (signature)

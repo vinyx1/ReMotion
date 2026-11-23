@@ -28,7 +28,7 @@ export function SignIn({ note, onSignedIn }: { note?: string; onSignedIn: (me: M
   const [message, setMessage] = useState<Message | null>(note ? { kind: 'info', text: note } : null)
   const submit = useRef<HTMLButtonElement>(null)
   const ids = { email: useId(), password: useId(), remember: useId(), message: useId() }
-  useEffect(() => { document.title = 'Sign in · Re:Motion' }, [])
+  useEffect(() => { document.title = 'Sign in · ReMotion' }, [])
 
   // typing over a filled-in demo account makes it an ordinary sign-in again
   const edit = (set: (v: string) => void) => (v: string) => { set(v); if (demo) { setDemo(false); setMessage(null) } }
@@ -62,7 +62,7 @@ export function SignIn({ note, onSignedIn }: { note?: string; onSignedIn: (me: M
     <div className="dash-wall flex min-h-dvh flex-col">
       <WallFacets />
       <header className="px-6 pt-6 sm:px-10">
-        <a href="/" className={cn('rounded-md font-display text-[1.6rem] font-semibold tracking-[-0.02em] text-forest', FOCUS)}>Re:Motion</a>
+        <a href="/" className={cn('rounded-md font-display text-[1.6rem] font-semibold tracking-[-0.02em] text-forest', FOCUS)}>ReMotion</a>
       </header>
       <main className="mx-auto grid w-full max-w-[27rem] flex-1 items-center px-6 pt-6 pb-16">
         <form onSubmit={onSubmit} noValidate aria-describedby={message ? ids.message : undefined}

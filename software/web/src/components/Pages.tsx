@@ -180,7 +180,7 @@ function Field({ label, children, mono }: { label: string; children: React.React
 }
 
 /*
-  Connect a phone: a QR code (and the same code in letters) that the Re:Motion phone app
+  Connect a phone: a QR code (and the same code in letters) that the ReMotion phone app
   will exchange for a sign-in as this patient, so what the phone records lands here. A code
   works for 10 minutes (server/accounts.ts); after that, New code.
 */
@@ -208,7 +208,7 @@ function ConnectPhone({ patient }: { patient: Patient }) {
   const first = patient.name.split(' ')[0]
   return (
     <Panel label="Connect a phone" className="p-5 sm:p-6 xl:col-span-2">
-      <PanelTitle as="h2" title="Connect a phone" caption={`So the Re:Motion app records as ${patient.name}`} />
+      <PanelTitle as="h2" title="Connect a phone" caption={`So the ReMotion app records as ${patient.name}`} />
       <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-center">
         <div className="relative grid size-48 shrink-0 place-items-center rounded-xl border border-wall bg-plaster p-3">
           {pair && (
@@ -221,7 +221,7 @@ function ConnectPhone({ patient }: { patient: Patient }) {
         </div>
         <div className="flex max-w-[46ch] flex-col gap-3 text-[16px] text-forest">
           <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-pretty marker:font-bold">
-            <li>Open the Re:Motion app on {first}’s phone.</li>
+            <li>Open the ReMotion app on {first}’s phone.</li>
             <li>Tap <span className="font-bold">Scan the code</span> and point the phone at this square.</li>
             <li>The app signs in as {patient.name}, and the sessions it records appear here.</li>
           </ol>
@@ -316,7 +316,7 @@ export function ProfilePage({ patient, sessions }: { patient: Patient; sessions:
         <dl className="mt-3">
           <Field label="Name">{patient.name}</Field>
           <Field label="Patient ID" mono>{patient.id}</Field>
-          <Field label="Data">{!sessions.length ? 'No sessions yet' : patient.simulated ? 'Simulated: generated to build and test the dashboard' : 'Recorded with the Re:Motion device'}</Field>
+          <Field label="Data">{!sessions.length ? 'No sessions yet' : patient.simulated ? 'Simulated: generated to build and test the dashboard' : 'Recorded with the ReMotion device'}</Field>
           <Field label="Sessions recorded" mono>{sessions.length}{first && last ? ` · ${day(first)} – ${day(last)}` : ''}</Field>
           <Field label="Notes"><span className="text-forest-2">No notes yet.</span></Field>
         </dl>

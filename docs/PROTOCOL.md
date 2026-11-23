@@ -44,7 +44,7 @@ S,63,20
 
 ## Session blocks
 
-One press of START runs the whole session: calibration, then the blocks below, back to back. The firmware deals each block's targets from a shuffled deck with equal numbers of GREEN, BLUE and RED, and rests 30 s (`REST` state) before TRAINING and before POST. An aborted rep keeps its target and doesn't count toward the block.
+One press of START runs the whole session: calibration, then the blocks below, back to back. The firmware deals each block's targets from a shuffled deck with equal numbers of GREEN, BLUE and RED, and rests 30 s (`REST` state) before TRAINING and before POST, unless the block just finished had fewer than 10 reps (short demo plans run straight through). An aborted rep keeps its target and doesn't count toward the block.
 
 | Block | Default reps | Buzzer | Purpose |
 |---|---|---|---|

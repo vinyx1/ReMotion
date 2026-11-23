@@ -103,7 +103,7 @@ function Message({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="flex min-h-dvh flex-col">
       <div className="bg-forest px-5 py-4 text-plaster sm:px-8">
-        <a href="/" className="font-display text-[1.45rem] font-semibold tracking-[-0.02em]">Re:Motion</a>
+        <a href="/" className="font-display text-[1.45rem] font-semibold tracking-[-0.02em]">ReMotion</a>
       </div>
       <main className="mx-auto flex max-w-lg flex-col items-center px-6 pt-32 text-center">
         <h1 className="font-display text-2xl font-medium">{title}</h1>
@@ -115,7 +115,7 @@ function Message({ title, children }: { title: string; children: React.ReactNode
 
 
 function Dashboard({ me, onSignedOut, version }: { me: Me; onSignedOut: () => void; version: number }) {
-  useEffect(() => { document.title = 'Re:Motion dashboard' }, [])
+  useEffect(() => { document.title = 'ReMotion dashboard' }, [])
   const load = useSessions(onSignedOut, version)
   const all = load.status === 'ready' ? load.data.sessions : []
   const patients = patientsFrom(all, me.patients)

@@ -17,7 +17,7 @@ Rehab tests usually only check whether the person reached the target, not *how* 
 3. They rest their hand on the **HOME** button. One of three coloured target buttons lights up.
 4. They reach out and press the lit button, then come back to HOME.
 5. If their chest tilts more than 10° during the reach, a **buzzer** goes off.
-6. After each reach, a **green light** means a good rep and a **red light** means they leaned.
+6. Each rep is labelled clean or compensated on the laptop (the buzzer is the only feedback on the device).
 
 Every rep is sent to a laptop, which records:
 - how quickly they started moving
@@ -65,6 +65,8 @@ Full-resolution PDF: [`docs/imu-reach-tracker-schematic.pdf`](docs/imu-reach-tra
 | `AGENTS.md` | How the team works and the full project spec. **Read this before changing anything** (AI agents read it too) |
 
 ## Running it
+
+Step-by-step guide for running a session: [`docs/MANUAL.md`](docs/MANUAL.md).
 
 **Arduino**
 1. Install the Arduino IDE, the **Arduino UNO R4 Boards** package, and the **Adafruit MPU6050** library.
