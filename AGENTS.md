@@ -312,7 +312,7 @@ ReMotion/                             # repo root (GitHub: vinyx1/ReMotion)
       tests/                          # pytest
     web/                              # React app: landing page at /, dashboard at /dashboard (see software/web/README.md)
     android/                          # Android phone app (Kotlin): runs a session over USB-C instead of a laptop (see software/android/README.md)
-    analysis/                         # (planned) offline Python / notebooks (SPARC, validation, tuning)
+    analysis/                         # offline Python: validation.py (label sheets, device-vs-video agreement, threshold sweep); SPARC planned
   data/
     raw/                              # real logs, git-ignored
     sample/                           # small committed examples for the dashboard
@@ -324,7 +324,7 @@ ReMotion/                             # repo root (GitHub: vinyx1/ReMotion)
     confirmations.md                  # open questions with answer blanks
     schematic-review.md               # findings from the 2026-11-05 schematic trace
     research/                         # literature notes
-    TESTING.md                        # (to write) validation plan (section 9)
+    TESTING.md                        # runbook for the validation plan (section 9): bring-up, recording, labeling, report
     WIRING.md                         # (to write) pin map + both IMU box pinouts
   README.md                           # setup, library install, flash, run logger, run dashboard
   requirements.txt                    # Python dependencies (pip install -r requirements.txt in a .venv)
