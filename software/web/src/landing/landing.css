@@ -290,9 +290,6 @@ html.lp-root {
 .lp-figure span { display: block; font-family: var(--font-display); font-weight: 500; font-size: clamp(2.6rem, 4vw, 3.4rem);
   line-height: 1.05; letter-spacing: -0.02em; color: var(--color-plaster); }
 .lp-studies p { font-size: 1.0625rem !important; line-height: 1.6; margin: 0 0 1rem !important; max-width: 40ch; text-wrap: pretty; }
-.lp-studies .lp-caveat { font-size: 1rem !important; color: #c9d3cb !important; }
-.lp-caveat strong { display: block; margin-bottom: 0.2rem; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.05em;
-  text-transform: uppercase; color: #a8b8ad; }
 /* the source card: opens the paper. Pinned to the bottom so the three line up */
 .lp-source {
   margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding: 14px 16px;
