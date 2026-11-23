@@ -45,6 +45,9 @@ data class UiState(
     val reps: Int = 0,
     val leaned: Int = 0,
     val streaming: Boolean = true,
+    /** From the device's last I line: its lean limit (degrees) and reps per block. */
+    val threshold: Float = 0f,
+    val plan: List<Int> = emptyList(),
     /** The firmware answered G, X or ? with "unknown command": it needs updating. */
     val oldFirmware: Boolean = false,
     val showSamples: Boolean = false,
@@ -272,6 +275,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Reaches per block, sent to the device (only between sessions). */
     fun setPlan(plan: List<Int>) = send("P" + plan.joinToString(","))
 
+    /**
+      One of the demos (Demo.kt, as in software/tools/demo.py): set the plan, read it back, and
+      start the session at once, as START would. Only between sessions. The device keeps the plan
+      afterwards, so the next yellow-button press runs the same demo again.
+    */
+    fun runDemo(plan: List<Int>) {
+        if (link == null || _ui.value.sessionRunning) return
+        setPlan(plan)
+        send(Protocol.STATUS)
+        send(Protocol.START)
+    }
+
     fun dismissFinished() { _finished.value = null }
 
     fun dismissHello() { _hello.value = null }
@@ -298,7 +313,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     blockSize = 0, blockDone = 0, blockUpright = 0, lastRep = null, sessionReps = emptyList(),
                     restEndsAt = 0, leaning = false)
                 is Status -> s.copy(state = msg.state, phase = msg.phase, reps = msg.reps,
-                    leaned = msg.compensatedReps, streaming = msg.streaming)
+                    leaned = msg.compensatedReps, streaming = msg.streaming, threshold = msg.threshold, plan = msg.plan)
                 is DeviceError -> {
                     val old = msg.message.removePrefix("unknown command: ") in setOf("G", "X", "?")
                     s.copy(oldFirmware = s.oldFirmware || old)

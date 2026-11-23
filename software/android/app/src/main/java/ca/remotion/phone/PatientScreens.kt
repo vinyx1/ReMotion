@@ -546,7 +546,7 @@ fun ResultIcon(upright: Boolean, size: Dp) {
 }
 
 @Composable
-private fun CheckMark(color: Color, size: Dp) {
+internal fun CheckMark(color: Color, size: Dp) {
     Canvas(Modifier.size(size)) {
         val w = this.size.minDimension
         val p = Path().apply { moveTo(w * 0.15f, w * 0.55f); lineTo(w * 0.40f, w * 0.78f); lineTo(w * 0.85f, w * 0.25f) }

@@ -63,27 +63,33 @@ fun MainScreen(vm: MainViewModel) {
     val hello by vm.hello.collectAsStateWithLifecycle()
     val exercise by vm.exercise.collectAsStateWithLifecycle()
     var settings by rememberSaveable { mutableStateOf(false) }
+    var demo by rememberSaveable { mutableStateOf(false) }      // demo mode, opened from Settings
     var intro by rememberSaveable { mutableStateOf(true) }      // once per launch, not on rotation
     Crossfade(intro, animationSpec = tween(260), label = "intro") { opening ->
         if (opening) Intro(onDone = { intro = false })
         else CompositionLocalProvider(LocalFirstName provides (login?.firstName ?: ""), LocalExercise provides exercise) {
-            App(s, past, finished, login, signIn, hello, vm, settings) { settings = it }
+            App(s, past, finished, login, signIn, hello, vm, settings, { settings = it }, demo, { demo = it }, exercise)
         }
     }
 }
 
 @Composable
 private fun App(s: UiState, past: List<PastSession>, finished: PastSession?, login: Login?, signIn: SignInState,
-                hello: String?, vm: MainViewModel, settings: Boolean, setSettings: (Boolean) -> Unit) {
+                hello: String?, vm: MainViewModel, settings: Boolean, setSettings: (Boolean) -> Unit,
+                demo: Boolean, setDemo: (Boolean) -> Unit, exercise: Exercise) {
     val context = LocalContext.current
-    if (settings) BackHandler { setSettings(false) }
+    if (settings) BackHandler { if (demo) setDemo(false) else setSettings(false) }
     // four places: settings, the sign-in screen (until the phone has a patient), "Hello" just
     // after signing in, the patient's screen
-    val place = if (settings) 2 else if (login == null) 0 else if (hello != null) 3 else 1
+    val place = if (settings && demo) 4 else if (settings) 2 else if (login == null) 0 else if (hello != null) 3 else 1
     AnimatedContent(place, transitionSpec = { fadeThrough() }, label = "place") { shown ->
         Surface(Modifier.fillMaxSize(), color = Plaster) {
-            if (shown == 2) {
-                SettingsScreen(s, login, vm, onClose = { setSettings(false) })
+            if (shown == 4) {
+                DemoScreen(s, login, exercise,
+                    onStart = { plan -> vm.runDemo(plan); setDemo(false); setSettings(false) },   // to the patient's screen, where the session plays
+                    onEnd = { vm.send(Protocol.STOP) }, onDemoDevice = vm::startDemo, onBack = { setDemo(false) })
+            } else if (shown == 2) {
+                SettingsScreen(s, login, vm, onClose = { setSettings(false) }, onDemo = { setDemo(true) })
             } else if (shown == 3) {
                 Hello(hello ?: "", onDone = vm::dismissHello)
             } else if (shown == 0) {
@@ -115,7 +121,7 @@ private fun scanCode(context: Context, vm: MainViewModel) {
   where the dashboard is, and every line the device sends.
 */
 @Composable
-private fun SettingsScreen(s: UiState, login: Login?, vm: MainViewModel, onClose: () -> Unit) {
+private fun SettingsScreen(s: UiState, login: Login?, vm: MainViewModel, onClose: () -> Unit, onDemo: () -> Unit) {
     Row(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(horizontal = 24.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(28.dp)) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -123,6 +129,12 @@ private fun SettingsScreen(s: UiState, login: Login?, vm: MainViewModel, onClose
                 Text("Settings for the care team", style = CoachStyle.copy(fontSize = 28.sp, lineHeight = 32.sp), color = Forest,
                     modifier = Modifier.weight(1f).semantics { heading() })
                 TextButton(onClick = onClose) { Text("Back", fontSize = 17.sp) }
+            }
+            // demo mode first: it's what the team reaches for at a demo
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                PrimaryButton("Demo mode", onDemo)
+                Text("Short sessions to show the buzzer, no buzzer and before / after.",
+                    style = BodyStyle.copy(fontSize = 15.sp, lineHeight = 20.sp), color = Forest2, modifier = Modifier.weight(1f))
             }
             Section("This phone")
             if (login == null) {
