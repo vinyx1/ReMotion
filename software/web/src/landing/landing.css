@@ -286,6 +286,7 @@ html.lp-root {
 .lp-studies li { display: flex; flex-direction: column; border-top: 1px solid rgb(201 211 203 / 0.3); padding-top: 1.5rem; }
 .lp-studies h3 { font-family: var(--font-text); font-weight: 700; font-size: 1rem; letter-spacing: 0; margin: 0; color: #c9d3cb; }
 /* the headline figure: large, in the display face, so the three studies compare at a glance */
+.lp-figure small { font-size: 0.45em; letter-spacing: 0; color: #c9d3cb; }
 .lp-studies .lp-figure { margin: 0.5rem 0 1rem !important; font-size: 1rem !important; line-height: 1.4; color: #c9d3cb !important; text-wrap: balance; }
 .lp-figure span { display: block; font-family: var(--font-display); font-weight: 500; font-size: clamp(2.6rem, 4vw, 3.4rem);
   line-height: 1.05; letter-spacing: -0.02em; color: var(--color-plaster); }

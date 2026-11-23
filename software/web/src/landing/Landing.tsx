@@ -519,8 +519,9 @@ function Progress() {
 const STUDIES = [
   {
     who: 'Gabler et al., 2026',
-    figure: '0.93+',
-    measure: 'ROC-AUC, telling compensated reaches from clean ones',
+    // ROC-AUC above 0.93: given one leaned and one upright reach, how often it ranks the leaned one higher
+    figure: '93', of: 'in 100',
+    measure: 'times it picked out the leaned reach, shown one leaned and one upright',
     title: 'Machine Learning-Based Real-Time Detection of Compensatory Trunk Movements Using Trunk-Wrist Inertial Measurement Units',
     kind: 'Preprint',
     venue: 'arXiv',
@@ -529,8 +530,8 @@ const STUDIES = [
   },
   {
     who: 'Ranganathan et al., 2017',
-    figure: '~90%',
-    measure: 'accuracy, checked against motion capture',
+    figure: 'About 9', of: 'in 10',
+    measure: 'reaches labelled the same as a motion-capture lab',
     title: 'Identifying compensatory movement patterns in the upper extremity using a wearable sensor system',
     kind: 'Journal article',
     venue: 'Physiological Measurement',
@@ -539,8 +540,8 @@ const STUDIES = [
   },
   {
     who: 'Seo et al., 2024',
-    figure: '92%',
-    measure: 'agreement with therapists’ video labels',
+    figure: '92', of: 'in 100',
+    measure: 'movements rated the same as a therapist watching the video',
     title: 'Wearable Sensor to Monitor Quality of Upper Limb Task Practice for Stroke Survivors at Home',
     kind: 'Journal article',
     venue: 'Sensors',
@@ -563,7 +564,7 @@ function Evidence() {
           {STUDIES.map((s) => (
             <li key={s.who}>
               <h3>{s.who}</h3>
-              <p className="lp-figure"><span>{s.figure}</span> {s.measure}</p>
+              <p className="lp-figure"><span>{s.figure} <small>{s.of}</small></span> {s.measure}</p>
               <a className="lp-source" href={s.href} target="_blank" rel="noreferrer">
                 <span className="lp-source-kind">{s.kind}<ArrowUpRight aria-hidden /></span>
                 <span className="lp-source-title">{s.title}</span>
