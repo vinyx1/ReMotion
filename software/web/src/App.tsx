@@ -59,7 +59,7 @@ function useSessions(onSignedOut: () => void, version: number): Load {
 
 type Auth = { status: 'checking' } | { status: 'out'; note?: string } | { status: 'in'; me: Me } | { status: 'error'; message: string }
 
-const DEMO_OVER = 'Your demo hour is up. Request a new login to try again.'
+const DEMO_OVER = 'Your demo has ended.'
 
 /** Who's signed in decides what shows: the sign-in page, or the dashboard of their account. */
 export default function App() {
@@ -71,7 +71,7 @@ export default function App() {
   }, [])
 
   const me = auth.status === 'in' ? auth.me : null
-  const ended = useCallback(() => setAuth({ status: 'out', note: me?.kind === 'demo' ? DEMO_OVER : 'You were signed out.' }), [me?.kind])
+  const ended = useCallback(() => setAuth({ status: 'out', note: me?.kind === 'demo' ? DEMO_OVER : 'You’ve been signed out.' }), [me?.kind])
 
   // a demo signs out by itself when its hour is up, even with the page left open
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function App() {
     me,
     refresh: async () => { const fresh = await getMe(); setAuth({ status: 'in', me: fresh }); setVersion((v) => v + 1) },
     signOut: () => { void signOut().finally(() => { location.hash = ''; setAuth({ status: 'out' }) }) },
-    endDemo: () => { void endDemo().finally(() => { location.hash = ''; setAuth({ status: 'out', note: 'The demo was ended and deleted.' }) }) },
+    endDemo: () => { void endDemo().finally(() => { location.hash = ''; setAuth({ status: 'out', note: 'Demo ended and deleted.' }) }) },
   }), [me])
 
   if (auth.status === 'checking') return <Loader label="Checking who’s signed in" />
