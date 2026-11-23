@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The dashboard's colours (DESIGN.md) -->
+    <color name="wall">#C9D3CB</color>
+    <color name="forest">#1F2D27</color>
+    <color name="plaster">#EEF0EC</color>
+    <color name="eucalyptus">#4F6F5F</color>
+</resources>

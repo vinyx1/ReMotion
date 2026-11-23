@@ -5,7 +5,9 @@ logger.py  —  record a session from the Arduino (or replay a saved one) into C
     python -m software.tools.logger --port /dev/cu.usbmodem1101
     python -m software.tools.logger --threshold 12           # send T12 before recording
     python -m software.tools.logger --plan 0,0,5,0           # short demo: 5 TRAINING reps only
+    python -m software.tools.logger --start                  # start a session without pressing START
     python -m software.tools.logger --replay data/sample/fake_session.txt
+    python -m software.tools.logger --replay run.txt --out data/phone/vincent --stamp 20261121_104500
 
 Press Ctrl+C to stop recording.
 
@@ -26,8 +28,8 @@ from datetime import datetime
 from pathlib import Path
 
 from software.tools.protocol import (
-    Comment, DeviceError, PHASES, Rep, Sample, SessionEnd,
-    REP_COLUMNS, SAMPLE_COLUMNS, parse_line, plan_command, threshold_command,
+    Comment, DeviceError, PHASES, Rep, Sample, SessionEnd, Status,
+    REP_COLUMNS, SAMPLE_COLUMNS, START, parse_line, plan_command, threshold_command,
 )
 
 BAUD = 115200
@@ -51,7 +53,7 @@ def find_arduino_port():
     sys.exit(f"Several serial ports found; pick one with --port:\n  {names}")
 
 
-def serial_lines(port, threshold=None, plan=None):
+def serial_lines(port, threshold=None, plan=None, start=False):
     """Yield lines from the Arduino forever (until Ctrl+C)."""
     import serial
 
@@ -62,6 +64,8 @@ def serial_lines(port, threshold=None, plan=None):
             conn.write((threshold_command(threshold) + "\n").encode())
         if plan is not None:
             conn.write((plan_command(plan) + "\n").encode())
+        if start:
+            conn.write((START + "\n").encode())   # after T and P: they're refused mid-session
         while True:
             raw = conn.readline()
             if raw:
@@ -82,9 +86,9 @@ def file_lines(path):
 class SessionWriter:
     """Writes samples, reps and the raw log for one logger run."""
 
-    def __init__(self, out_dir):
+    def __init__(self, out_dir, stamp=None):
         out_dir.mkdir(parents=True, exist_ok=True)
-        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        stamp = stamp or datetime.now().strftime("%Y%m%d_%H%M%S")
         self.samples_path = out_dir / f"samples_{stamp}.csv"
         self.reps_path = out_dir / f"reps_{stamp}.csv"
         self.raw_path = out_dir / f"raw_{stamp}.txt"
@@ -132,6 +136,10 @@ class SessionWriter:
                     print(f"  {phase:8s}  {comp:2d} of {n:2d} compensated ({100 * comp / n:.0f}%)")
             self.phase_counts = {}
             self.session += 1
+        elif isinstance(msg, Status):
+            plan = ",".join(str(n) for n in msg.plan)
+            print(f"status: {msg.state} {msg.phase or '-'}  threshold {msg.threshold} deg  "
+                  f"plan {plan}  {msg.reps} reps ({msg.compensated_reps} compensated)")
         elif isinstance(msg, DeviceError):
             print(f"ARDUINO ERROR: {msg.message}")
         elif isinstance(msg, Comment):
@@ -154,7 +162,11 @@ def main():
     parser.add_argument("--threshold", type=float, help="lean threshold to send, in degrees")
     parser.add_argument("--plan", help="reps per block to send: PRACTICE,BASELINE,TRAINING,POST "
                                        "(e.g. 3,15,30,15; default: whatever the Arduino has)")
+    parser.add_argument("--start", action="store_true",
+                        help="start a session right away (sends G), instead of pressing START")
     parser.add_argument("--replay", help="read lines from this saved file instead of the Arduino")
+    parser.add_argument("--stamp", help="name the files <kind>_<stamp> (YYYYMMDD_HHMMSS) instead of the "
+                                        "time now; existing files with that name are replaced")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_DIR,
                         help="folder for the output files (default data/raw)")
     args = parser.parse_args()
@@ -169,9 +181,14 @@ def main():
                 plan_command(plan)             # check it before opening the port
             except ValueError as e:
                 parser.error(f"--plan: {e}")
-        lines = serial_lines(args.port or find_arduino_port(), args.threshold, plan)
+        lines = serial_lines(args.port or find_arduino_port(), args.threshold, plan, args.start)
 
-    writer = SessionWriter(args.out)
+    if args.stamp:
+        try:
+            datetime.strptime(args.stamp, "%Y%m%d_%H%M%S")
+        except ValueError:
+            parser.error("--stamp must look like 20261121_104500")
+    writer = SessionWriter(args.out, args.stamp)
     try:
         for line in lines:
             writer.handle(line)

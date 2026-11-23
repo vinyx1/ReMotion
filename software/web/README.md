@@ -1,17 +1,17 @@
 # Web dashboard
 
-The therapist dashboard: React + TypeScript + Tailwind v4, Recharts for charts,
-React Three Fiber for the 3D replay. Post-session only; it reads one JSON file.
+The landing page and the therapist dashboard: React + TypeScript + Tailwind v4, Recharts for
+charts, React Three Fiber for the 3D replay, and a small Node server (`server/`) for accounts and
+the API. The data logic stays in Python: the server runs the logger and the export.
 
 ```
-logger CSVs (data/raw, data/sample)
-   │  python -m software.dashboard.export        ← run from the repo root
+logger CSVs (data/raw, data/sample, data/fake, data/phone…)
+   │  python -m software.dashboard.export --data <folder>   ← the server runs this per account
    ▼
-software/web/public/sessions.json
-   │  npm run dev
-   ▼
-http://localhost:5173            the landing page
-http://localhost:5173/dashboard  the therapist dashboard
+<account>/sessions.json  →  GET /api/sessions  →  the dashboard (re-read every 5 s)
+
+http://localhost:5173            the landing page ("Try the demo")
+http://localhost:5173/dashboard  sign in, then the dashboard
 ```
 
 ## Run it
@@ -19,30 +19,64 @@ http://localhost:5173/dashboard  the therapist dashboard
 ```bash
 # from the repo root, with the Python venv active
 python -m software.dashboard.fake_history      # optional: three simulated patients' sessions, in data/fake/<id>/
-python -m software.dashboard.export            # add --no-sample for real recordings only
 
 cd software/web
 npm install                                    # once
-npm run dev
+node server/set-owner.ts vincent@remotion.demo # once: the owner's account; prints a password (only its hash is kept)
+npm run dev                                    # development, with the API
+npm run build && npm start                     # production: the built site + API on PORT (default 8080)
 ```
 
-Run the export again after every new recording, then reload the page.
+The API (`server/api.ts`) runs inside `npm run dev` and `npm run preview` as a Vite plugin, and in
+`npm start` (`server/index.ts`, Node 24 runs the TypeScript directly).
 
-### The "Generate summary" button (optional)
+## Accounts and demos
 
-The Overview's **Generate summary** button asks Claude (`claude-opus-5-5`, low effort) for a
-few plain sentences about the patient's sessions. It goes through `POST /api/summary`, served by
-the dev and preview servers (`server/summary.ts`), so the API key never reaches the browser.
-Give the server credentials before starting it:
+- **The owner's account** sees the repo's `data/` folder (the simulated patients, the sample
+  session, everything the phone app sent). Create it, or change its password, with
+  `node server/set-owner.ts <email> [password]`; a changed password signs it out everywhere.
+- **Demo accounts:** "Try a 1-hour demo" on the sign-in page makes a temporary account
+  and fills its email and password into the form. It starts with two example patients
+  (Margaret Chen, Elena Rossi) and is deleted, with anything added to it, an hour after it was
+  requested. **End demo** deletes it straight away (for the next visitor at the table). **One
+  live demo per browser:** requesting again while one runs fills in that same demo, with a fresh password (an
+  HttpOnly `rm_demo` cookie holds a claim token; the server keeps its hash) instead of a second
+  account; End demo frees the browser. At most 100 live demos, 20 requests per address per
+  hour, and 15 new Claude summaries per demo.
+- **Signing in** sets an HttpOnly, SameSite=Lax cookie (Secure over https). The server keeps
+  only a hash of its token. "Keep me signed in" lasts 30 days; otherwise until the browser
+  closes. A demo's sign-in ends with the demo.
+- **Patients:** Add patient (patients page) gives a profile with no sessions. Each patient's
+  Profile & settings has a **Connect a phone** QR code with a 6-letter code (one use, valid 10
+  minutes). The phone app scans or types it (`POST /api/phone/pair`) and gets its own token (kept
+  hashed in `devices.json`), which every upload carries; the server files the sessions under that
+  patient. Uploads without a valid token are refused. The QR code links to `/pair?code=…`
+  (`src/Pair.tsx`) for phones that scan it with the camera app: it opens the app signed in, or
+  shows the code to type. A phone's sign-in ends with its demo, or when its patient is deleted.
+- **Deleting a patient** (bottom of Profile & settings, after a confirmation) takes them and
+  their sessions off the dashboard. Recordings only that account holds (`phone/`, `phone-demo/`,
+  `fake/`, the phone's raw lines) are moved to `<account>/deleted/<id>-<time>/` on the server, so
+  a slip can be recovered; sessions in shared files (the committed `data/sample`, `data/raw`)
+  can't be removed for one account, so that patient is hidden instead (`hidden.json`).
+- State lives in `data/state/` (git-ignored; `REMOTION_STATE` to move it): `accounts.json`,
+  `signins.json`, and one folder per account. No database: demos only have to last an hour.
 
-```bash
-export ANTHROPIC_API_KEY=...    # or: ant auth login
-npm run dev
-```
+### Environment
 
-Only the figures the Overview shows are sent (per-session counts, percentages, lean and reach
-times, by-target counts). The static `npm run build` output has no server, so the button only
-reports that it needs `npm run dev` or `npm run preview`.
+| Variable | What |
+|---|---|
+| `ANTHROPIC_API_KEY` | For the Overview summaries (or `ANTHROPIC_AUTH_TOKEN`, or `ant auth login`). `npm run dev` and `npm start` read it from `software/web/.env`. Keep it out of git and chat. |
+| `PORT` | `npm start`'s port (default 8080) |
+| `REMOTION_STATE` | Where accounts and demos live (default `data/state`) |
+| `REMOTION_OWNER_DATA` | The owner's data folder (default the repo's `data/`) |
+| `REMOTION_PYTHON` | The Python to run (default `.venv/bin/python`, else `python3`) |
+
+### The summary (optional)
+
+The Overview writes a few plain bullet points about the patient's sessions with Claude
+(`server/summary.ts`), cached by the exact figures sent, so the same data never calls Claude
+twice. Only the figures the Overview shows are sent (per-session counts, percentages, lean and
+reach times, by-target counts).
 
 ## Where things are
 
@@ -53,11 +87,17 @@ reports that it needs `npm run dev` or `npm run preview`.
 | `src/landing/LeanScene.tsx` | The landing page's 3D room; the visitor leans the figure (same 10° / 200 ms rule as the firmware) |
 | `src/landing/landing.css` | Landing page styles (Rehab Studio tokens live in `src/index.css`) |
 | `src/App.tsx` | Dashboard page: header, headline numbers, tabs |
-| `server/summary.ts` | `POST /api/summary` for the dev/preview server: writes the Overview summary with Claude |
+| `server/api.ts` | The API under `/api` (sign-in, demos, patients, sessions, summary, phone) |
+| `server/accounts.ts` | Accounts, sign-ins, 1-hour demos and their clean-up, patients, phone codes |
+| `server/index.ts` | The production server (`npm start`): the built site and the API |
+| `server/summary.ts` | `POST /api/summary`: the Overview summary with Claude |
+| `server/phone.ts` | `POST /api/phone/lines`: the phone app's lines, turned into sessions |
+| `src/components/SignIn.tsx` | The sign-in page and "Request a 1-hour demo login" |
 | `src/components/Replay.tsx` | Clean vs compensated replay on one shared clock |
 | `src/components/Figure3D.tsx` | The 3D seated figure (fixed camera) |
 | `src/lib/figure.ts` | Figure geometry: real trunk tilt and timing, illustrative arm |
 | `src/components/Overview.tsx` | Peak lean per target, reach time trend |
+| `src/components/PracticeCalendar.tsx` | The month beside the Overview summary: which days the patient practised |
 | `src/components/RepDetail.tsx` | Trunk and wrist traces for one rep |
 | `src/components/AllSessions.tsx` | Session table |
 | `src/index.css` | Design tokens (colours, fonts) |

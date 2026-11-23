@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Android 12+ launch screen: the figure at rest on the wall colour. The app's intro
+      (Intro.kt) takes over from it at the same size and place, and the arm reaches out.
+    -->
+    <style name="Theme.ReMotion" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/wall</item>
+        <item name="android:windowSplashScreenBackground">@color/wall</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_figure</item>
+    </style>
+</resources>

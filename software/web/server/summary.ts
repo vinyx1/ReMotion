@@ -2,11 +2,11 @@
   POST /api/summary: writes a short, plain summary of one patient's sessions with
   Claude, for the dashboard's "Generate summary" button.
 
-  It runs inside the Vite dev and preview servers (see vite.config.ts), so the API
-  key stays on this machine and never reaches the browser. Credentials come from
-  the environment: ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, or an `ant auth login`
-  profile. The static production build has no server, so the button there reports
-  that summaries need `npm run dev` or `npm run preview`.
+  Part of the dashboard's API (server/api.ts), so the API key stays on the server and
+  never reaches the browser. Credentials come from the environment: ANTHROPIC_API_KEY,
+  ANTHROPIC_AUTH_TOKEN, or an `ant auth login` profile. Only a signed-in account can ask,
+  and a demo account gets at most DEMO_SUMMARIES new ones (the demo is a public page;
+  stored notes don't count).
 
   The browser sends the figures the Overview already shows; nothing else.
 
@@ -20,8 +20,10 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { dirname, resolve } from 'node:path'
-import type { Plugin } from 'vite'
+import { dirname, join } from 'node:path'
+import { type Account, countSummary, DEMO_SUMMARIES } from './accounts.ts'
+import { readBody, send } from './http.ts'
+import { REPO } from './python.ts'
 
 // Haiku: a short note from a handful of numbers doesn't need a bigger model, and it costs a fraction
 const MODEL = 'claude-haiku-5-5'
@@ -44,7 +46,7 @@ Example of the format and tone (the numbers here are made up):
 - Practising about three times a week`
 
 type Cached = { text: string; createdAt: string }
-const CACHE_FILE = resolve(process.cwd(), 'node_modules/.cache/remotion-summaries.json')
+const CACHE_FILE = process.env.REMOTION_SUMMARY_CACHE ?? join(REPO, 'software/web/node_modules/.cache/remotion-summaries.json')
 let cache: Record<string, Cached> | null = null
 // identical requests in flight share one Claude call (the Overview and a tab can ask at once)
 const inFlight = new Map<string, Promise<Cached>>()
@@ -95,22 +97,7 @@ class SummaryError extends Error {
   constructor(status: number, message: string) { super(message); this.status = status }
 }
 
-function readBody(req: IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    let data = ''
-    req.on('data', (chunk) => { data += chunk; if (data.length > 200_000) req.destroy() })
-    req.on('end', () => resolve(data))
-    req.on('error', reject)
-  })
-}
-
-function send(res: ServerResponse, status: number, body: object) {
-  res.statusCode = status
-  res.setHeader('Content-Type', 'application/json')
-  res.end(JSON.stringify(body))
-}
-
-async function handle(req: IncomingMessage, res: ServerResponse) {
+export async function summarize(req: IncomingMessage, res: ServerResponse, account: Account) {
   if (req.method !== 'POST') return send(res, 405, { error: 'Use POST.' })
   let body: { data?: unknown; cachedOnly?: boolean }
   try {
@@ -124,6 +111,9 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
   const store = await loadCache()
   if (store[key]) return send(res, 200, { ...store[key], cached: true })
   if (body.cachedOnly) return send(res, 200, { text: null })
+  if (account.kind === 'demo' && account.summaries >= DEMO_SUMMARIES) {
+    return send(res, 429, { error: `This demo has used its ${DEMO_SUMMARIES} summaries.` })
+  }
 
   try {
     let job = inFlight.get(key)
@@ -131,6 +121,7 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
       job = write(body.data).then(async (text) => {
         const entry = { text, createdAt: new Date().toISOString() }
         store[key] = entry
+        await countSummary(account)
         await saveCache().catch(() => { /* a failed save only costs a later call */ })
         return entry
       }).finally(() => inFlight.delete(key))
@@ -150,20 +141,8 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
     }
     if (error instanceof Anthropic.AnthropicError) {
       // not an API response: the client could not start, most often because no credentials are set
-      return send(res, 503, { error: 'No Claude credentials found on the server. Set ANTHROPIC_API_KEY (or run `ant auth login`) and restart `npm run dev`.' })
+      return send(res, 503, { error: 'No Claude credentials found on the server. Set ANTHROPIC_API_KEY (or run `ant auth login`) and restart the server.' })
     }
     return send(res, 502, { error: 'Could not reach the Claude API.' })
-  }
-}
-
-/** Vite plugin: serves POST /api/summary in `vite` (dev) and `vite preview`. */
-export function claudeSummary(): Plugin {
-  const mount = (server: { middlewares: { use: (path: string, fn: (req: IncomingMessage, res: ServerResponse) => void) => void } }) => {
-    server.middlewares.use('/api/summary', (req, res) => { void handle(req, res) })
-  }
-  return {
-    name: 'remotion-claude-summary',
-    configureServer: mount,
-    configurePreviewServer: mount,
   }
 }

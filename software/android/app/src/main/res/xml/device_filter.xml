@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Boards that open this app when plugged in: Arduino (0x2341, 0x2A03), e.g. the UNO R4 Minima. -->
+<resources>
+    <usb-device vendor-id="9025" />
+    <usb-device vendor-id="10755" />
+</resources>
