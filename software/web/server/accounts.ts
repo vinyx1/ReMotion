@@ -201,6 +201,18 @@ export async function createDemo(): Promise<{ email: string; password: string; e
   return { email: account.email, password, expiresAt: account.expiresAt!, claim }
 }
 
+/**
+  A new password for a live demo, for the browser that requested it asking again: the sign-in
+  form fills it the same way as a new demo (the old password is never stored, so it can't be
+  shown again). Sign-ins made with the old one carry on.
+*/
+export async function freshDemoPassword(a: Account): Promise<{ email: string; password: string; expiresAt: number }> {
+  const password = demoPassword()
+  Object.assign(a, hashPassword(password))
+  await saveAccounts()
+  return { email: a.email, password, expiresAt: a.expiresAt! }
+}
+
 /** The live demo a browser's claim token belongs to, if any (ended and expired demos are gone). */
 export async function demoForClaim(claim: string | undefined): Promise<Account | null> {
   await init()

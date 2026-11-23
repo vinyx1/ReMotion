@@ -1,14 +1,14 @@
 /*
-  The dashboard's sign-in: email and password, or "Try a 1-hour demo". A new demo fills the
-  form with its account (the visitor then signs in with it); a browser that already has a
-  demo running is taken straight back into it (server/api.ts allows one live demo per
-  browser). One message line at most, never stacked: the newest thing to say replaces the last.
+  The dashboard's sign-in: email and password, or "Try a 1-hour demo", which always does the
+  same thing: fills the form with a demo account, then the visitor signs in with it. A browser
+  that already has a demo running gets that same demo filled in again (server/api.ts allows
+  one live demo per browser). One message line at most: the newest replaces the last.
 
   The room's wall, as on the dashboard, with the form on a plaster plate hung on it.
 */
 import { ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react'
-import { ApiError, continueDemo, type Me, requestDemo, signIn } from '../lib/account'
+import { type Me, requestDemo, signIn } from '../lib/account'
 import { cn } from '../lib/utils'
 import { FOCUS } from './ui'
 import { WallFacets } from './WallFacets'
@@ -53,12 +53,7 @@ export function SignIn({ note, onSignedIn }: { note?: string; onSignedIn: (me: M
       setBusy(null)
       submit.current?.focus()                        // the next step: Sign in
     } catch (err) {
-      let problem = err
-      if (err instanceof ApiError && err.status === 409) {
-        // this browser's demo is still running: open it
-        try { return onSignedIn(await continueDemo()) } catch (again) { problem = again }
-      }
-      setMessage({ kind: 'error', text: (problem as Error).message })
+      setMessage({ kind: 'error', text: (err as Error).message })
       setBusy(null)
     }
   }
@@ -118,7 +113,7 @@ export function SignIn({ note, onSignedIn }: { note?: string; onSignedIn: (me: M
           {/* once a demo account is filled in, the next step is Sign in: this one greys out */}
           <button type="button" onClick={onDemo} disabled={busy !== null || demo}
             className={cn('inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-xl border-[1.5px] border-forest/30 px-5 text-[16px] font-bold text-forest transition-colors duration-150 hover:border-forest/60 hover:bg-wash disabled:cursor-not-allowed disabled:opacity-55', FOCUS)}>
-            {busy === 'demo' ? 'Opening the demo…' : 'Try a 1-hour demo'}
+            {busy === 'demo' ? 'Getting a demo account…' : 'Try a 1-hour demo'}
           </button>
         </form>
       </main>
