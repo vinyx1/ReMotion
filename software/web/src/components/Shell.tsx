@@ -4,7 +4,8 @@
   phones a compact top bar. A patient's own sub-views are tabs on the patient page.
 */
 import { ChevronRight, FileText, Users } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { timeLeft, useAccount } from '../lib/account'
 import { href, type Route } from '../lib/route'
 import type { Patient } from '../lib/patients'
 import { cn } from '../lib/utils'
@@ -50,10 +51,10 @@ function DataChip({ simulated, className }: { simulated: boolean; className?: st
   )
 }
 
-/** Split "Nov 18, 11:09" into its day and time. */
+/** "Nov 21, 23:15 (session 2)" -> { d: "Nov 21", t: "23:15 (2)" }: short enough for one line (the link's aria-label keeps the full label). */
 function when(s: Session) {
-  const [d, t] = s.label.split(', ')
-  return { d, t: t ?? '' }
+  const [d, t = ''] = s.label.split(', ')
+  return { d, t: t.replace(/ \(session (\d+)\)$/, ' ($1)') }
 }
 
 /*
@@ -68,7 +69,7 @@ function PatientFolder({ patient, sessions, route }: { patient: Patient; session
   const sid = route.name === 'session' || route.name === 'rep' ? route.sid : null
   const onPatient = route.name !== 'patients' && route.pid === patient.id
   return (
-    <div className="relative mt-2">
+    <div data-open-folder className="relative mt-2">
       {/* the back of the folder, with its tab */}
       <a href={href({ name: 'overview', pid: patient.id })} aria-current={onPatient && route.name === 'overview' ? 'page' : undefined}
         className={cn('relative z-10 flex h-[38px] w-fit max-w-[92%] items-center gap-2 rounded-t-[10px] bg-folder pr-3 pl-1.5 text-forest', FOLDER_FOCUS)}>
@@ -97,8 +98,8 @@ function PatientFolder({ patient, sessions, route }: { patient: Patient; session
                     className={cn('flex items-center gap-2 rounded-md px-2 py-1.5 text-[14px] transition-colors duration-150',
                       active ? 'bg-panel font-bold shadow-[0_1px_2px_rgb(31_45_39/0.18)]' : 'hover:bg-panel/70', FOLDER_FOCUS)}>
                     <FileText className="size-3.5 shrink-0 text-forest-2" aria-hidden />
-                    <span className="font-readout tabular-nums">{w.d}</span>
-                    <span className="font-readout text-forest-2 tabular-nums">{w.t}</span>
+                    <span className="font-readout whitespace-nowrap tabular-nums">{w.d}</span>
+                    <span className="font-readout whitespace-nowrap text-forest-2 tabular-nums">{w.t}</span>
                     <span className="ml-auto inline-flex items-center gap-1 font-readout text-[13px] tabular-nums">
                       <svg className="size-2.5" viewBox="0 0 10 10" aria-hidden>
                         {n > 0
@@ -148,30 +149,93 @@ function ClosedFolder({ patient, sessions }: { patient: Patient; sessions: Sessi
   )
 }
 
-function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; patients: Patient[]; patient: Patient; sessionsFor: (p: Patient) => Session[] }) {
+/** Now, updated every 20 s: enough for a countdown in minutes. */
+function useNow(every = 20_000) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), every); return () => clearInterval(t) }, [every])
+  return now
+}
+
+const ACCOUNT_BTN = 'inline-flex h-10 cursor-pointer items-center justify-center rounded-lg border border-plaster/30 px-3 text-[14px] font-bold text-plaster transition-colors duration-150 hover:border-plaster/60 hover:bg-plaster/10'
+
+/**
+  Who's signed in, at the foot of the sidebar. A demo shows how long it has left and
+  End demo (deletes it now, for the next visitor at the table); the owner, Sign out.
+*/
+function AccountBlock() {
+  const { me, signOut, endDemo } = useAccount()
+  const now = useNow()
+  const demo = me.kind === 'demo' && me.expiresAt !== null
+  return (
+    <div className="flex flex-col gap-2.5">
+      <p className="min-w-0">
+        <span className="block text-[12px] font-bold text-plaster/60">{demo ? 'Demo account' : 'Signed in as'}</span>
+        <span className="block truncate text-[14px] font-bold text-plaster" title={me.email}>{me.email}</span>
+        {demo && <span className="block text-[13px] text-plaster/75 tabular-nums">Deleted in {timeLeft(me.expiresAt!, now)}</span>}
+      </p>
+      {demo
+        ? <button type="button" onClick={endDemo} className={cn(ACCOUNT_BTN, NAV_FOCUS)}>End demo</button>
+        : <button type="button" onClick={signOut} className={cn(ACCOUNT_BTN, NAV_FOCUS)}>Sign out</button>}
+    </div>
+  )
+}
+
+function Sidebar({ route, patients, patient, sessionsFor }: { route: Route; patients: Patient[]; patient?: Patient; sessionsFor: (p: Patient) => Session[] }) {
+  const nav = useRef<HTMLElement>(null)
+  const openId = patient && route.name !== 'patients' ? patient.id : null
+
+  /*
+    Opening a patient scrolls the list only when their name tab is (even partly) out of sight,
+    bringing it to the top; a name you could see and click stays where it is, even if the
+    opened folder now runs past the bottom. Only the list scrolls, never the page (the sidebar
+    is sticky); smooth unless the reader asked for reduced motion.
+  */
+  useEffect(() => {
+    const list = nav.current
+    const tab = list?.querySelector<HTMLElement>('[data-open-folder] > a')
+    if (!list || !tab || !openId) return
+    const l = list.getBoundingClientRect(), f = tab.getBoundingClientRect()
+    if (f.top >= l.top && f.bottom <= l.bottom) return
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    list.scrollTo({ top: list.scrollTop + (f.top - l.top) - 8, behavior: reduce ? 'auto' : 'smooth' })
+  }, [openId])
+
   return (
     <aside className="sticky top-0 hidden h-dvh w-[17rem] shrink-0 flex-col bg-forest text-plaster lg:flex">
       <div className="px-5 pt-5 pb-6">
         <a href="/" className={cn('rounded-md font-display text-[1.45rem] font-semibold tracking-[-0.02em]', NAV_FOCUS)}>Re:Motion</a>
       </div>
-      <nav aria-label="Patients" className="scroll-quiet flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4">
+      <nav ref={nav} aria-label="Patients" className="scroll-quiet flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-4">
         <NavLink to={{ name: 'patients' }} active={route.name === 'patients'} icon={Users}>All patients</NavLink>
         <p className="mt-5 mb-1 px-3 text-[13px] font-bold text-plaster/60">Patient files · {patients.length}</p>
         {patients.map((p) => (
-          route.name !== 'patients' && p.id === patient.id
+          patient && route.name !== 'patients' && p.id === patient.id
             ? <PatientFolder key={p.id} patient={p} sessions={sessionsFor(p)} route={route} />
             : <ClosedFolder key={p.id} patient={p} sessions={sessionsFor(p)} />
         ))}
       </nav>
-      <div className="flex flex-col gap-3 border-t border-plaster/15 px-5 py-4 text-[13px] text-plaster/75">
-        <DataChip simulated={patient.simulated} className="self-start" />
-        <p>Chest and wrist sensors, 100 Hz</p>
+      <div className="flex flex-col gap-4 border-t border-plaster/15 px-5 py-4 text-[13px] text-plaster/75">
+        <AccountBlock />
+        <p>{patient && sessionsFor(patient).length > 0 && <><DataChip simulated={patient.simulated} /> · </>}Chest and wrist sensors, 100 Hz</p>
       </div>
     </aside>
   )
 }
 
-function MobileBar({ route, patient }: { route: Route; patient: Patient }) {
+/** The small screen's version: the demo's time left and End demo, or Sign out. */
+function MobileAccount() {
+  const { me, signOut, endDemo } = useAccount()
+  const now = useNow()
+  const demo = me.kind === 'demo' && me.expiresAt !== null
+  return (
+    <div className="ml-auto flex shrink-0 items-center gap-2">
+      {demo && <span className="text-[13px] text-plaster/75 tabular-nums">{timeLeft(me.expiresAt!, now)} left</span>}
+      <button type="button" onClick={demo ? endDemo : signOut} className={cn(ACCOUNT_BTN, 'h-9', NAV_FOCUS)}>{demo ? 'End demo' : 'Sign out'}</button>
+    </div>
+  )
+}
+
+function MobileBar({ route }: { route: Route }) {
   return (
     <div className="flex items-center gap-3 bg-forest px-4 py-3 text-plaster lg:hidden">
       <a href="/" className={cn('shrink-0 rounded-md font-display text-[1.2rem] font-semibold tracking-[-0.02em]', NAV_FOCUS)}>Re:Motion</a>
@@ -179,7 +243,7 @@ function MobileBar({ route, patient }: { route: Route; patient: Patient }) {
         className={cn('inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-plaster/85 hover:text-plaster', NAV_FOCUS)}>
         <Users className="size-4" aria-hidden /> Patients
       </a>
-      <DataChip simulated={patient.simulated} className="ml-auto shrink-0" />
+      <MobileAccount />
     </div>
   )
 }
@@ -207,7 +271,8 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
 export function Shell({ route, patients, patient, crumbs, sessionsFor, header, mood, children }: {
   route: Route
   patients: Patient[]
-  patient: Patient
+  /** the patient in view; none when the account has no patients */
+  patient?: Patient
   crumbs: Crumb[]
   sessionsFor: (p: Patient) => Session[]
   /** What hangs on the wall: the page or patient header, ending on the horizon. */
@@ -220,7 +285,7 @@ export function Shell({ route, patients, patient, crumbs, sessionsFor, header, m
     <div className="flex min-h-dvh">
       <Sidebar route={route} patients={patients} patient={patient} sessionsFor={sessionsFor} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <MobileBar route={route} patient={patient} />
+        <MobileBar route={route} />
         {/* the wall: the page's header, painted like the landing page's room, meeting the floor at a horizon */}
         <header className={cn('dash-wall', mood === 'warm' && 'is-warm', mood === 'cool' && 'is-cool')}>
           <WallFacets />
@@ -230,7 +295,7 @@ export function Shell({ route, patients, patient, crumbs, sessionsFor, header, m
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1240px] flex-1 px-5 pt-8 pb-16 sm:px-8">{children}</main>
-        {patient.simulated && (
+        {patient?.simulated && (
           <footer className="mx-auto w-full max-w-[1240px] px-5 pb-8 sm:px-8">
             <p className="border-t border-wall pt-4 text-sm text-forest-2">
               <span className="font-bold text-forest">Simulated data.</span> These sessions were generated to build and test the

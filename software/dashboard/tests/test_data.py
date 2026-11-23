@@ -109,6 +109,8 @@ def test_simulated_patients_are_tagged_and_kept_apart(tmp_path, monkeypatch, cap
     monkeypatch.setattr(export, "RAW_DIR", tmp_path / "no-real-data-here")
     monkeypatch.setattr(export, "SAMPLE_DIR", tmp_path / "no-samples-here")
     monkeypatch.setattr(export, "FAKE_DIR", fake)
+    monkeypatch.setattr(export, "PHONE_DIR", tmp_path / "no-phone-here")
+    monkeypatch.setattr(export, "PHONE_DEMO_DIR", tmp_path / "no-phone-demo-here")
     sessions = export.export_groups(export.patient_folders())["sessions"]
 
     # the forward reach, each patient on their own (extra exercises are checked below)
@@ -130,6 +132,8 @@ def test_extra_exercises_come_from_their_subfolders(tmp_path, monkeypatch, capsy
     monkeypatch.setattr(export, "RAW_DIR", tmp_path / "no-real-data-here")
     monkeypatch.setattr(export, "SAMPLE_DIR", tmp_path / "no-samples-here")
     monkeypatch.setattr(export, "FAKE_DIR", fake)
+    monkeypatch.setattr(export, "PHONE_DIR", tmp_path / "no-phone-here")
+    monkeypatch.setattr(export, "PHONE_DEMO_DIR", tmp_path / "no-phone-demo-here")
     sessions = export.export_groups(export.patient_folders())["sessions"]
 
     assert {s["exercise"] for s in sessions} <= set(export.EXERCISES)
@@ -139,6 +143,32 @@ def test_extra_exercises_come_from_their_subfolders(tmp_path, monkeypatch, capsy
             assert len(mine) == x["sessions"]
             assert all(s["id"].endswith(f"-{pid}-{x['exercise']}") for s in mine)   # ids stay unique
     assert len({s["id"] for s in sessions}) == len(sessions)
+
+
+def test_phone_sessions_are_their_patients(tmp_path, monkeypatch, capsys):
+    """Files the phone app sent (via the dashboard server and logger --stamp) show up under their patient."""
+    from software.dashboard import export
+    from software.tools.fake_session import generate
+    from software.tools.logger import SessionWriter
+
+    for root, stamp in [(tmp_path / "phone", "20261121_100000"), (tmp_path / "phone-demo", "20261121_110000")]:
+        writer = SessionWriter(root / "vincent", stamp)
+        for line in generate((0, 3, 0, 0), lean_fraction=0.5, seed=2):
+            writer.handle(line)
+        writer.close()
+    for name in ("RAW_DIR", "SAMPLE_DIR", "FAKE_DIR"):
+        monkeypatch.setattr(export, name, tmp_path / "nothing-here")
+    monkeypatch.setattr(export, "PHONE_DIR", tmp_path / "phone")
+    monkeypatch.setattr(export, "PHONE_DEMO_DIR", tmp_path / "phone-demo")
+
+    sessions = export.export_groups(export.patient_folders())["sessions"]
+    assert [(s["patient"], s["simulated"], len(s["reps"])) for s in sessions] == [
+        ("vincent", False, 3),      # recorded on the device
+        ("vincent", True, 3),       # demo mode
+    ]
+    assert sessions[0]["id"].startswith("20261121_100000")
+    real_only = export.export_groups(export.patient_folders(include_fake=False))["sessions"]
+    assert [s["simulated"] for s in real_only] == [False]
 
 
 def test_phase_summary(session_folder):

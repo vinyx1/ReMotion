@@ -263,13 +263,15 @@ IDLE -> CALIBRATING -> WAIT_HOME -> CUED -> REACHING -> RETURNING -> WAIT_HOME .
 D,t_ms,state,trunk_deg,wrist_dps,threshold      (every sample, 100 Hz; toggle with a constant)
 R,rep,target,react_ms,reach_ms,peak_deg,bursts,compensated,phase
 S,reps,compensated_reps
+I,state,phase,threshold,practice,baseline,training,post,streaming,reps,compensated_reps   (reply to ?)
 E,message                                       (errors)
 ```
 
-Commands accepted from the laptop:
+Commands accepted from the laptop (or the phone app, over the same USB cable):
 - `T<deg>` — set threshold (e.g. `T12`)
 - `D0` / `D1` — disable / enable sample (`D`) streaming
 - `P<a>,<b>,<c>,<d>` — reps per block (PRACTICE, BASELINE, TRAINING, POST), e.g. `P3,15,30,15`
+- `G` — start a session, same as pressing START · `X` — end it now · `?` — reply with one `I` status line
 
 **Do not change this format without updating the logger and dashboard together.**
 
@@ -309,7 +311,8 @@ ReMotion/                             # repo root (GitHub: vinyx1/ReMotion)
       fake_history.py                 # a few weeks of fake sessions -> data/fake/ (for building the dashboard)
       tests/                          # pytest
     web/                              # React app: landing page at /, dashboard at /dashboard (see software/web/README.md)
-    analysis/                         # (planned) offline Python / notebooks (SPARC, validation, tuning)
+    android/                          # Android phone app (Kotlin): runs a session over USB-C instead of a laptop (see software/android/README.md)
+    analysis/                         # offline Python: validation.py (label sheets, device-vs-video agreement, threshold sweep); SPARC planned
   data/
     raw/                              # real logs, git-ignored
     sample/                           # small committed examples for the dashboard
@@ -321,7 +324,7 @@ ReMotion/                             # repo root (GitHub: vinyx1/ReMotion)
     confirmations.md                  # open questions with answer blanks
     schematic-review.md               # findings from the 2026-11-05 schematic trace
     research/                         # literature notes
-    TESTING.md                        # (to write) validation plan (section 9)
+    TESTING.md                        # runbook for the validation plan (section 9): bring-up, recording, labeling, report
     WIRING.md                         # (to write) pin map + both IMU box pinouts
   README.md                           # setup, library install, flash, run logger, run dashboard
   requirements.txt                    # Python dependencies (pip install -r requirements.txt in a .venv)
