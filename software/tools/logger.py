@@ -29,7 +29,7 @@ from pathlib import Path
 
 from software.tools.protocol import (
     Comment, DeviceError, PHASES, Rep, Sample, SessionEnd, Status,
-    REP_COLUMNS, SAMPLE_COLUMNS, START, parse_line, plan_command, threshold_command,
+    REP_COLUMNS, SAMPLE_COLUMNS, START, STOP, parse_line, plan_command, threshold_command,
 )
 
 BAUD = 115200
@@ -59,6 +59,11 @@ def serial_lines(port, threshold=None, plan=None, start=False):
 
     with serial.Serial(port, BAUD, timeout=1) as conn:
         time.sleep(2)                          # opening the port may reset the board
+        if start:
+            # A session left running (an earlier run, or START pressed) would refuse T, P and G:
+            # end it first and drop its S line, so this run starts clean.
+            conn.write((STOP + "\n").encode())
+            time.sleep(0.5)
         conn.reset_input_buffer()              # drop a half-received first line
         if threshold is not None:
             conn.write((threshold_command(threshold) + "\n").encode())
