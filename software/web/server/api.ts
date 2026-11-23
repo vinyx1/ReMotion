@@ -10,6 +10,7 @@
     GET  /api/sessions                the account's sessions.json
     POST /api/patients                { name } -> a new patient
     POST /api/patients/<id>/pair      a code (and the link in the phone's QR code) for that patient
+    POST /api/patients/<id>/delete    delete that patient (server/accounts.ts, deletePatient)
     POST /api/summary                 a Claude summary (server/summary.ts)
     POST /api/phone/lines             lines from the phone app (server/phone.ts)
 
@@ -20,8 +21,8 @@ import { readFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import {
-  type Account, accountFor, addPatient, createDemo, deleteDemo, ownerAccount, pairCode, patients,
-  sessionsFile, signIn, signOut,
+  type Account, accountFor, addPatient, createDemo, deleteDemo, deletePatient, hiddenPatients, ownerAccount, pairCode,
+  patients, sessionsFile, signIn, signOut,
 } from './accounts.ts'
 import { clearSessionCookie, cookie, COOKIE, HttpError, origin, readJson, send, setSessionCookie } from './http.ts'
 import { phoneLines } from './phone.ts'
@@ -91,6 +92,13 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     const a = await signedIn(req)
     let text: string
     try { text = await readFile(sessionsFile(a), 'utf8') } catch { text = JSON.stringify({ generated: '', sessions: [] }) }
+    // patients deleted from this account whose sessions live in shared files stay out of sight
+    const hidden = await hiddenPatients(a)
+    if (hidden.length) {
+      const data = JSON.parse(text) as { sessions: { patient?: string }[] }
+      data.sessions = data.sessions.filter((s) => !hidden.includes(s.patient ?? ''))
+      text = JSON.stringify(data)
+    }
     res.statusCode = 200
     res.setHeader('Content-Type', 'application/json')
     res.setHeader('Cache-Control', 'no-store')
@@ -113,6 +121,13 @@ async function route(req: IncomingMessage, res: ServerResponse) {
     } catch (e) {
       throw new HttpError(404, (e as Error).message)
     }
+  }
+
+  const del = /^\/api\/patients\/([a-z0-9-]{1,32})\/delete$/.exec(path)
+  if (del && post) {
+    const a = await signedIn(req)
+    try { await deletePatient(a, del[1]) } catch (e) { throw new HttpError(404, (e as Error).message) }
+    return send(res, 200, await me(a))
   }
 
   if (path === '/api/summary') return summarize(req, res, await signedIn(req))

@@ -18,7 +18,7 @@ import { RepDetail } from './components/RepDetail'
 import { SessionDetail, SessionPlates, SessionTable } from './components/Sessions'
 import { type Crumb, Shell } from './components/Shell'
 import { EXERCISES, exerciseOf } from './lib/exercises'
-import { patientsFrom, sessionsOf } from './lib/patients'
+import { type Patient, patientsFrom, sessionsOf } from './lib/patients'
 import { go, href, type Route, useRoute } from './lib/route'
 import { trendOf } from './lib/stats'
 import type { ExerciseId, SessionsFile } from './types'
@@ -33,7 +33,7 @@ type Load = { status: 'loading' } | { status: 'error'; message: string } | { sta
 */
 const POLL_MS = 5000
 
-function useSessions(onSignedOut: () => void): Load {
+function useSessions(onSignedOut: () => void, version: number): Load {
   const [state, setState] = useState<Load>({ status: 'loading' })
   useEffect(() => {
     let alive = true
@@ -53,7 +53,7 @@ function useSessions(onSignedOut: () => void): Load {
     void read(true)
     const timer = setInterval(() => { if (document.visibilityState === 'visible') void read(false) }, POLL_MS)
     return () => { alive = false; clearInterval(timer) }
-  }, [onSignedOut])
+  }, [onSignedOut, version])          // a new version (a patient deleted) reads straight away
   return state
 }
 
@@ -64,6 +64,7 @@ const DEMO_OVER = 'Your demo hour is up. Request a new login to try again.'
 /** Who's signed in decides what shows: the sign-in page, or the dashboard of their account. */
 export default function App() {
   const [auth, setAuth] = useState<Auth>({ status: 'checking' })
+  const [version, setVersion] = useState(0)          // bumped after a change, so the sessions are read again now
   useEffect(() => {
     getMe().then((me) => setAuth({ status: 'in', me }))
       .catch((e) => setAuth(e instanceof ApiError && e.status === 401 ? { status: 'out' } : { status: 'error', message: e.message }))
@@ -81,7 +82,7 @@ export default function App() {
 
   const account = useMemo<AccountApi | null>(() => me && ({
     me,
-    refresh: async () => { const fresh = await getMe(); setAuth({ status: 'in', me: fresh }) },
+    refresh: async () => { const fresh = await getMe(); setAuth({ status: 'in', me: fresh }); setVersion((v) => v + 1) },
     signOut: () => { void signOut().finally(() => { location.hash = ''; setAuth({ status: 'out' }) }) },
     endDemo: () => { void endDemo().finally(() => { location.hash = ''; setAuth({ status: 'out', note: 'The demo was ended and deleted.' }) }) },
   }), [me])
@@ -93,7 +94,7 @@ export default function App() {
   if (auth.status === 'out' || !account) return <SignIn note={auth.status === 'out' ? auth.note : undefined} onSignedIn={(m) => setAuth({ status: 'in', me: m })} />
   return (
     <AccountContext.Provider value={account}>
-      <Dashboard me={account.me} onSignedOut={ended} />
+      <Dashboard me={account.me} onSignedOut={ended} version={version} />
     </AccountContext.Provider>
   )
 }
@@ -113,9 +114,9 @@ function Message({ title, children }: { title: string; children: React.ReactNode
 }
 
 
-function Dashboard({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
+function Dashboard({ me, onSignedOut, version }: { me: Me; onSignedOut: () => void; version: number }) {
   useEffect(() => { document.title = 'Re:Motion dashboard' }, [])
-  const load = useSessions(onSignedOut)
+  const load = useSessions(onSignedOut, version)
   const all = load.status === 'ready' ? load.data.sessions : []
   const patients = patientsFrom(all, me.patients)
   const route = useRoute(patients[0]?.id ?? '')
@@ -132,11 +133,11 @@ function Dashboard({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
   }
 
   const patient = patients.find((p) => route.name !== 'patients' && p.id === route.pid) ?? patients[0]
-  const pid = patient.id
-  const sessionsFor = (p: typeof patient) => sessionsOf(p, all)
+  const sessionsFor = (p: Patient) => sessionsOf(p, all)
   const crumbs: Crumb[] = [{ label: 'Patients', to: { name: 'patients' } }]
 
-  if (route.name === 'patients') {
+  // the patients page, and the only page there is while an account has no patients
+  if (route.name === 'patients' || !patient) {
     return (
       <Shell route={route} patients={patients} patient={patient} crumbs={crumbs} sessionsFor={sessionsFor}
         header={<PatientsHeader count={patients.length} />}>
@@ -145,6 +146,7 @@ function Dashboard({ me, onSignedOut }: { me: Me; onSignedOut: () => void }) {
     )
   }
 
+  const pid = patient.id
   crumbs.push({ label: patient.name, to: { name: 'overview', pid } })
   const openSession = (sid: string) => go({ name: 'session', pid, sid })
   const openRep = (sid: string, rep: number) => go({ name: 'rep', pid, sid, rep })

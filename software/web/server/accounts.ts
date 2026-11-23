@@ -20,7 +20,7 @@
 */
 import { createHash, randomBytes, randomInt, scryptSync, timingSafeEqual } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { cp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { python, REPO } from './python.ts'
 
@@ -75,6 +75,10 @@ export const accountDir = (a: Account) => join(STATE, 'accounts', a.id)
 export const dataDir = (a: Account) => (a.kind === 'owner' ? OWNER_DATA : join(accountDir(a), 'data'))
 export const sessionsFile = (a: Account) => join(accountDir(a), 'sessions.json')
 const patientsFile = (a: Account) => join(accountDir(a), 'patients.json')
+/** Patients deleted from the account whose sessions are in shared files (the committed sample, data/raw): hidden, not removed. */
+const hiddenFile = (a: Account) => join(accountDir(a), 'hidden.json')
+
+export const hiddenPatients = (a: Account) => readJsonFile<string[]>(hiddenFile(a), [])
 
 // ---------------------------------------------------------------- passwords
 
@@ -260,11 +264,48 @@ export async function addPatient(a: Account, name: string): Promise<PatientEntry
   const list = await patients(a)
   if (list.length >= 50) throw new Error('This account already has 50 patients.')
   const base = clean.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24) || 'patient'
+  const hidden = await hiddenPatients(a)
   let id = base
-  for (let n = 2; list.some((p) => p.id === id) || id === 'recorded'; n++) id = `${base}-${n}`
+  for (let n = 2; list.some((p) => p.id === id) || hidden.includes(id) || id === 'recorded'; n++) id = `${base}-${n}`
   const entry = { id, name: clean }
   await writeJsonFile(patientsFile(a), [...list, entry])
   return entry
+}
+
+/**
+  Delete a patient from the account. Their sessions that only this account holds (phone/,
+  phone-demo/, fake/ in its data folder, and the phone's raw lines) are moved to
+  <account>/deleted/<id>-<time>/, out of the dashboard but recoverable on the server; a demo's
+  go with the demo anyway. Sessions in shared files (the committed sample, data/raw) can't be
+  removed for one account, so the patient is hidden instead. The sessions are exported again
+  before this returns, so the dashboard never shows the patient again.
+*/
+export async function deletePatient(a: Account, patientId: string): Promise<void> {
+  const list = await patients(a)
+  const hidden = await hiddenPatients(a)
+  if (!list.some((p) => p.id === patientId) && !hidden.includes(patientId)) {
+    // a patient with sessions but no listed name can be deleted too
+    const known = JSON.parse(await readFile(sessionsFile(a), 'utf8').catch(() => '{"sessions":[]}')) as { sessions: { patient?: string }[] }
+    if (!known.sessions.some((s) => s.patient === patientId)) throw new Error('No such patient.')
+  }
+  await writeJsonFile(patientsFile(a), list.filter((p) => p.id !== patientId))
+
+  const trash = join(accountDir(a), 'deleted', `${patientId}-${new Date().toISOString().replace(/[:.]/g, '-')}`)
+  const moves: [string, string][] = ['fake', 'phone', 'phone-demo'].map((root) => [join(dataDir(a), root, patientId), join(trash, root)])
+  const incoming = join(accountDir(a), 'incoming')
+  for (const kind of await readdir(incoming).catch(() => [] as string[])) moves.push([join(incoming, kind, patientId), join(trash, 'incoming', kind)])
+  for (const [from, to] of moves) {
+    if (!existsSync(from)) continue
+    await mkdir(join(to, '..'), { recursive: true })
+    await rename(from, to)
+  }
+  await exportSessions(a)
+
+  // anything still left is in shared files: hide it from this account
+  const after = JSON.parse(await readFile(sessionsFile(a), 'utf8').catch(() => '{"sessions":[]}')) as { sessions: { patient?: string }[] }
+  if (after.sessions.some((s) => s.patient === patientId) && !hidden.includes(patientId)) {
+    await writeJsonFile(hiddenFile(a), [...hidden, patientId])
+  }
 }
 
 // ---------------------------------------------------------------- the phone's QR code
