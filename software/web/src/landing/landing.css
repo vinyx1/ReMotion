@@ -272,19 +272,45 @@ html.lp-root {
 
 .lp-evidence { background: var(--color-forest); color: var(--color-plaster); }
 .lp-evidence .lp-h2 { color: var(--color-plaster); }
-.lp-evidence p { color: var(--color-wall); }
+/* body text on forest: a near-plaster tint (about 12:1), never the wall grey for reading text */
+.lp-evidence p { color: #dfe5e0; }
 .lp-measure { max-width: 58ch; }
+.lp-lede { font-size: 1.2rem; line-height: 1.6; text-wrap: pretty; }
+.lp-evidence a:not(.lp-source) { color: var(--color-plaster); text-decoration-line: underline; text-decoration-thickness: from-font;
+  text-underline-offset: 0.18em; text-decoration-color: rgb(238 240 236 / 0.45); transition: text-decoration-color 150ms ease; }
+.lp-evidence a:not(.lp-source):hover { text-decoration-color: var(--color-plaster); }
 .lp-studies {
-  list-style: none; padding: 0; margin: 3rem 0 0;
+  list-style: none; padding: 0; margin: 3.5rem 0 0;
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 clamp(24px, 3vw, 48px);
 }
-.lp-studies li { border-top: 1px solid rgb(201 211 203 / 0.35); padding-top: 1.4rem; }
-.lp-studies h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.4rem; margin: 0 0 0.6rem; color: var(--color-plaster); }
-.lp-studies p { font-size: 1.05rem !important; margin: 0 0 0.9rem !important; }
-.lp-studies .lp-caveat { font-size: 0.95rem !important; color: #b7c4ba !important; }
-.lp-studies a { font-size: 0.95rem; color: var(--color-plaster); }
-.lp-studies a.lp-id { font-family: var(--font-readout); font-size: 0.9rem; }
-@media (max-width: 900px) { .lp-studies { grid-template-columns: 1fr; gap: 2rem; } }
+.lp-studies li { display: flex; flex-direction: column; border-top: 1px solid rgb(201 211 203 / 0.3); padding-top: 1.5rem; }
+.lp-studies h3 { font-family: var(--font-text); font-weight: 700; font-size: 1rem; letter-spacing: 0; margin: 0; color: #c9d3cb; }
+/* the headline figure: large, in the display face, so the three studies compare at a glance */
+.lp-studies .lp-figure { margin: 0.5rem 0 1rem !important; font-size: 1rem !important; line-height: 1.4; color: #c9d3cb !important; text-wrap: balance; }
+.lp-figure span { display: block; font-family: var(--font-display); font-weight: 500; font-size: clamp(2.6rem, 4vw, 3.4rem);
+  line-height: 1.05; letter-spacing: -0.02em; color: var(--color-plaster); }
+.lp-studies p { font-size: 1.0625rem !important; line-height: 1.6; margin: 0 0 1rem !important; max-width: 40ch; text-wrap: pretty; }
+.lp-studies .lp-caveat { font-size: 1rem !important; color: #c9d3cb !important; }
+.lp-caveat strong { display: block; margin-bottom: 0.2rem; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: #a8b8ad; }
+/* the source card: opens the paper. Pinned to the bottom so the three line up */
+.lp-source {
+  margin-top: auto; display: flex; flex-direction: column; gap: 6px; padding: 14px 16px;
+  border: 1px solid rgb(201 211 203 / 0.28); border-radius: 12px; background: rgb(238 240 236 / 0.04);
+  color: var(--color-plaster); text-decoration: none;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.lp-source:hover { border-color: rgb(201 211 203 / 0.6); background: rgb(238 240 236 / 0.08); }
+.lp-source:focus-visible { outline: 3px solid var(--color-eucalyptus); outline-offset: 3px; }
+.lp-source-kind { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #a8b8ad; }
+.lp-source-kind svg { width: 16px; height: 16px; flex: none; color: var(--color-plaster); transition: transform 150ms ease; }
+@media (hover: hover) and (pointer: fine) { .lp-source:hover .lp-source-kind svg { transform: translate(2px, -2px); } }
+.lp-source-title { font-size: 0.9375rem; line-height: 1.4; min-height: 4.2em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.lp-source-meta { display: flex; flex-direction: column; gap: 2px; font-family: var(--font-readout); font-size: 0.8125rem; color: #c9d3cb; overflow-wrap: anywhere; }
+.lp-source-meta > span { font-family: var(--font-text); font-weight: 700; color: var(--color-plaster); }
+@media (max-width: 900px) { .lp-studies { grid-template-columns: 1fr; gap: 2.5rem; } .lp-source { margin-top: 0.5rem; } }
+@media (prefers-reduced-motion: reduce) { .lp-source-kind svg { transition: none; } }
 .lp-ours {
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px 48px;
   margin-top: clamp(56px, 8vh, 96px); padding: 2rem 0;

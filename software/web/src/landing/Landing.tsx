@@ -11,7 +11,7 @@ import '@fontsource-variable/atkinson-hyperlegible-next'
 import '@fontsource-variable/atkinson-hyperlegible-mono'
 import './landing.css'
 
-import { ArrowDown, ArrowRight } from 'lucide-react'
+import { ArrowDown, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { SessionsFile, Target } from '../types'
 import { FallbackFigure } from './FallbackFigure'
@@ -511,28 +511,47 @@ function Progress() {
   )
 }
 
+/*
+  The studies behind the claim, from docs/research/stroke-compensations.md (titles, venues and
+  links exactly as there). Each card leads with its headline figure, then what was done, the
+  limits, and a small source card that opens the paper itself.
+*/
 const STUDIES = [
   {
     who: 'Gabler et al., 2026',
-    what: 'Two motion sensors, on the wrist and the trunk, detected compensatory trunk movement in real time (ROC-AUC above 0.93).',
-    caveat: 'Preprint, not peer reviewed. 10 able-bodied people simulating impairment, plus 4 with neurological conditions, where accuracy was lower. Uses machine learning; we use a readable threshold.',
+    figure: '0.93+',
+    measure: 'ROC-AUC, telling compensated reaches from clean ones',
+    what: 'Two motion sensors, on the wrist and the trunk, detected compensatory trunk movement in real time.',
+    caveat: 'Preprint, not peer reviewed. 10 able-bodied people simulating impairment, plus 4 with neurological conditions, where it did worse. Uses machine learning; we use a threshold anyone can read.',
+    title: 'Machine Learning-Based Real-Time Detection of Compensatory Trunk Movements Using Trunk-Wrist Inertial Measurement Units',
+    kind: 'Preprint',
+    venue: 'arXiv',
+    id: 'arXiv:2604.12591',
     href: 'https://arxiv.org/abs/2604.12591',
-    src: 'arXiv:2604.12591',
-    id: true,
   },
   {
     who: 'Ranganathan et al., 2017',
-    what: 'A two-sensor wearable told compensatory from normal reaching with about 90% accuracy, checked against motion capture.',
-    caveat: '19 healthy adults, with compensation induced by an elbow brace.',
+    figure: '~90%',
+    measure: 'accuracy, checked against motion capture',
+    what: 'A two-sensor wearable told compensatory reaching from normal reaching.',
+    caveat: '19 healthy adults, with compensation caused by locking an elbow brace, not stroke.',
+    title: 'Identifying compensatory movement patterns in the upper extremity using a wearable sensor system',
+    kind: 'Journal article',
+    venue: 'Physiological Measurement',
+    id: 'DOI 10.1088/1361-6579/aa9835',
     href: 'https://doi.org/10.1088/1361-6579/aa9835',
-    src: 'Physiological Measurement',
   },
   {
     who: 'Seo et al., 2024',
-    what: 'A wrist sensor monitored the quality of 19 stroke survivors’ practice at home, agreeing with therapist video labels 92% of the time.',
-    caveat: 'One wrist sensor and a different method; it shows home monitoring is workable.',
+    figure: '92%',
+    measure: 'agreement with therapists’ video labels',
+    what: 'A wrist sensor monitored the quality of 19 stroke survivors’ practice at home.',
+    caveat: 'One wrist sensor and a different method. It shows home monitoring is workable.',
+    title: 'Wearable Sensor to Monitor Quality of Upper Limb Task Practice for Stroke Survivors at Home',
+    kind: 'Journal article',
+    venue: 'Sensors',
+    id: 'DOI 10.3390/s24020554',
     href: 'https://doi.org/10.3390/s24020554',
-    src: 'Sensors',
   },
 ]
 
@@ -541,17 +560,24 @@ function Evidence() {
     <section id="evidence" className="lp-section lp-evidence" aria-labelledby="evidence-h">
       <div className="lp-wrap">
         <h2 id="evidence-h" className="lp-h2">What the research says is possible.</h2>
-        <p className="lp-measure">
-          After a stroke, leaning the trunk to make up for a weaker arm is well documented (Cirstea &amp; Levin, 2000).
+        <p className="lp-measure lp-lede">
+          After a stroke, leaning the trunk to make up for a weaker arm is well documented
+          (<a href="https://doi.org/10.1093/brain/123.5.940" target="_blank" rel="noreferrer">Cirstea &amp; Levin, 2000</a>).
           Wearable sensors have already been shown to catch it.
         </p>
         <ol className="lp-studies">
           {STUDIES.map((s) => (
             <li key={s.who}>
               <h3>{s.who}</h3>
+              <p className="lp-figure"><span>{s.figure}</span> {s.measure}</p>
               <p>{s.what}</p>
-              <p className="lp-caveat">{s.caveat}</p>
-              <a href={s.href} target="_blank" rel="noreferrer" className={'id' in s ? 'lp-id' : undefined}>{s.src}</a>
+              <p className="lp-caveat"><strong>Limits</strong> {s.caveat}</p>
+              <a className="lp-source" href={s.href} target="_blank" rel="noreferrer">
+                <span className="lp-source-kind">{s.kind}<ArrowUpRight aria-hidden /></span>
+                <span className="lp-source-title">{s.title}</span>
+                <span className="lp-source-meta"><span>{s.venue}</span><bdi>{s.id}</bdi></span>
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
             </li>
           ))}
         </ol>
