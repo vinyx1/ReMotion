@@ -77,17 +77,24 @@ The patient overview and the replays above use simulated data, made to build and
 ## How it fits together
 
 ```mermaid
-flowchart LR
-    S1[Chest sensor] --> A
-    S2[Wrist sensor] --> A
-    B[Mat buttons] --> A
-    A[Arduino<br/>reach_tracker.ino] --> Z[Buzzer and<br/>button lights]
-    A -- "USB serial, text lines" --> P[Phone app]
-    A -. "or USB to a laptop" .-> L[Python logger]
-    P -- "Wi-Fi, every line" --> W[Dashboard server<br/>Node]
-    L --> D[(CSV files)]
-    W --> D
-    D --> E[Python export] --> J[sessions.json] --> UI[Dashboard<br/>React]
+flowchart TB
+    subgraph DEV["On the table"]
+        direction LR
+        S1[Chest sensor] --> A
+        S2[Wrist sensor] --> A
+        B[Mat buttons] --> A
+        A[Arduino<br/>reach_tracker.ino] --> Z[Buzzer and<br/>button lights]
+    end
+    A <-- "USB serial: text lines out,<br/>commands in" --> P[Phone app]
+    A <-. "or USB to a laptop" .-> L[Python logger]
+    subgraph SRV["Dashboard server (Node)"]
+        direction LR
+        R[Raw lines] --> PL[Python logger] --> C[(CSV files)] --> E[Python export] --> J[sessions.json]
+    end
+    P -- "Wi-Fi, every line" --> R
+    L --> C
+    J -- "/api/sessions, every 5 s" --> UI[Dashboard in the browser<br/>React]
+    UI <-- "Generate summary,<br/>through the server" --> CL[Claude]
 ```
 
 - **The Arduino decides.** It reads both sensors 100 times a second, runs the session, judges
@@ -97,9 +104,12 @@ flowchart LR
   status line (`I`), and live samples (`D`) for the replay. The phone and the laptop logger read
   the same lines and can send a few one-letter commands back (start, stop, plan, lean limit). The
   format is in [`docs/PROTOCOL.md`](docs/PROTOCOL.md).
-- **The dashboard reads files.** The phone's lines become CSV files on the server, a Python
-  export turns them into one `sessions.json` per account, and the React app draws from that.
-  Overview summaries are written by Claude from the same numbers.
+- **The dashboard reads files.** The server saves the phone's lines as they arrive, runs the
+  same Python logger the laptop uses to turn them into CSV files, then a Python export gathers
+  every session into one `sessions.json` per account. The dashboard fetches it every 5 seconds,
+  so a new reach shows up within a few seconds. A laptop recording joins the same CSV files.
+- **Summaries come from Claude.** "Generate summary" sends a patient's numbers to Claude through
+  the server, and the short written overview comes back.
 
 ### Hardware
 
