@@ -41,9 +41,9 @@ gh issue create --label found-by-agent --label <area> \
 | Area | Paths | Owner |
 |---|---|---|
 | Hardware / firmware | `hardware/`, `firmware/` | Yousuf-Hamoda |
-| Signal processing | `software/tools/`, `software/analysis/` | Yousuf-Hamoda or prestonbaichoo3 (to confirm) |
+| Signal processing | `software/tools/`, `software/analysis/` | prestonbaichoo3 |
 | Dashboard / storage | `software/dashboard/`, `software/web/` | vinyx1 |
-| Mounting / testing | `docs/TESTING.md`, `data/sample/` | _unassigned_ |
+| Mounting / testing | `docs/TESTING.md`, `data/sample/` | Ali-Hadi123 |
 
 Shared by everyone, change with care: this file, `docs/PROTOCOL.md`, `docs/STATUS.md`, `requirements.txt`, `README.md`.
 
