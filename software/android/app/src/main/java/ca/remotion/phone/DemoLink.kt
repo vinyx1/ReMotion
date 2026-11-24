@@ -35,7 +35,7 @@ class DemoLink(
 
     private var streaming = true
     private var threshold = 10.0f
-    private var plan = listOf(3, 15, 30, 15)
+    private var plan = Protocol.SESSION_PLAN
     private var state = "IDLE"
     private var block = -1                    // index into PHASES; -1 before the first block
     private var blockReps = 0

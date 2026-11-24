@@ -138,7 +138,7 @@ const float RAD_TO_DEGREES = 57.29578;
 // =====================================================================
 enum Phase { PRACTICE, BASELINE, TRAINING, POST, NUM_PHASES };
 const char* PHASE_NAMES[NUM_PHASES] = { "PRACTICE", "BASELINE", "TRAINING", "POST" };
-uint8_t phaseReps[NUM_PHASES]       = { 3, 15, 30, 15 };        // change with P<a>,<b>,<c>,<d>
+uint8_t phaseReps[NUM_PHASES]       = { 0, 3, 10, 3 };          // 3 without, 10 with the buzzer, 3 without; change with P<a>,<b>,<c>,<d>
 const bool PHASE_BUZZER[NUM_PHASES] = { false, false, true, false };  // lean alarm on?
 const bool PHASE_REST_FIRST[NUM_PHASES] = { false, false, true, true }; // REST_MS pause before it
 const uint8_t MAX_PHASE_REPS = 60;

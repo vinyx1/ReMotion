@@ -106,6 +106,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun chooseExercise(e: Exercise) {
         _exercise.value = e
         prefs.edit().putString(KEY_EXERCISE, e.id).apply()
+        usePatientPlan()
     }
     private val _hello = MutableStateFlow<String?>(null)
     /** Set right after a sign-in: the first name the "Hello" screen greets, until it's done. */
@@ -250,6 +251,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         link = l
+        checkPlan = true                       // the first I line says whether the plan needs setting
         send(Protocol.STATUS)                  // find out what the device is doing right now
     }
 
@@ -272,6 +274,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 withContext(Dispatchers.Main) { if (link === l) disconnect("Couldn't send to the device (${e.message}).") }
             }
         }
+    }
+
+    @Volatile private var checkPlan = false
+
+    /** Put the patient's plan (Protocol.SESSION_PLAN) on the device, if it has another one. Only between sessions. */
+    fun usePatientPlan() {
+        val s = _ui.value
+        if (link != null && !s.sessionRunning && s.plan != Protocol.SESSION_PLAN) setPlan(Protocol.SESSION_PLAN)
     }
 
     /** Reaches per block, sent to the device (only between sessions). */
@@ -302,6 +312,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         uploader?.add(line)
         val msg = Protocol.parse(line)
         if (msg is SessionEnd) endOfSession()
+        if (msg is Status && checkPlan) {                    // just connected: a demo may have left its plan
+            checkPlan = false
+            if (msg.state in Protocol.IDLE_STATES && msg.plan != Protocol.SESSION_PLAN) {
+                setPlan(Protocol.SESSION_PLAN)
+                send(Protocol.STATUS)
+            }
+        }
         _ui.update { s ->
             val next = when (msg) {
                 // 100 samples a second: the state only changes (and the screen only redraws) when
@@ -310,7 +327,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 is Rep -> s.copy(reps = msg.rep, phase = msg.phase,
                     leaned = (if (msg.rep == 1) 0 else s.leaned) + if (msg.compensated) 1 else 0,
                     blockDone = s.blockDone + 1, blockUpright = s.blockUpright + if (msg.compensated) 0 else 1,
-                    lastRep = msg, sessionReps = s.sessionReps + msg, leaning = false)
+                    lastRep = msg, sessionReps = s.sessionReps + msg,
+                    leaning = s.leaning || msg.compensated)            // the device's verdict keeps the warning up
                 is SessionEnd -> s.copy(reps = msg.reps, leaned = msg.compensatedReps, phase = "", target = "",
                     blockSize = 0, blockDone = 0, blockUpright = 0, lastRep = null, sessionReps = emptyList(),
                     restEndsAt = 0, leaning = false)
@@ -347,13 +365,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /**
       The firmware's rule, for the screen: past the limit for at least 200 ms while reaching.
-      Once a reach counts as leaning it stays so until the reach ends: the lean itself often
-      lasts under a second, too short to read "Sit back" from across the table.
+      Once a reach counts as leaning, the warning stays up until the next reach is cued: through
+      the press, the return and the wait at HOME. (It used to clear the moment the reach ended,
+      so straightening up, or pressing the button, took the message away before it could be read.)
     */
     private fun leaning(sample: Sample, s: UiState): Boolean {
-        if (sample.state != "REACHING") {
-            overSinceMs = -1
-            return false
+        when (sample.state) {
+            "REACHING" -> {}
+            "RETURNING", "WAIT_HOME" -> { overSinceMs = -1; return s.leaning }
+            else -> { overSinceMs = -1; return false }          // CUED: a new reach starts clean; REST, ...
         }
         if (s.leaning) return true
         if (sample.trunkDeg <= sample.threshold) {

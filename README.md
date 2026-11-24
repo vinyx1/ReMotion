@@ -71,7 +71,7 @@ Step-by-step guide for running a session: [`docs/MANUAL.md`](docs/MANUAL.md).
 **Arduino**
 1. Install the Arduino IDE, the **Arduino UNO R4 Boards** package, and the **Adafruit MPU6050** library.
 2. Open `firmware/reach_tracker/reach_tracker.ino` and upload it to the board.
-3. Press the yellow START button. The whole session then runs by itself (about 7 minutes): calibration, 3 practice reps, 15 baseline reps without the buzzer, 30 training reps with it, and 15 more without it to see whether the change held. 3 beeps mean it's done.
+3. Press the yellow START button. The whole session then runs by itself (about 2 minutes): calibration, 3 reps without the buzzer, 10 with it, a 30 s rest, and 3 more without it to see whether the change held. The same for every exercise. 3 beeps mean it's done.
 
 **Laptop: record a session**
 ```bash

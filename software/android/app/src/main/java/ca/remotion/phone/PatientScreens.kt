@@ -252,10 +252,11 @@ private fun ColumnScope.SessionCoach(s: UiState, warm: Boolean) {
     AnimatedContent(say(s, warm, LocalExercise.current), transitionSpec = { swap() }, contentKey = { it.headline }, label = "instruction") { said ->
         Column {
             if (said.warning) {
+                val short = LocalConfiguration.current.screenHeightDp < 400
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    ResultIcon(upright = false, size = 44.dp)
-                    Spacer(Modifier.width(14.dp))
-                    Text(said.headline, style = CoachStyle, color = Forest, maxLines = 2,
+                    WarningMark(if (short) 72.dp else 104.dp)
+                    Spacer(Modifier.width(if (short) 18.dp else 24.dp))
+                    Text(said.headline, style = CoachStyle, color = TerraDeep, maxLines = 2,
                         modifier = Modifier.semantics { heading(); liveRegion = LiveRegionMode.Assertive })
                 }
                 Text(said.sub!!, style = CoachSubStyle, color = Forest, modifier = Modifier.padding(top = 12.dp))
@@ -538,6 +539,21 @@ fun PrimaryButton(label: String, onClick: () -> Unit, modifier: Modifier = Modif
         contentPadding = PaddingValues(horizontal = 28.dp, vertical = 12.dp),
         modifier = modifier.heightIn(min = 56.dp),
     ) { Text(label, style = LabelStyle.copy(fontSize = 19.sp, lineHeight = 26.sp)) }
+}
+
+/**
+  The leaning warning: a big filled terracotta disc with an exclamation mark, readable from
+  across the table. Terracotta is kept for leaning, so this is the loudest thing on screen.
+*/
+@Composable
+private fun WarningMark(size: Dp) {
+    Canvas(Modifier.size(size).semantics { contentDescription = "Warning: leaning" }) {
+        val w = this.size.minDimension
+        drawCircle(Terra)
+        val stroke = w * 0.13f
+        drawLine(Plaster, Offset(w / 2, w * 0.24f), Offset(w / 2, w * 0.56f), strokeWidth = stroke, cap = StrokeCap.Round)
+        drawCircle(Plaster, radius = stroke * 0.62f, center = Offset(w / 2, w * 0.76f))
+    }
 }
 
 /** A circle with a tick (upright) or a cross (leaned): never colour alone. */

@@ -88,7 +88,7 @@ private fun App(s: UiState, past: List<PastSession>, finished: PastSession?, log
                 // the demo runs on its own screen; only Back leaves it
                 DemoScreen(s, login, exercise, finished,
                     onStart = vm::runDemo, onRetry = { vm.send(Protocol.START) }, onEnd = { vm.send(Protocol.STOP) },
-                    onDismissFinished = vm::dismissFinished, onAddReach = vm::addDemoRep, onDemoDevice = vm::startDemo, onBack = { setDemo(false) })
+                    onDismissFinished = vm::dismissFinished, onAddReach = vm::addDemoRep, onDemoDevice = vm::startDemo, onBack = { vm.usePatientPlan(); setDemo(false) })
             } else if (shown == 2) {
                 SettingsScreen(s, login, vm, onClose = { setSettings(false) }, onDemo = { setDemo(true) })
             } else if (shown == 3) {
@@ -170,8 +170,8 @@ private fun SettingsScreen(s: UiState, login: Login?, vm: MainViewModel, onClose
 
             Section("Session length")
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = { vm.setPlan(listOf(3, 15, 30, 15)) }, enabled = s.connected != null && !s.sessionRunning) {
-                    Text("Full: 3 · 15 · 30 · 15")
+                OutlinedButton(onClick = { vm.setPlan(Protocol.SESSION_PLAN) }, enabled = s.connected != null && !s.sessionRunning) {
+                    Text("Session: 3 · 10 · 3")
                 }
                 OutlinedButton(onClick = { vm.setPlan(listOf(0, 0, 5, 0)) }, enabled = s.connected != null && !s.sessionRunning) {
                     Text("Short: 5 reaches")

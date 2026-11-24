@@ -48,10 +48,12 @@ One press of START runs the whole session: calibration, then the blocks below, b
 
 | Block | Default reps | Buzzer | Purpose |
 |---|---|---|---|
-| `PRACTICE` | 3 | off | Learn the task; left out of the results |
-| `BASELINE` | 15 | off | How much the patient compensates on their own |
-| `TRAINING` | 30 | on while leaning | Feedback to stay upright |
-| `POST` | 15 | off | Whether the change holds without the buzzer |
+| `PRACTICE` | 0 | off | Learn the task; left out of the results (skipped by default) |
+| `BASELINE` | 3 | off | How much the patient compensates on their own |
+| `TRAINING` | 10 | on while leaning | Feedback to stay upright |
+| `POST` | 3 | off | Whether the change holds without the buzzer |
+
+The default is 3 / 10 / 3 for every exercise (`P0,3,10,3`); the phone app also sets it on the device when it connects. With these sizes there is no rest before TRAINING (BASELINE has fewer than 10 reps) and a 30 s rest before POST.
 
 BASELINE vs POST (percent compensated, median peak lean) is the session's result. `P` changes the block sizes; a block with 0 reps is skipped.
 

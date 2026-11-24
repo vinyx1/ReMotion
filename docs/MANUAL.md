@@ -56,7 +56,7 @@ In a terminal at the repo root:
 
 ```bash
 source .venv/bin/activate
-python -m software.tools.logger                    # full session (about 7 min)
+python -m software.tools.logger                    # full session (about 2 min)
 python -m software.tools.logger --plan 0,0,5,0     # quick demo: 5 reps, buzzer on
 python -m software.tools.logger --threshold 12     # optional: a 12° lean limit instead of 10°
 ```
@@ -74,12 +74,10 @@ Leave it running. It finds the Arduino by itself (or pass `--port /dev/ttyACM0`)
 
    | Block | Reps | Buzzer | Purpose |
    |---|---|---|---|
-   | PRACTICE | 3 | off | Learn the task (not scored) |
-   | BASELINE | 15 | off | How much they lean on their own |
+   | BASELINE | 3 | off | How much they lean on their own |
+   | TRAINING | 10 | **on** | The buzzer sounds while they lean past the limit |
    | *rest 30 s* | | | HOME blinks slowly |
-   | TRAINING | 30 | **on** | The buzzer sounds while they lean past the limit |
-   | *rest 30 s* | | | |
-   | POST | 15 | off | Did the training stick? |
+   | POST | 3 | off | Did the training stick? |
 
 6. **3 beeps:** the session is done. Press **Ctrl+C** in the logger terminal.
 
@@ -110,7 +108,7 @@ Laptop recordings appear under the patient **"recorded"**. What to look at:
 
 ## Showing it off (short demos)
 
-No need for the full 7 minutes. Plug in the Arduino, close the Serial Monitor, and from the repo folder run:
+No need for a full session. Plug in the Arduino, close the Serial Monitor, and from the repo folder run:
 
 ```bash
 ./demo.sh

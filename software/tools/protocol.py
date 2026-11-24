@@ -27,7 +27,7 @@ TARGETS = ("GREEN", "BLUE", "RED")
 # Blocks of a session, in order (reach_tracker.ino runs them back to back after START).
 # The buzzer only sounds in TRAINING; lean is measured the same way in every block.
 PHASES = ("PRACTICE", "BASELINE", "TRAINING", "POST")
-DEFAULT_PLAN = (3, 15, 30, 15)     # reps per phase, same as the firmware
+DEFAULT_PLAN = (0, 3, 10, 3)       # reps per phase, same as the firmware (3 without, 10 with the buzzer, 3 without)
 
 
 @dataclass

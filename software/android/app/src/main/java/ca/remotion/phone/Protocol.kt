@@ -69,6 +69,14 @@ object Protocol {
     const val STREAM_ON = "D1"
     const val STREAM_OFF = "D0"
 
+    /**
+      A patient's session: reaches per block (PRACTICE, BASELINE, TRAINING, POST): 3 on their own,
+      10 with the buzzer, 3 on their own again, for every exercise. The app sets it on the device
+      when it connects, when an exercise is chosen and when Demo mode is left, so the yellow
+      button always runs this (a demo leaves its own plan on the device).
+    */
+    val SESSION_PLAN = listOf(0, 3, 10, 3)
+
     /** States in which no session is running (START / G would start one). */
     val IDLE_STATES = setOf("IDLE", "CALIB_FAILED")
 

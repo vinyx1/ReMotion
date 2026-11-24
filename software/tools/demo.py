@@ -27,8 +27,8 @@ DEMOS = {
     "2": ("Before / after", [0, 3, 5, 3],
           "3 reps without the buzzer, 5 with it, 3 without again. "
           "Lean in the first 3, stay upright after: the dashboard shows the drop."),
-    "3": ("Full session", [3, 15, 30, 15],
-          "The real thing: about 7 minutes."),
+    "3": ("Full session", [0, 3, 10, 3],
+          "The real thing: 3 without the buzzer, 10 with it, 3 without. About 2 minutes."),
 }
 
 

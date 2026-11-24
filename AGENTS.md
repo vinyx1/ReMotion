@@ -130,7 +130,7 @@ A judge straps on the chest and wrist sensors, the team measures their arm and p
 5. Patient rests the reaching hand on HOME. After HOME is held for 1 s, the next target's LED lights up (each block deals equal numbers of GREEN, BLUE and RED from a shuffled deck).
 6. Patient lifts off HOME, reaches, presses the lit target, returns to HOME. ONE hand does everything.
 7. During the reach, if trunk angle exceeds the threshold, the buzzer sounds. The buzzer is the only feedback (no result LEDs); each rep's clean/compensated label goes to the laptop in the `R` line.
-8. The session runs in blocks with no operator input (`docs/PROTOCOL.md`, Session blocks): PRACTICE 3 reps (buzzer off, not scored), BASELINE 15 (off), 30 s rest, TRAINING 30 (buzzer on), 30 s rest, POST 15 (off). Lean is judged the same in every block; only the buzzer changes. BASELINE vs POST is the result. 3 beeps when done (about 7 minutes). START ends it early.
+8. The session runs in blocks with no operator input (`docs/PROTOCOL.md`, Session blocks): BASELINE 3 reps (off), TRAINING 10 (buzzer on), 30 s rest, POST 3 (off), for every exercise (`P0,3,10,3`, the default; PRACTICE is 0, so skipped). The phone app sets this plan when it connects, when an exercise is chosen and when Demo mode is left. Lean is judged the same in every block; only the buzzer changes. BASELINE vs POST is the result. 3 beeps when done (about 2 minutes). START ends it early.
 
 Timing captured per rep:
 - **Reaction time:** cue → leaving HOME

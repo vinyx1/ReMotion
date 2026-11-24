@@ -66,8 +66,8 @@ private val DEMOS = listOf(
         "Five reaches with the buzzer off, like the first block of a real session. The device still marks every lean, it just doesn’t say so: the dashboard shows which ones."),
     DemoRun("Before and after", listOf(0, 3, 5, 3), "about 1 min",
         "Three reaches without the buzzer, five with it, three without again. Lean in the first three, stay upright after: the dashboard shows the drop."),
-    DemoRun("Full session", listOf(3, 15, 30, 15), "about 7 min",
-        "The real thing: a warm-up, 15 reaches on your own, a 30 s rest, 30 with the buzzer, another rest, 15 on your own again."),
+    DemoRun("Full session", Protocol.SESSION_PLAN, "about 2 min",
+        "The real thing, for every exercise: 3 reaches on your own, 10 with the buzzer, a 30 s rest, 3 on your own again."),
 )
 
 /** The blocks in order, and whether the buzzer is on in each (only TRAINING). */
