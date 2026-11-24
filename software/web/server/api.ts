@@ -32,7 +32,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import {
   type Account, accountFor, addPatient, claimCode, createDemo, deleteDemo, deletePatient, demoForClaim, deviceFor,
-  freshDemoPassword, hiddenPatients, pairCode, patients, sessionsFile, signIn, signOut, signOutDevice,
+  freshDemoPassword, freshSessions, hiddenPatients, pairCode, patients, sessionsFile, signIn, signOut, signOutDevice,
 } from './accounts.ts'
 import {
   addCookie, clearSessionCookie, cookie, COOKIE, DEMO_COOKIE, HttpError, origin, readJson, send, setSessionCookie,
@@ -116,6 +116,7 @@ async function route(req: IncomingMessage, res: ServerResponse) {
 
   if (path === '/api/sessions' && req.method === 'GET') {
     const a = await signedIn(req)
+    await freshSessions(a)                              // the owner's laptop recordings (data/raw) show up too
     let text: string
     try { text = await readFile(sessionsFile(a), 'utf8') } catch { text = JSON.stringify({ generated: '', sessions: [] }) }
     // patients deleted from this account whose sessions live in shared files stay out of sight

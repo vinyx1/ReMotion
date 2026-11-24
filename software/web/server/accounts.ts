@@ -22,7 +22,7 @@
 import { createHash, randomBytes, randomInt, scrypt, scryptSync, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 import { existsSync } from 'node:fs'
-import { cp, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { python, REPO } from './python.ts'
 
@@ -414,6 +414,54 @@ export async function signOutDevice(token: string | undefined) {
 /** Rebuild an account's sessions.json from its data folder. */
 export function exportSessions(a: Account): Promise<void> {
   return python('software.dashboard.export', '--data', dataDir(a), '--out', sessionsFile(a))
+}
+
+/*
+  The owner's data folder also gets files from outside the server: a laptop recording
+  (`python -m software.tools.logger` writes data/raw/), fake_history, a copied-in session. So
+  before handing out the owner's sessions.json, check whether its CSV files changed since the
+  last export (newer, added or removed) and export again if so. Checked at most every 3 s (the
+  dashboard polls every 5 s); state/ and the phone's raw incoming lines are skipped.
+*/
+const SKIP = new Set(['state', 'phone-incoming', 'incoming', 'node_modules', '.git'])
+let ownerSeen = ''                       // "<csv count>:<newest mtime>" at the last export
+let ownerCheckedAt = 0
+let ownerCheck: Promise<void> | null = null
+
+async function csvSignature(dir: string): Promise<{ sig: string; newest: number }> {
+  let count = 0
+  let newest = 0
+  async function walk(d: string) {
+    let entries
+    try { entries = await readdir(d, { withFileTypes: true }) } catch { return }
+    for (const e of entries) {
+      if (e.isDirectory()) { if (!SKIP.has(e.name)) await walk(join(d, e.name)) }
+      else if (e.name.endsWith('.csv')) {
+        count++
+        try { newest = Math.max(newest, (await stat(join(d, e.name))).mtimeMs) } catch { /* removed meanwhile */ }
+      }
+    }
+  }
+  await walk(dir)
+  return { sig: `${count}:${newest}`, newest }
+}
+
+/** For the owner: re-export first if the data folder's CSV files changed. Others: nothing to do. */
+export function freshSessions(a: Account): Promise<void> {
+  if (a.kind !== 'owner') return Promise.resolve()
+  if (ownerCheck) return ownerCheck
+  if (Date.now() - ownerCheckedAt < 3_000) return Promise.resolve()
+  ownerCheck = (async () => {
+    const { sig, newest } = await csvSignature(dataDir(a))
+    let exportedAt = 0
+    try { exportedAt = (await stat(sessionsFile(a))).mtimeMs } catch { /* never exported */ }
+    // first check after a start: only a CSV newer than sessions.json counts as a change
+    const changed = ownerSeen ? sig !== ownerSeen : newest > exportedAt
+    if (changed) await exportSessions(a)
+    ownerSeen = sig
+  })().catch((e) => { console.error('[sessions] re-export failed', e) })
+    .finally(() => { ownerCheckedAt = Date.now(); ownerCheck = null })
+  return ownerCheck
 }
 
 /** The owner's account, for phone uploads that don't say whose they are yet (before phones sign in). */

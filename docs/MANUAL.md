@@ -94,11 +94,7 @@ npm run dev
 
 Open http://localhost:5173/dashboard and sign in with the login you made during setup.
 
-After each new recording, refresh the data (in another terminal, at the repo root). The open dashboard picks it up within 5 seconds:
-
-```bash
-.venv/bin/python -m software.dashboard.export --data data --out data/state/accounts/owner/sessions.json
-```
+A new recording shows up by itself within a few seconds: the server notices new files in `data/` and refreshes the dashboard's data. Nothing to run.
 
 Laptop recordings appear under the patient **"recorded"**. What to look at:
 
