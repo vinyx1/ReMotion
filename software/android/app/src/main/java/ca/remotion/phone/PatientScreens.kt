@@ -180,7 +180,12 @@ private fun Instruction(text: String, sub: String? = null) {
 private fun ColumnScope.HomeCoach(s: UiState) {
     Text(greeting(), style = LabelStyle.copy(fontSize = 19.sp), color = Forest)
     Spacer(Modifier.height(10.dp))
-    Text("Press the yellow button on the mat to start", style = CoachStyle, color = Forest, maxLines = 3,
+    if (s.sensorTrouble || s.state == "CALIB_FAILED") {
+        // a rejected calibration, or readings that point at the sensors: say what to do, not just "press start"
+        Text(if (s.sensorTrouble) "Check the device" else "Let’s try that again", style = CoachStyle, color = Forest, maxLines = 2,
+            modifier = Modifier.semantics { heading(); liveRegion = LiveRegionMode.Polite })
+        Text(calibrationHelp(s), style = CoachSubStyle, color = Forest, modifier = Modifier.padding(top = 12.dp))
+    } else Text("Press the yellow button on the mat to start", style = CoachStyle, color = Forest, maxLines = 3,
         modifier = Modifier.semantics { heading() })
     Spacer(Modifier.weight(1f))
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -246,8 +251,22 @@ private fun say(s: UiState, warm: Boolean, e: Exercise): Say = when {
     }
 }
 
+/** Unplugging and replugging restarts the Arduino, which sets the sensors up again. */
+const val REPLUG = "Check the cable at the wrist and at the chest, then unplug the device from the phone and plug it back in."
+
+/** What to say after a rejected calibration, or when the readings point at the sensors. */
+fun calibrationHelp(s: UiState): String = when {
+    s.sensorTrouble -> "The sensors aren’t reading properly. $REPLUG Then press the yellow button."
+    s.calibFails >= 2 -> "Sit back with your hands still, then press the yellow button. If it keeps happening while you’re still: ${REPLUG.replaceFirstChar { it.lowercase() }}"
+    else -> "You moved while the device was learning how you sit. Sit back, hands still, and press the yellow button again."
+}
+
 @Composable
 private fun ColumnScope.SessionCoach(s: UiState, warm: Boolean) {
+    if (s.sensorTrouble) {
+        Instruction("Check the device", "The sensors stopped reading properly, so this session can’t be trusted. End the session. $REPLUG")
+        return
+    }
     // a new instruction crossfades in; the same one (CUED then REACHING) stays put
     AnimatedContent(say(s, warm, LocalExercise.current), transitionSpec = { swap() }, contentKey = { it.headline }, label = "instruction") { said ->
         Column {

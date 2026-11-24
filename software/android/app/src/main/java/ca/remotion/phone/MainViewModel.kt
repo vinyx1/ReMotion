@@ -50,6 +50,14 @@ data class UiState(
     val plan: List<Int> = emptyList(),
     /** The device's last E line (e.g. why calibration was rejected); "" until there is one. */
     val deviceError: String = "",
+    /**
+      Set when the readings say the sensors, not the person, are the problem (a frozen wrist
+      reading, a calibration with jumps no one sitting can make, one that passed with no noise at
+      all): tell them to check the cable and replug. Cleared by a calibration that looks normal.
+    */
+    val sensorTrouble: Boolean = false,
+    /** Calibrations rejected in a row (for "still rejected? replug" after a few). */
+    val calibFails: Int = 0,
     /** The firmware answered G, X or ? with "unknown command": it needs updating. */
     val oldFirmware: Boolean = false,
     val showSamples: Boolean = false,
@@ -321,10 +329,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         s.copy(showSamples = show, log = if (show) s.log else s.log.filter { it.kind != LogLine.Kind.SAMPLE })
     }
 
+    // a wrist reading that doesn't change at all: a healthy sensor never repeats one value more
+    // than a few samples in a row (7 at most in a real session); 1.5 s of the same means it stopped answering
+    private var lastWrist = Float.NaN
+    private var sameWrist = 0
+
     /** Called on a background thread for every line the device sends. */
     private fun onLine(line: String) {
         uploader?.add(line)
         val msg = Protocol.parse(line)
+        val frozen = msg is Sample && msg.state != "IDLE" && run {
+            sameWrist = if (msg.wristDps == lastWrist) sameWrist + 1 else 0
+            lastWrist = msg.wristDps
+            sameWrist >= FROZEN_SAMPLES
+        }
         if (msg is SessionEnd) endOfSession()
         if (msg is Status && checkPlan) {                    // just connected: a demo may have left its plan
             checkPlan = false
@@ -339,7 +357,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val next = when (msg) {
                 // 100 samples a second: the state only changes (and the screen only redraws) when
                 // the device's state or the leaning does, not with every reading
-                is Sample -> s.copy(state = msg.state, leaning = leaning(msg, s))
+                is Sample -> s.copy(state = msg.state, leaning = leaning(msg, s), sensorTrouble = s.sensorTrouble || frozen)
                 is Rep -> s.copy(reps = msg.rep, phase = msg.phase,
                     leaned = (if (msg.rep == 1) 0 else s.leaned) + if (msg.compensated) 1 else 0,
                     blockDone = s.blockDone + 1, blockUpright = s.blockUpright + if (msg.compensated) 0 else 1,
@@ -352,7 +370,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     leaned = msg.compensatedReps, streaming = msg.streaming, threshold = msg.threshold, plan = msg.plan)
                 is DeviceError -> {
                     val old = msg.message.removePrefix("unknown command: ") in setOf("G", "X", "?")
-                    s.copy(oldFirmware = s.oldFirmware || old, deviceError = msg.message)
+                    // "calibration rejected: moved too much (std 0.35 m/s2)": a person sitting
+                    // makes well under 1; several m/s2 is the sensor jumping, not them
+                    val std = CALIB_STD.find(msg.message)?.groupValues?.get(1)?.toFloatOrNull()
+                    val rejected = "calibration rejected" in msg.message
+                    s.copy(oldFirmware = s.oldFirmware || old, deviceError = msg.message,
+                        calibFails = if (rejected) s.calibFails + 1 else s.calibFails,
+                        sensorTrouble = s.sensorTrouble || "no gravity" in msg.message || (std != null && std > JUMPY_STD))
                 }
                 is Comment -> when {
                     msg.text == "sample stream off" -> s.copy(streaming = false)
@@ -361,6 +385,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     msg.text.startsWith("calibrating") -> s.copy(reps = 0, leaned = 0, phase = "", target = "",
                         blockSize = 0, blockDone = 0, blockUpright = 0, lastRep = null, sessionReps = emptyList(), restEndsAt = 0)
                     msg.text.startsWith("target ") -> s.copy(target = msg.text.removePrefix("target ").trim())
+                    // "# calibration OK (std 0.16 m/s2)": exactly no noise means frozen readings
+                    msg.text.startsWith("calibration OK") -> {
+                        val std = CALIB_STD.find(msg.text)?.groupValues?.get(1)?.toFloatOrNull()
+                        if (std != null && std < FROZEN_STD) s.copy(sensorTrouble = true)
+                        else s.copy(sensorTrouble = false, calibFails = 0).also { sameWrist = 0 }
+                    }
                     // "# BASELINE block: 15 reps, buzzer off"
                     BLOCK_START.find(msg.text) != null -> BLOCK_START.find(msg.text)!!.let {
                         s.copy(phase = it.groupValues[1], blockSize = it.groupValues[2].toInt(), blockDone = 0,
@@ -440,6 +470,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_HISTORY_OWNER = "historyFor"
         private const val KEY_EXERCISE = "exercise"
         private const val KEY_LEAN_LIMIT = "leanLimit"
+        private val CALIB_STD = Regex("""std ([0-9.]+)""")
+        private const val JUMPY_STD = 1.5f            // m/s2; people sitting: under 1 (rejections were 0.35-0.89)
+        private const val FROZEN_STD = 0.02f          // m/s2; a live sensor always shows some noise (0.12-0.19)
+        private const val FROZEN_SAMPLES = 150        // 1.5 s at 100 Hz
         const val MIN_LIMIT = 6f
         const val MAX_LIMIT = 20f
         /**

@@ -180,7 +180,8 @@ private fun LivePanel(s: UiState, d: DemoRun?, finished: PastSession?, countdown
             s.state == "CALIB_FAILED" -> {
                 Big("Calibration didn’t take")
                 Line(when {
-                    "no gravity" in s.deviceError -> "The chest sensor isn’t answering. Check the cable between the wrist and chest boxes, unplug and replug the device, then try again."
+                    s.sensorTrouble || "no gravity" in s.deviceError -> "The sensors aren’t reading properly (${s.deviceError.substringAfter(": ").ifEmpty { "frozen readings" }}), not you. $REPLUG Then try again."
+                    "moved too much" in s.deviceError && s.calibFails >= 2 -> "Movement again during the 3 seconds. Sit back, hands still. If it keeps happening while still: ${REPLUG.replaceFirstChar { it.lowercase() }}"
                     "moved too much" in s.deviceError -> "There was movement during the 3 seconds. Sit back, hands still, and try again."
                     else -> s.deviceError.ifEmpty { "Sit upright and still, then try again." }
                 })
@@ -189,6 +190,10 @@ private fun LivePanel(s: UiState, d: DemoRun?, finished: PastSession?, countdown
                     OutlinedButton(onClick = onBackToDemos, modifier = Modifier.heightIn(min = 48.dp)) { Text("All demos") }
                 }
                 Line("The yellow button on the mat tries again too.", quiet = true)
+            }
+            s.sessionRunning && s.sensorTrouble -> {
+                Big("Check the device")
+                Line("The sensors stopped reading properly (a frozen value), so this run can’t be trusted. Stop it, then: ${REPLUG.replaceFirstChar { it.lowercase() }}")
             }
             s.sessionRunning -> {
                 val buzzer = s.phase == "TRAINING"
