@@ -196,8 +196,8 @@ private fun LivePanel(s: UiState, d: DemoRun?, finished: PastSession?, countdown
                     style = BodyStyle.copy(fontSize = 15.sp, fontWeight = if (buzzer) FontWeight.Bold else FontWeight.Normal), color = Forest,
                     modifier = Modifier.background(if (buzzer) Wall else Wash, RoundedCornerShape(8.dp)).padding(horizontal = 8.dp, vertical = 4.dp))
                 if (s.blockSize > 0) {
-                    val now = (s.blockDone + if (s.state in listOf("WAIT_HOME", "CUED", "REACHING")) 1 else 0).coerceIn(1, s.blockSize)
-                    Big("${LocalExercise.current.one.replaceFirstChar { it.uppercase() }} $now of ${s.blockSize}")
+                    val now = s.blockDone.coerceIn(0, s.blockSize)          // counted from 0: the ones finished
+                    Big("$now of ${s.blockSize} ${LocalExercise.current.many} done")
                 }
                 Line(when (s.state) {
                     "WAIT_HOME" -> "Hand on the white HOME button until a light comes on."

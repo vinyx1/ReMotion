@@ -405,7 +405,7 @@ private fun ColumnScope.SessionScore(s: UiState, actions: PatientActions) {
     Text(blockName(s.phase), style = LabelStyle.copy(fontSize = 20.sp), color = Forest)
     if (!short || s.state == "REST") Text(if (s.state == "REST") "Finished. Well done." else blockLine(s.phase), style = BodyStyle.copy(fontSize = 16.sp), color = Forest2)
     if (s.blockSize > 0) {
-        val now = (s.blockDone + if (s.state in listOf("WAIT_HOME", "CUED", "REACHING")) 1 else 0).coerceIn(1, s.blockSize)
+        val now = s.blockDone.coerceIn(0, s.blockSize)          // counted from 0: the ones finished
         val e = LocalExercise.current
         AnimatedContent(now to s.blockSize, transitionSpec = { swap() }, label = "count") { (n, of) ->
             Text(
@@ -413,7 +413,7 @@ private fun ColumnScope.SessionScore(s: UiState, actions: PatientActions) {
                     append("$n")
                     withStyle(SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Normal, color = Forest2)) { append(" of $of ${e.many}") }
                 },
-                style = NumberStyle, color = Forest, modifier = Modifier.padding(top = if (short) 2.dp else 8.dp).semantics { contentDescription = "${e.one.replaceFirstChar { it.uppercase() }} $n of $of" },
+                style = NumberStyle, color = Forest, modifier = Modifier.padding(top = if (short) 2.dp else 8.dp).semantics { contentDescription = "$n of $of ${e.many} done" },
             )
         }
     }
