@@ -61,6 +61,32 @@ The API (`server/api.ts`) runs inside `npm run dev` and `npm run preview` as a V
 - State lives in `data/state/` (git-ignored; `REMOTION_STATE` to move it): `accounts.json`,
   `signins.json`, and one folder per account. No database: demos only have to last an hour.
 
+### Deploy (Railway)
+
+The repo-root `Dockerfile` builds one image with Node 24, the built site, and the Python tools the
+server runs; `railway.json` tells Railway to use it. Everything the server writes (accounts, demos,
+phone recordings) goes to `/data`, so the Railway service needs a **volume mounted at `/data`** or
+it all disappears on each deploy.
+
+```bash
+railway login                                   # once, opens the browser
+railway init                                    # once: a new project, from the repo root
+railway up                                      # build and deploy from this folder
+railway volume add --mount-path /data           # once
+railway variables --set REMOTION_OWNER_EMAIL=you@example.com --set REMOTION_OWNER_PASSWORD=<long password>
+railway variables --set ANTHROPIC_API_KEY=...   # optional: the Overview summaries
+railway domain                                  # a public https address
+```
+
+The owner account is made from `REMOTION_OWNER_EMAIL` / `REMOTION_OWNER_PASSWORD` on the first start
+with an empty volume (never again, so changing them later does nothing: use `set-owner.ts` in a
+`railway ssh` shell). The image sets `TRUST_PROXY=1`, `REMOTION_STATE=/data/state`,
+`REMOTION_OWNER_DATA=/data/owner` and `REMOTION_APK=/app/release/ReMotion.apk`. The phone app's
+download comes from `release/ReMotion.apk` in the repo: after an app change, copy the new build there
+(`cp software/android/app/build/outputs/apk/release/{app-release.apk,output-metadata.json} release/`,
+renaming the APK to `ReMotion.apk`) and deploy again. Test the image locally with
+`docker build -t remotion . && docker run -p 8080:8080 -v remotion-data:/data remotion`.
+
 ### Environment
 
 | Variable | What |
@@ -70,6 +96,7 @@ The API (`server/api.ts`) runs inside `npm run dev` and `npm run preview` as a V
 | `REMOTION_STATE` | Where accounts and demos live (default `data/state`) |
 | `REMOTION_OWNER_DATA` | The owner's data folder (default the repo's `data/`) |
 | `REMOTION_PYTHON` | The Python to run (default `.venv/bin/python`, else `python3`) |
+| `REMOTION_OWNER_EMAIL`, `REMOTION_OWNER_PASSWORD` | Make the owner account on a server's first start (no owner yet). Ignored once one exists |
 | `TRUST_PROXY` | Set to `1` behind a proxy that adds `X-Forwarded-For` (Railway), so rate limits see the visitor's address. Leave it unset otherwise: the header could be faked |
 | `REMOTION_APK` | Path to the phone app's install file for **Connect a phone → Don't have the app?**. Default: the repo's release build (`software/android/app/build/outputs/apk/release/app-release.apk`); without either, the panel says how to build it |
 

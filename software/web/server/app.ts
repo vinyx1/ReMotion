@@ -7,12 +7,13 @@
     GET /api/app/remotion.apk   the file itself
 
   The file is the release build in the repo (`./gradlew assembleRelease` in software/android),
-  or the one REMOTION_APK points at (e.g. on a server without the Android build).
+  or the one REMOTION_APK points at (e.g. on a server without the Android build: the Docker image
+  uses the repo's release/ReMotion.apk, a copy of the release build, with its output-metadata.json).
 */
 import { createReadStream } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { HttpError, send } from './http.ts'
 import { clientAddress, LIMITS } from './security.ts'
 
@@ -25,7 +26,7 @@ async function found() {
 
 async function version(): Promise<string | null> {
   try {
-    const m = JSON.parse(await readFile(join(BUILD, 'output-metadata.json'), 'utf8'))
+    const m = JSON.parse(await readFile(join(dirname(APK), 'output-metadata.json'), 'utf8'))   // next to the file (Gradle's, or release/)
     return typeof m.elements?.[0]?.versionName === 'string' ? m.elements[0].versionName : null
   } catch { return null }
 }

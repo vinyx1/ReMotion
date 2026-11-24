@@ -1,0 +1,20 @@
+# Only what the server needs goes into the image.
+.git
+.github
+.claude
+.venv
+**/node_modules
+**/__pycache__
+software/web/dist
+software/web/.env
+software/android
+firmware
+hardware
+docs
+data/state
+data/raw
+data/phone
+data/phone-demo
+data/phone-incoming
+data/fake
+data/validation

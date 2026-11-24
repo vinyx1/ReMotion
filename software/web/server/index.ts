@@ -11,7 +11,7 @@ import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { extname, join, normalize, sep } from 'node:path'
-import { init } from './accounts.ts'
+import { init, ownerAccount, setOwner } from './accounts.ts'
 import { api } from './api.ts'
 import { securityHeaders } from './security.ts'
 
@@ -25,6 +25,15 @@ const TYPES: Record<string, string> = {
 }
 
 await init()
+
+// A new server (Railway) has no owner yet: make one from REMOTION_OWNER_EMAIL / REMOTION_OWNER_PASSWORD.
+// Only when there's none, so a restart never resets the password or signs the owner out.
+const ownerEmail = process.env.REMOTION_OWNER_EMAIL
+const ownerPassword = process.env.REMOTION_OWNER_PASSWORD
+if (ownerEmail && ownerPassword && !(await ownerAccount())) {
+  await setOwner(ownerEmail, ownerPassword)
+  console.log(`Owner account created: ${ownerEmail.toLowerCase()}`)
+}
 
 const server = createServer(async (req, res) => {
   try {
