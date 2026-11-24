@@ -278,6 +278,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     @Volatile private var checkPlan = false
 
+    private val _leanLimit = MutableStateFlow(prefs.getFloat(KEY_LEAN_LIMIT, 10f))
+    /**
+      The lean limit this phone puts on the device (T<deg>), in degrees past the calibrated upright.
+      10 by default; raise it for someone whose normal sitting posture already reads a few degrees
+      forward. Kept on the phone and sent on every connect (the device forgets it when unplugged).
+    */
+    val leanLimit: StateFlow<Float> = _leanLimit.asStateFlow()
+    fun setLeanLimit(deg: Float) {
+        val v = (Math.round(deg * 2) / 2f).coerceIn(MIN_LIMIT, MAX_LIMIT)
+        _leanLimit.value = v
+        prefs.edit().putFloat(KEY_LEAN_LIMIT, v).apply()
+        if (link != null && !_ui.value.sessionRunning) { send("T" + Protocol.one(v)); send(Protocol.STATUS) }
+    }
+
     /** Put the patient's plan (Protocol.SESSION_PLAN) on the device, if it has another one. Only between sessions. */
     fun usePatientPlan() {
         val s = _ui.value
@@ -314,9 +328,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (msg is SessionEnd) endOfSession()
         if (msg is Status && checkPlan) {                    // just connected: a demo may have left its plan
             checkPlan = false
-            if (msg.state in Protocol.IDLE_STATES && msg.plan != Protocol.SESSION_PLAN) {
-                setPlan(Protocol.SESSION_PLAN)
-                send(Protocol.STATUS)
+            if (msg.state in Protocol.IDLE_STATES) {
+                var changed = false
+                if (msg.plan != Protocol.SESSION_PLAN) { setPlan(Protocol.SESSION_PLAN); changed = true }
+                if (kotlin.math.abs(msg.threshold - _leanLimit.value) > 0.01f) { send("T" + Protocol.one(_leanLimit.value)); changed = true }
+                if (changed) send(Protocol.STATUS)
             }
         }
         _ui.update { s ->
@@ -423,6 +439,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         private const val KEY_DASHBOARD = "dashboard"
         private const val KEY_HISTORY_OWNER = "historyFor"
         private const val KEY_EXERCISE = "exercise"
+        private const val KEY_LEAN_LIMIT = "leanLimit"
+        const val MIN_LIMIT = 6f
+        const val MAX_LIMIT = 20f
         /**
           Where a typed code is sent (a scanned QR code carries its own address). With the phone on a
           cable, `adb reverse tcp:5173 tcp:5173` makes this the Mac's dashboard; once it's online,

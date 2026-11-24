@@ -180,6 +180,17 @@ private fun SettingsScreen(s: UiState, login: Login?, vm: MainViewModel, onClose
             Text("Reaches per block: warm-up, on your own, with the buzzer, on your own again. Only between sessions.",
                 style = BodyStyle.copy(fontSize = 15.sp), color = Forest2)
 
+            Section("Lean limit")
+            val limit by vm.leanLimit.collectAsStateWithLifecycle()
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedButton(onClick = { vm.setLeanLimit(limit - 0.5f) }, enabled = !s.sessionRunning && limit > MainViewModel.MIN_LIMIT) { Text("−", fontSize = 20.sp) }
+                Text("${Protocol.one(limit)}°", style = BodyStyle.copy(fontSize = 22.sp, fontFeatureSettings = "tnum"), color = Forest)
+                OutlinedButton(onClick = { vm.setLeanLimit(limit + 0.5f) }, enabled = !s.sessionRunning && limit < MainViewModel.MAX_LIMIT) { Text("+", fontSize = 20.sp) }
+                if (s.connected != null) Text("Device: ${Protocol.one(s.threshold)}°", style = BodyStyle.copy(fontSize = 15.sp, fontFeatureSettings = "tnum"), color = Forest2)
+            }
+            Text("How far past their calibrated upright the trunk may tip before a reach counts as leaned. 10° by default; raise it a little for someone whose normal sitting posture already reads a few degrees forward. Sent to the device whenever it connects. Only between sessions.",
+                style = BodyStyle.copy(fontSize = 15.sp), color = Forest2)
+
             Section("Dashboard")
             OutlinedTextField(
                 value = s.dashboard, onValueChange = vm::setDashboard, singleLine = true, enabled = s.connected == null,
