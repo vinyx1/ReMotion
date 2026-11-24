@@ -70,7 +70,7 @@ cd software/web && npx vite --host --port 5173
    `./gradlew testDebugUnitTest`.
 
    **Without a cable:** after `./gradlew assembleRelease`, the dashboard serves the app.
-   **Profile & settings → Connect a phone → Don't have the app?** shows a QR code: scan it with
+   **Profile & settings → Connect a phone → Don't have the app?** swaps in a QR code: scan it with
    the phone's camera, open the file, allow installs from the browser once. (Open the dashboard
    at the laptop's network address, not `localhost`.)
 
