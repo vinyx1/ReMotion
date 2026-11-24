@@ -76,7 +76,10 @@ function stable(v: unknown): string {
 }
 
 async function write(payload: unknown): Promise<string> {
-  const client = new Anthropic()
+  // a key pasted into a dashboard (Railway's Variables) often brings a space, a line break or quotes
+  // with it; any of those makes the request invalid before it's sent, so clean it up first
+  const key = process.env.ANTHROPIC_API_KEY?.trim().replace(/^["']|["']$/g, '').trim()
+  const client = key ? new Anthropic({ apiKey: key }) : new Anthropic()
   const response = await client.messages.create({
     model: MODEL,
     max_tokens: 1024,
@@ -136,6 +139,11 @@ export async function summarize(req: IncomingMessage, res: ServerResponse, accou
     if (error instanceof Anthropic.RateLimitError) {
       return send(res, 429, { error: 'Claude is rate limited right now. Try again in a minute.' })
     }
+    if (error instanceof Anthropic.APIConnectionError) {
+      console.error('[summary]', error.cause ?? error)
+      const cause = error.cause instanceof Error ? error.cause.message : error.message
+      return send(res, 502, { error: `Could not reach the Claude API (${cause.slice(0, 160)}). If the key was pasted, check it has no spaces or quotes.` })
+    }
     if (error instanceof Anthropic.APIError) {
       return send(res, 502, { error: `Claude API error${error.status ? ` ${error.status}` : ''}: ${error.message}` })
     }
@@ -143,6 +151,9 @@ export async function summarize(req: IncomingMessage, res: ServerResponse, accou
       // not an API response: the client could not start, most often because no credentials are set
       return send(res, 503, { error: 'No Claude credentials found on the server. Set ANTHROPIC_API_KEY (or run `ant auth login`) and restart the server.' })
     }
-    return send(res, 502, { error: 'Could not reach the Claude API.' })
+    // anything else (network, DNS, a malformed key header): log it and say what it was
+    console.error('[summary]', error)
+    const why = error instanceof Error ? error.message : String(error)
+    return send(res, 502, { error: `Could not reach the Claude API (${why.slice(0, 160)}).` })
   }
 }
