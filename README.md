@@ -1,3 +1,6 @@
+> [!NOTE]
+> **To do:** add photos of the hardware (the mat, the wrist and chest sensors, the built device) to `docs/images/readme/` and show them in [What we built](#what-we-built) and [Hardware](#hardware).
+
 ![ReMotion: relearning to reach, the right way](docs/images/readme/banner.png)
 
 # ReMotion
