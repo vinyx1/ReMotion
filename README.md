@@ -59,7 +59,7 @@ that's going down, at which targets, and a short written summary.
 
 ![Patient overview with a practice calendar and one row per exercise](docs/images/readme/dashboard-overview.png)
 
-![Forward reach page: latest session against the average, the summary, and a graph of each rep](docs/images/readme/dashboard-exercise.png)
+![An exercise's overview: the latest session against the average of all sessions, the graph picker, and each rep of the last session against the 10° limit](docs/images/readme/dashboard-exercise.png)
 
 ### Rep replay
 
@@ -72,7 +72,7 @@ wrist-speed traces beside it. The trunk turns warm when it passes the limit.
 |---|---|
 | ![3D figure leaning forward to reach the red button](docs/images/readme/replay-reach.png) | ![3D figure bending down to meet the hand at the mouth](docs/images/readme/replay-mouth.png) |
 
-The data in these screenshots is simulated, made to build and test the dashboard.
+The patient overview and the replays above use simulated data, made to build and test the dashboard. The exercise page shows real sessions recorded with the device during team testing.
 
 ## How it fits together
 
