@@ -32,6 +32,7 @@ From the repo root, once:
 
 ```bash
 git pull
+git config core.hooksPath .githooks                                  # refuses commits with API keys or key files
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt      # Python tools and tests
 cd software/web && npm ci                                                 # dashboard (needs Node 24)
 node server/set-owner.ts <your email>       # your dashboard login; prints a password once

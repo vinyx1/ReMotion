@@ -7,6 +7,18 @@ on:
   pull_request:
 
 jobs:
+  secrets:
+    name: No API keys or key files (every commit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # all history: a key added and then deleted is still caught
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m software.tools.check_secrets --history
+
   python:
     name: Python tests (protocol, logger, dashboard data)
     runs-on: ubuntu-latest
