@@ -87,6 +87,8 @@ export const LIMITS = {
   phoneBatches: new Limiter(240, MIN),
   /** New patients per account per hour. */
   newPatients: new Limiter(30, 60 * MIN),
+  /** Phone app downloads per address per hour (each is a few MB). */
+  appDownloads: new Limiter(10, 60 * MIN),
 }
 
 /** Refuse a cross-site browser request that would act with the visitor's cookie. */

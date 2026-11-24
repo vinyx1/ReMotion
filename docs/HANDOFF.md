@@ -69,6 +69,11 @@ cd software/web && npx vite --host --port 5173
    Opening `software/android` in Android Studio and pressing Run works too. Unit tests:
    `./gradlew testDebugUnitTest`.
 
+   **Without a cable:** after `./gradlew assembleRelease`, the dashboard serves the app.
+   **Profile & settings → Connect a phone → Don't have the app?** shows a QR code: scan it with
+   the phone's camera, open the file, allow installs from the browser once. (Open the dashboard
+   at the laptop's network address, not `localhost`.)
+
 ### Connect the phone to your dashboard
 
 The phone's only USB-C port goes to the Arduino, so the phone reaches the dashboard over Wi-Fi.

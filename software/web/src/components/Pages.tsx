@@ -1,7 +1,7 @@
 /*
   The pages that came with patient profiles: the patient list and the profile page.
 */
-import { Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { Download, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { AlertDialog, Popover } from 'radix-ui'
 import QRCode from 'qrcode'
 import { type FormEvent, useEffect, useId, useState } from 'react'
@@ -239,7 +239,61 @@ function ConnectPhone({ patient }: { patient: Patient }) {
 
         </div>
       </div>
+      <GetTheApp />
     </Panel>
+  )
+}
+
+/*
+  Don't have the app? The install file comes from this dashboard (server/app.ts): a QR code
+  for the phone's camera, and a plain download link. The phone must reach this address, so
+  open the dashboard at its network address (not localhost), as for the code above.
+*/
+function GetTheApp() {
+  const [app, setApp] = useState<{ available: boolean; version?: string | null; sizeMB?: number } | null>(null)
+  const [svg, setSvg] = useState<string | null>(null)
+  const link = `${window.location.origin}/api/app/remotion.apk`
+  const local = /^(localhost|127\.|\[::1\])/.test(window.location.hostname)
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/app').then((r) => r.json()).then((a) => { if (alive) setApp(a) }).catch(() => { if (alive) setApp({ available: false }) })
+    QRCode.toString(link, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: '#1f2d27', light: '#00000000' } })
+      .then((s) => { if (alive) setSvg(s) })
+    return () => { alive = false }
+  }, [link])
+
+  if (!app) return null
+  return (
+    <div className="mt-6 flex flex-col gap-6 border-t border-wall/70 pt-6 sm:flex-row sm:items-center">
+      <div className="grid size-48 shrink-0 place-items-center rounded-xl border border-wall bg-plaster p-6">
+        {app.available && svg
+          ? <div role="img" aria-label="QR code for downloading the ReMotion app" className="size-full [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: svg }} />
+          : <Download className="size-10 text-forest-2/50" aria-hidden />}
+      </div>
+      <div className="flex max-w-[46ch] flex-col gap-3 text-[16px] text-forest">
+        <h3 className="font-display text-[1.15rem] font-medium">Don’t have the app?</h3>
+        {app.available ? (
+          <>
+            <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-pretty marker:font-bold">
+              <li>Point the phone’s <span className="font-bold">camera</span> at this square and open the link.</li>
+              <li>Open the downloaded file. The first time, Android asks to allow installs from the browser: allow it.</li>
+              <li>Open ReMotion and scan the code above.</li>
+            </ol>
+            {local && <p className="text-pretty text-terra-deep">This page is open at localhost, which a phone can’t reach. Open it at this computer’s network address instead.</p>}
+            <a href="/api/app/remotion.apk" download="ReMotion.apk"
+              className={cn('inline-flex h-10 w-fit items-center gap-2 rounded-lg border-[1.5px] border-forest/30 px-4 text-[15px] font-bold text-forest transition-colors duration-150 hover:border-forest/60 hover:bg-wash', FOCUS)}>
+              <Download className="size-4" aria-hidden /> Download for Android
+              <span className="font-readout font-normal text-forest-2 tabular-nums">{[app.version && `v${app.version}`, app.sizeMB && `${app.sizeMB} MB`].filter(Boolean).join(' · ')}</span>
+            </a>
+          </>
+        ) : (
+          <p className="text-pretty text-forest-2">
+            The app’s install file isn’t on this server yet. Build it with <code className="font-readout text-[0.95em] text-forest">./gradlew assembleRelease</code> in <code className="font-readout text-[0.95em] text-forest">software/android</code>, then reload this page.
+          </p>
+        )}
+      </div>
+    </div>
   )
 }
 

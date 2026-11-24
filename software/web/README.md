@@ -71,6 +71,7 @@ The API (`server/api.ts`) runs inside `npm run dev` and `npm run preview` as a V
 | `REMOTION_OWNER_DATA` | The owner's data folder (default the repo's `data/`) |
 | `REMOTION_PYTHON` | The Python to run (default `.venv/bin/python`, else `python3`) |
 | `TRUST_PROXY` | Set to `1` behind a proxy that adds `X-Forwarded-For` (Railway), so rate limits see the visitor's address. Leave it unset otherwise: the header could be faked |
+| `REMOTION_APK` | Path to the phone app's install file for **Connect a phone → Don't have the app?**. Default: the repo's release build (`software/android/app/build/outputs/apk/release/app-release.apk`); without either, the panel says how to build it |
 
 **Security** (`server/security.ts`): per-address rate limits on every API call, failed sign-ins
 limited per address and per email (5 per 15 minutes, then 429 with `Retry-After`), limits on demo

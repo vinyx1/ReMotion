@@ -17,6 +17,8 @@
     GET  /api/phone/me                the app's sign-in: { patient, kind, expiresAt }          401 if it ended
     POST /api/phone/logout            the app signs out
     POST /api/phone/lines             lines from the phone app (server/phone.ts), with its token
+    GET  /api/app                     is the phone app's install file here? (server/app.ts)
+    GET  /api/app/remotion.apk        the install file, for "Don't have the app?" in Connect a phone
 
   Signing in sets an HttpOnly cookie; the browser never sees the token's meaning, and the
   server keeps only its hash (server/accounts.ts).
@@ -35,6 +37,7 @@ import {
 import {
   addCookie, clearSessionCookie, cookie, COOKIE, DEMO_COOKIE, HttpError, origin, readJson, send, setSessionCookie,
 } from './http.ts'
+import { appFile, appInfo } from './app.ts'
 import { phoneLines } from './phone.ts'
 import { clientAddress, LIMITS, sameOrigin, securityHeaders } from './security.ts'
 import { summarize } from './summary.ts'
@@ -60,6 +63,8 @@ async function route(req: IncomingMessage, res: ServerResponse) {
   const path = (req.url ?? '').split('?')[0].replace(/\/+$/, '')
   const post = req.method === 'POST'
 
+  if (path === '/api/app' && req.method === 'GET') return appInfo(res)
+  if (path === '/api/app/remotion.apk' && req.method === 'GET') return appFile(req, res)
   if (path === '/api/me' && req.method === 'GET') return send(res, 200, await me(await signedIn(req)))
 
   if (path === '/api/demo' && post) {
