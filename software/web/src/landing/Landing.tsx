@@ -32,6 +32,27 @@ function useReducedMotion() {
   return reduced
 }
 
+/** True once the element has scrolled into view (and stays true): entrance motion runs once. */
+function useSeen<T extends Element>() {
+  const ref = useRef<T>(null)
+  const [seen, setSeen] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || seen) return
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect() } }, { threshold: 0.35 })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [seen])
+  return [ref, seen] as const
+}
+
+/** A share as "about 1 in N", for people who don't think in percentages. */
+function oneIn(pct: number) {
+  if (pct <= 0) return 'none'
+  const n = Math.round(100 / pct)
+  return n <= 1 ? 'nearly all' : `about 1 in ${n}`
+}
+
 function hasWebGL() {
   try {
     const c = document.createElement('canvas')
@@ -471,6 +492,8 @@ const EXAMPLE = [
 ]
 
 function Progress() {
+  const [ref, seen] = useSeen<HTMLDivElement>()
+  const [active, setActive] = useState<number | null>(null)            // the session being read (hover, focus, keys)
   const W = 640, H = 260, left = 52, right = 24, top = 20, bottom = 40, max = 50
   const xs = (i: number) => left + (i / (EXAMPLE.length - 1)) * (W - left - right)
   const ys = (pct: number) => top + (1 - pct / max) * (H - top - bottom)
@@ -496,20 +519,45 @@ function Progress() {
             <p className="lp-chart-who">Margaret · forward reach</p>
             <p className="lp-chart-stat">About <strong>1 in 3</strong> reaches leaned at first, <strong>1 in 20</strong> by week three</p>
           </div>
-          <svg viewBox={`0 0 ${W} ${H}`} role="img"
-            aria-label="Share of reaches where the trunk leaned, per session, from 33% on November 2 to 5% on November 18, trending down">
-            {[0, 25, 50].map((v) => (
-              <g key={v}>
-                <line x1={left} x2={W - right} y1={ys(v)} y2={ys(v)} className="lp-grid" />
-                <text x={left - 10} y={ys(v) + 5} className="lp-axis" textAnchor="end">{v}%</text>
-              </g>
-            ))}
-            <line x1={xs(0)} y1={ys(fit(0))} x2={xs(n - 1)} y2={ys(fit(n - 1))} className="lp-trend" />
-            <polyline className="lp-line" points={EXAMPLE.map((p, i) => `${xs(i)},${ys(p.pct)}`).join(' ')} />
-            {EXAMPLE.map((p, i) => <circle key={p.day} cx={xs(i)} cy={ys(p.pct)} r="5.5" className="lp-dot" />)}
-            <text x={xs(0)} y={H - 10} className="lp-axis">{EXAMPLE[0].day}</text>
-            <text x={xs(n - 1)} y={H - 10} className="lp-axis" textAnchor="end">{EXAMPLE[n - 1].day}</text>
-          </svg>
+          {/* explorable: hover or arrow keys read one session; the line draws itself in once, on arrival */}
+          <div ref={ref} className={`lp-explore${seen ? ' is-seen' : ''}`} tabIndex={0} role="group"
+            aria-label="Sessions chart: share of reaches where the trunk leaned, from 33% on November 2 to 5% on November 18. Use the left and right arrow keys to read each session."
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowRight') { e.preventDefault(); setActive((a) => Math.min(n - 1, (a ?? -1) + 1)) }
+              if (e.key === 'ArrowLeft') { e.preventDefault(); setActive((a) => Math.max(0, (a ?? n) - 1)) }
+              if (e.key === 'Escape') setActive(null)
+            }}
+            onBlur={() => setActive(null)}
+            onPointerLeave={() => setActive(null)}
+            onPointerMove={(e) => {
+              const r = e.currentTarget.getBoundingClientRect()
+              const x = ((e.clientX - r.left) / r.width) * W
+              setActive(Math.max(0, Math.min(n - 1, Math.round(((x - left) / (W - left - right)) * (n - 1)))))
+            }}>
+            <svg viewBox={`0 0 ${W} ${H}`} aria-hidden>
+              {[0, 25, 50].map((v) => (
+                <g key={v}>
+                  <line x1={left} x2={W - right} y1={ys(v)} y2={ys(v)} className="lp-grid" />
+                  <text x={left - 10} y={ys(v) + 5} className="lp-axis" textAnchor="end">{v}%</text>
+                </g>
+              ))}
+              {active !== null && <line x1={xs(active)} x2={xs(active)} y1={top} y2={H - bottom} className="lp-guide" />}
+              <line x1={xs(0)} y1={ys(fit(0))} x2={xs(n - 1)} y2={ys(fit(n - 1))} className="lp-trend" />
+              <polyline className="lp-line" pathLength={1} points={EXAMPLE.map((p, i) => `${xs(i)},${ys(p.pct)}`).join(' ')} />
+              {EXAMPLE.map((p, i) => (
+                <circle key={p.day} cx={xs(i)} cy={ys(p.pct)} r={active === i ? 8 : 5.5}
+                  className={`lp-dot${active === i ? ' is-active' : ''}`} style={{ transitionDelay: seen && active === null ? `${400 + i * 60}ms` : undefined }} />
+              ))}
+              <text x={xs(0)} y={H - 10} className="lp-axis">{EXAMPLE[0].day}</text>
+              <text x={xs(n - 1)} y={H - 10} className="lp-axis" textAnchor="end">{EXAMPLE[n - 1].day}</text>
+            </svg>
+            {/* the reading: what the session under the pointer means, in words */}
+            <p className="lp-chart-read" aria-live="polite">
+              {active === null ? <span className="lp-chart-read-hint">Point at or tab to the chart to read each session.</span> : (
+                <><strong>{EXAMPLE[active].day}</strong> · {EXAMPLE[active].pct}% of reaches leaned, {oneIn(EXAMPLE[active].pct)}</>
+              )}
+            </p>
+          </div>
           <figcaption>
             Share of reaches where the trunk leaned past the limit, each session. The dashed line is the trend.
             <strong className="lp-sim"> Simulated example patient.</strong>
@@ -529,7 +577,7 @@ const STUDIES = [
   {
     who: 'Gabler et al., 2026',
     // ROC-AUC above 0.93: given one leaned and one upright reach, how often it ranks the leaned one higher
-    figure: '93', of: 'in 100',
+    figure: '93', of: 'in 100', dots: [93, 100],
     measure: 'times it picked out the leaned reach, shown one leaned and one upright',
     title: 'Machine Learning-Based Real-Time Detection of Compensatory Trunk Movements Using Trunk-Wrist Inertial Measurement Units',
     kind: 'Preprint',
@@ -539,7 +587,7 @@ const STUDIES = [
   },
   {
     who: 'Ranganathan et al., 2017',
-    figure: 'About 9', of: 'in 10',
+    figure: 'About 9', of: 'in 10', dots: [9, 10],
     measure: 'reaches labelled the same as a motion-capture lab',
     title: 'Identifying compensatory movement patterns in the upper extremity using a wearable sensor system',
     kind: 'Journal article',
@@ -549,7 +597,7 @@ const STUDIES = [
   },
   {
     who: 'Seo et al., 2024',
-    figure: '92', of: 'in 100',
+    figure: '92', of: 'in 100', dots: [92, 100],
     measure: 'movements rated the same as a therapist watching the video',
     title: 'Wearable Sensor to Monitor Quality of Upper Limb Task Practice for Stroke Survivors at Home',
     kind: 'Journal article',
@@ -558,6 +606,24 @@ const STUDIES = [
     href: 'https://doi.org/10.3390/s24020554',
   },
 ]
+
+/*
+  A number as a grid of dots (an icon array): 93 in 100 is 93 filled dots of 100, the way risk
+  is shown to people who don't read percentages. The dots fill in once, in reading order, when
+  the grid scrolls into view; with reduced motion they're simply there. `filled` null = not yet
+  known (an empty grid).
+*/
+function DotGrid({ filled, of, label }: { filled: number | null; of: number; label: string }) {
+  const [ref, seen] = useSeen<HTMLDivElement>()
+  return (
+    <div ref={ref} role="img" aria-label={label} className={`lp-dots${of <= 10 ? ' is-row' : ''}${seen ? ' is-seen' : ''}${filled === null ? ' is-unknown' : ''}`}>
+      {Array.from({ length: of }, (_, i) => (
+        <span key={i} className={filled !== null && i < filled ? 'on' : undefined}
+          style={filled !== null && i < filled ? { transitionDelay: `${Math.round(i * (of <= 10 ? 45 : 6))}ms` } : undefined} />
+      ))}
+    </div>
+  )
+}
 
 function Evidence() {
   return (
@@ -574,6 +640,7 @@ function Evidence() {
             <li key={s.who}>
               <h3>{s.who}</h3>
               <p className="lp-figure"><span>{s.figure} <small>{s.of}</small></span> {s.measure}</p>
+              <DotGrid filled={s.dots[0]} of={s.dots[1]} label={`${s.dots[0]} of ${s.dots[1]} dots filled`} />
               <a className="lp-source" href={s.href} target="_blank" rel="noreferrer">
                 <span className="lp-source-kind">{s.kind}<ArrowUpRight aria-hidden /></span>
                 <span className="lp-source-title">{s.title}</span>
@@ -591,7 +658,10 @@ function Evidence() {
               from three or more testers.
             </p>
           </div>
-          <p className="lp-ours-value">To be measured</p>
+          <div className="lp-ours-right">
+            <DotGrid filled={null} of={100} label="An empty grid of 100: not measured yet" />
+            <p className="lp-ours-value">To be measured</p>
+          </div>
         </div>
         <p className="lp-honest">
           ReMotion is a student prototype, tested only on team members, never on patients. It is not a certified medical device.
@@ -611,22 +681,55 @@ const PARTS: [string, string][] = [
   ['Cost', 'About $150 in parts'],
 ]
 
+/*
+  Where each part is on the schematic (public/schematic.png), as boxes in percent of the image:
+  [left, top, width, height]. Pointing at or tabbing to a spec row lights its part; the
+  caption says what's lit. Rows with nothing to point at (cost) light nothing.
+*/
+type Box = [number, number, number, number]
+const ARDUINO: Box[] = [[32, 9, 14, 34]]
+const SCHEMATIC_PARTS: Record<string, { boxes: Box[]; what: string }> = {
+  Brain: { boxes: ARDUINO, what: 'the Arduino UNO R4 Minima' },
+  Sensors: { boxes: [[71, 9, 18, 34], [53, 16, 10, 15]], what: 'the two motion sensors and the level shifter between them and the Arduino' },
+  Sampling: { boxes: ARDUINO, what: 'the Arduino, which reads both sensors 100 times a second' },
+  Mat: { boxes: [[1, 5, 12, 44]], what: 'the five arcade buttons' },
+  Feedback: { boxes: [[18, 0, 10, 12], [25, 58, 12, 14], [6, 74, 92, 22]], what: 'the buzzer, the result lights and the transistors that drive them' },
+  Rule: { boxes: ARDUINO, what: 'the Arduino, where the 10° / 200 ms rule runs' },
+}
+
 function Hardware() {
+  const [lit, setLit] = useState<string | null>(null)
+  const part = lit ? SCHEMATIC_PARTS[lit] : undefined
   return (
     <section id="hardware" className="lp-section lp-hardware" aria-labelledby="hardware-h">
       <div className="lp-wrap lp-split">
         <div>
           <h2 id="hardware-h" className="lp-h2">About $150 of parts, one USB cable.</h2>
-          <dl className="lp-spec">
+          <ul className="lp-spec" onPointerLeave={() => setLit(null)}>
             {PARTS.map(([k, v]) => (
-              <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
+              <li key={k}>
+                <button type="button" className={lit === k ? 'is-lit' : undefined} aria-pressed={lit === k}
+                  onPointerEnter={() => setLit(k)} onFocus={() => setLit(k)} onBlur={() => setLit(null)}
+                  onClick={() => setLit((l) => (l === k ? null : k))}>
+                  <span className="lp-spec-k">{k}</span><span className="lp-spec-v">{v}</span>
+                </button>
+              </li>
             ))}
-          </dl>
+          </ul>
         </div>
         <div className="lp-media">
           <figure className="lp-schematic">
-            <img src="/schematic.png" alt="KiCad schematic of the IMU Reach Tracker: Arduino, level shifter, two motion sensors, five buttons, transistor drivers and the buzzer" loading="lazy" width="1434" height="974" />
-            <figcaption>The circuit, drawn in KiCad by Group 19.</figcaption>
+            <div className="lp-schematic-img">
+              <img src="/schematic.png" alt="KiCad schematic of the IMU Reach Tracker: Arduino, level shifter, two motion sensors, five buttons, transistor drivers and the buzzer" loading="lazy" width="1434" height="974" />
+              {Object.entries(SCHEMATIC_PARTS).map(([k, p]) => p.boxes.map((b, i) => (
+                <span key={`${k}-${i}`} aria-hidden className={`lp-schematic-box${lit === k ? ' is-lit' : ''}`}
+                  style={{ left: `${b[0]}%`, top: `${b[1]}%`, width: `${b[2]}%`, height: `${b[3]}%` }} />
+              )))}
+            </div>
+            <figcaption aria-live="polite">
+              {part ? <>Highlighted: <strong>{part.what}</strong>.</> : 'The circuit, drawn in KiCad by Group 19. Point at a part on the left to find it here.'}
+              {' '}<a href="/schematic.png" target="_blank" rel="noreferrer">Open full size<span className="sr-only"> (opens in a new tab)</span></a>
+            </figcaption>
           </figure>
           <div className="lp-slots">
             <div className="lp-slot">Photo of the soldered build, coming from the bench</div>
