@@ -8,6 +8,9 @@ reach afterwards.
 
 ECE 198, University of Waterloo, Group 19, for CCCARE.
 
+**Live site:** [remotion-rehab.up.railway.app](https://remotion-rehab.up.railway.app). The landing page,
+and the dashboard with a 1-hour demo account (no sign-up).
+
 ## Why we built it
 
 After a stroke, many people can't move their arm as far as they used to. So when they reach for a
@@ -36,7 +39,8 @@ Three pieces that work together.
 button, a buzzer, and two motion sensors: one on a chest strap, one on the wrist. The patient sits
 up straight for 3 seconds so it learns what "upright" means for them. Then a target lights up,
 they reach for it, and come back to HOME. If the chest tilts more than 10° for longer than 0.2 s,
-that reach counts as leaned.
+that reach counts as leaned. The 10° can be raised for someone whose normal posture already sits a
+little forward (app Settings → Lean limit).
 
 | The electronics, inside the box | Putting it together |
 |---|---|
@@ -58,7 +62,11 @@ dashboard over Wi-Fi.
 | ![Sit back against the chair, with a large warning mark](docs/images/readme/app-leaning.png) | ![Well done screen with today's result](docs/images/readme/app-done.png) |
 
 There are four exercises: reach forward, reach to the right, hand to mouth, and forearm rotation.
-Settings has a Demo mode with short scripted runs for showing the buzzer off.
+Forward and sideways reach work end to end on the device. Hand to mouth and forearm rotation are in
+the app and dashboard, but the firmware that detects those reps is still being built, so for now
+they run on the app's demo device. Settings has a Demo mode with short scripted runs for showing the
+buzzer off. If calibration fails because a sensor stopped answering (a loose cable), the app says
+so and asks you to replug the device.
 
 **The dashboard** (web). Where the therapist follows each patient: how often they lean, whether
 that's going down, at which targets, and a short written summary.
@@ -150,6 +158,7 @@ npm run dev
 ```
 
 Open http://localhost:5173 for the landing page, or http://localhost:5173/dashboard to sign in.
+New laptop recordings in `data/` show up on the dashboard by themselves within a few seconds.
 "Try a 1-hour demo" on the sign-in page works without an account. Summaries need an
 `ANTHROPIC_API_KEY` in `software/web/.env`; everything else works without one.
 
@@ -170,14 +179,20 @@ To record a session on a laptop instead of the phone: `.venv/bin/python -m softw
 cd software/android && ./gradlew installRelease     # with the phone plugged in and USB debugging on
 ```
 
-No cable? Build it with `./gradlew assembleRelease`, then on the dashboard open a patient's
+No cable? On the dashboard (the live site, or your own), open a patient's
 **Profile & settings → Connect a phone → Don't have the app?** and scan that code with the
 phone's camera. Then scan the pairing code with the app, and the phone records as that patient.
+With the live site the phone only needs internet.
 
-The phone must be able to reach the dashboard, so run it with `npx vite --host` and open it at
-the laptop's network address rather than `localhost`. Campus Wi-Fi blocks this; a phone hotspot
-works. [`docs/HANDOFF.md`](docs/HANDOFF.md) walks through the whole setup, and
+For a dashboard on your laptop, the phone must be able to reach it: run it with `npx vite --host`
+and open it at the laptop's network address rather than `localhost`. Campus Wi-Fi blocks this; a
+phone hotspot works. [`docs/HANDOFF.md`](docs/HANDOFF.md) walks through the whole setup, and
 [`docs/MANUAL.md`](docs/MANUAL.md) covers running a session step by step.
+
+**Deploying:** the repo-root `Dockerfile` builds the whole dashboard server (site, API and the
+Python tools it runs), and `railway.json` deploys it on Railway, which redeploys on every push to
+`main`. It needs a volume at `/data`; the steps are in the
+[web README](software/web/README.md#deploy-railway).
 
 ## In this repo
 
@@ -188,10 +203,13 @@ works. [`docs/HANDOFF.md`](docs/HANDOFF.md) walks through the whole setup, and
 | `software/web/` | Landing page, dashboard and its server ([README](software/web/README.md)) |
 | `software/tools/`, `software/dashboard/` | Python: logger, protocol parser, fake data, export |
 | `software/analysis/` | Validation: label sheets and threshold sweeps |
+| `release/` | The current phone app (`ReMotion.apk`), which the dashboard offers for download |
 | `hardware/` | Schematic, perfboard layout, enclosures, mat |
 | `docs/` | Protocol, manual, testing plan, research notes, team status |
 
-Working on the code? Read [`AGENTS.md`](AGENTS.md) first.
+Working on the code? Read [`AGENTS.md`](AGENTS.md) first, and run
+`git config core.hooksPath .githooks` once in your clone: it refuses any commit that contains an API
+key, a password or a key file (CI checks every commit too).
 
 ## Team
 
