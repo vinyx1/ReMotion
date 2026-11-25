@@ -338,7 +338,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun onLine(line: String) {
         uploader?.add(line)
         val msg = Protocol.parse(line)
-        val frozen = msg is Sample && msg.state != "IDLE" && run {
+        // the demo device holds made-up readings perfectly still between reaches, so only a real device can look frozen
+        val frozen = msg is Sample && msg.state != "IDLE" && link !is DemoLink && run {
             sameWrist = if (msg.wristDps == lastWrist) sameWrist + 1 else 0
             lastWrist = msg.wristDps
             sameWrist >= FROZEN_SAMPLES
