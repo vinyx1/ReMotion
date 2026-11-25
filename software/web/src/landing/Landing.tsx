@@ -693,7 +693,7 @@ const SCHEMATIC_PARTS: Record<string, { boxes: Box[]; what: string }> = {
   Sensors: { boxes: [[71, 9, 18, 34], [53, 16, 10, 15]], what: 'the two motion sensors and the level shifter between them and the Arduino' },
   Sampling: { boxes: ARDUINO, what: 'the Arduino, which reads both sensors 100 times a second' },
   Mat: { boxes: [[1, 5, 12, 44]], what: 'the five arcade buttons' },
-  Feedback: { boxes: [[18, 0, 10, 12], [25, 58, 12, 14], [6, 74, 92, 22]], what: 'the buzzer, the result lights and the transistors that drive them' },
+  Feedback: { boxes: [[18, 0, 10, 12], [25, 58, 12, 14], [6, 74, 92, 22]], what: 'the buzzer, the button lights and the transistors that drive them' },
   Rule: { boxes: ARDUINO, what: 'the Arduino, where the 10° / 200 ms rule runs' },
 }
 
