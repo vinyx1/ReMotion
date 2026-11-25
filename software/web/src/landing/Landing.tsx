@@ -616,10 +616,11 @@ const STUDIES = [
 function DotGrid({ filled, of, label }: { filled: number | null; of: number; label: string }) {
   const [ref, seen] = useSeen<HTMLDivElement>()
   return (
-    <div ref={ref} role="img" aria-label={label} className={`lp-dots${of <= 10 ? ' is-row' : ''}${seen ? ' is-seen' : ''}${filled === null ? ' is-unknown' : ''}`}>
+    <div ref={ref} role="img" aria-label={label} style={of <= 15 ? { gridTemplateColumns: `repeat(${of}, 14px)` } : undefined}
+      className={`lp-dots${of <= 15 ? ' is-row' : ''}${seen ? ' is-seen' : ''}${filled === null ? ' is-unknown' : ''}`}>
       {Array.from({ length: of }, (_, i) => (
         <span key={i} className={filled !== null && i < filled ? 'on' : undefined}
-          style={filled !== null && i < filled ? { transitionDelay: `${Math.round(i * (of <= 10 ? 45 : 6))}ms` } : undefined} />
+          style={filled !== null && i < filled ? { transitionDelay: `${Math.round(i * (of <= 15 ? 45 : 6))}ms` } : undefined} />
       ))}
     </div>
   )
@@ -654,13 +655,13 @@ function Evidence() {
           <div>
             <h3>Our own number</h3>
             <p>
-              How often ReMotion agreed with a blind label from side-view video, in our team’s first tests. Our target is
-              about 9 in 10.
+              How often ReMotion agreed with a blind label from side-view video: 12 of the 13 reps in our team’s first
+              test. Our target is about 9 in 10, over more reps and testers.
             </p>
           </div>
           <div className="lp-ours-right">
-            <DotGrid filled={7} of={10} label="7 of 10 dots filled" />
-            <p className="lp-ours-value">7 <small>in 10</small></p>
+            <DotGrid filled={12} of={13} label="12 of 13 dots filled" />
+            <p className="lp-ours-value">12 <small>of 13</small></p>
           </div>
         </div>
         <p className="lp-honest">

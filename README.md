@@ -23,8 +23,9 @@ the lean, say so right away, and keep a record.
 Research says this is possible with cheap sensors. Studies with a wrist and a trunk sensor picked
 out leaned reaches about 9 times in 10 ([Ranganathan et al., 2017](https://doi.org/10.1088/1361-6579/aa9835);
 [Seo et al., 2024](https://doi.org/10.3390/s24020554);
-[Gabler et al., 2026](https://arxiv.org/abs/2604.12591)). In our team's first tests, ReMotion
-agreed with a blind label from side-view video **about 7 times in 10**. Our target is 9 in 10, and
+[Gabler et al., 2026](https://arxiv.org/abs/2604.12591)). In our team's first test, ReMotion
+agreed with a blind label from side-view video on **12 of 13 reps**. Our target is 9 in 10 over more
+reps and testers, and
 [`docs/TESTING.md`](docs/TESTING.md) is how we measure it.
 
 ## What we built
