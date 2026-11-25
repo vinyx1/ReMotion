@@ -154,6 +154,9 @@ export async function summarize(req: IncomingMessage, res: ServerResponse, accou
     // anything else (network, DNS, a malformed key header): log it and say what it was
     console.error('[summary]', error)
     const why = error instanceof Error ? error.message : String(error)
+    if (/authentication method|api ?key/i.test(why)) {
+      return send(res, 503, { error: 'No Claude API key on the server. Set ANTHROPIC_API_KEY in the server\'s environment (on Railway: the service\'s Variables), then redeploy.' })
+    }
     return send(res, 502, { error: `Could not reach the Claude API (${why.slice(0, 160)}).` })
   }
 }
