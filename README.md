@@ -1,6 +1,3 @@
-> [!NOTE]
-> **To do:** add photos of the hardware (the mat, the wrist and chest sensors, the built device) to `docs/images/readme/` and show them in [What we built](#what-we-built) and [Hardware](#hardware).
-
 ![ReMotion: relearning to reach, the right way](docs/images/readme/banner.png)
 
 # ReMotion
@@ -26,8 +23,9 @@ the lean, say so right away, and keep a record.
 Research says this is possible with cheap sensors. Studies with a wrist and a trunk sensor picked
 out leaned reaches about 9 times in 10 ([Ranganathan et al., 2017](https://doi.org/10.1088/1361-6579/aa9835);
 [Seo et al., 2024](https://doi.org/10.3390/s24020554);
-[Gabler et al., 2026](https://arxiv.org/abs/2604.12591)). We haven't measured our own accuracy
-yet; `docs/TESTING.md` is the plan for that.
+[Gabler et al., 2026](https://arxiv.org/abs/2604.12591)). In our team's first tests, ReMotion
+agreed with a blind label from side-view video **about 7 times in 10**. Our target is 9 in 10, and
+[`docs/TESTING.md`](docs/TESTING.md) is how we measure it.
 
 ## What we built
 
@@ -38,6 +36,10 @@ button, a buzzer, and two motion sensors: one on a chest strap, one on the wrist
 up straight for 3 seconds so it learns what "upright" means for them. Then a target lights up,
 they reach for it, and come back to HOME. If the chest tilts more than 10° for longer than 0.2 s,
 that reach counts as leaned.
+
+| The electronics, inside the box | Putting it together |
+|---|---|
+| ![The Arduino, two perfboards and the arcade buttons wired up inside a cardboard box](docs/images/readme/hardware-inside.jpg) | ![Three of the team wiring the device at a table](docs/images/readme/team-building.jpg) |
 
 A session is the same for every exercise: **3 reaches without the buzzer, 10 with it, 3 without
 again.** The first three show how they move on their own. The middle ten are the training, where

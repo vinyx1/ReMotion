@@ -654,13 +654,13 @@ function Evidence() {
           <div>
             <h3>Our own number</h3>
             <p>
-              How often ReMotion agrees with a blind label from side-view video. Target: about 9 in 10, over about 60 reps
-              from three or more testers.
+              How often ReMotion agreed with a blind label from side-view video, in our team’s first tests. Our target is
+              about 9 in 10.
             </p>
           </div>
           <div className="lp-ours-right">
-            <DotGrid filled={null} of={100} label="An empty grid of 100: not measured yet" />
-            <p className="lp-ours-value">To be measured</p>
+            <DotGrid filled={7} of={10} label="7 of 10 dots filled" />
+            <p className="lp-ours-value">7 <small>in 10</small></p>
           </div>
         </div>
         <p className="lp-honest">
