@@ -38,6 +38,12 @@ Behind **Settings** on the patient screen:
 
 Android Studio's emulator (Device Manager → ▶ Medium Phone) runs everything except the real device (it can't pass USB through): use the demo device. `adb -s emulator-5554 reverse tcp:5173 tcp:5173` sends its sessions to the dashboard.
 
+## Download (releases)
+
+Every change to the app merged into `main` is built by CI (`.github/workflows/android.yml`: unit tests, then the release build) and published as a GitHub release. The newest one is always at **https://github.com/vinyx1/ReMotion/releases/latest/download/ReMotion.apk**: open it on the phone and allow installs from the browser. Each release has a higher version and the same signing key, so it installs over the last one and keeps the phone's history. Pull requests get the APK as a downloadable artifact instead. CI also copies the newest build to `release/ReMotion.apk`, which the dashboard offers under **Connect a phone**.
+
+**The release key** (`remotion-release.p12`) is only in the repo secrets `REMOTION_KEYSTORE_B64`, `REMOTION_KEYSTORE_PASSWORD` and `REMOTION_KEY_ALIAS`, plus the team's backup. Without it CI refuses to publish; if it is ever lost, a new key means every phone must uninstall the app once (losing its on-phone history). Phones that installed an earlier debug-signed copy also have to uninstall once before the first release installs.
+
 ## Build and install
 
 Needs Android Studio (for the SDK, including SDK Platform 37.2 and the Command-line Tools) and these in `~/.zshrc`:
@@ -56,7 +62,7 @@ From `software/android/`, with the phone connected (`adb devices` lists it):
 ./gradlew testDebugUnitTest     # parser and demo-device tests
 ```
 
-The release build is shrunk and optimised by R8 (2 MB instead of 14 MB) and signed with the debug key, so it installs over a debug build and keeps the phone's history; a Play Store release would need a real signing key. `proguard-rules.pro` keeps the USB drivers and ML Kit's scanner parts, which both libraries build by reflection (without it, Scan the code crashed the release build).
+The release build is shrunk and optimised by R8 (2 MB instead of 14 MB). Built on a laptop it is signed with the debug key, so it installs over a debug build and keeps the phone's history, but not over a downloaded release (different key: uninstall first). CI signs with the release key when `REMOTION_KEYSTORE` (a file) and the two other variables are set. `proguard-rules.pro` keeps the USB drivers and ML Kit's scanner parts, which both libraries build by reflection (without it, Scan the code crashed the release build).
 
 **Motion** (`Motion.kt`): Material's fade-through between screens (home, session, done, settings), a crossfade when the coach says something new or a count changes, a 150 ms fade for the lit button and the warm wall. Nothing slides, so text never moves under an older reader's eyes. All of it follows the phone's Remove animations setting.
 

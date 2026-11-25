@@ -1,0 +1,91 @@
+# Builds the phone app. On a pull request: tests + APK as a downloadable artifact.
+# On main (or "Run workflow"): also publishes it as a GitHub release (the latest one is always at
+# https://github.com/vinyx1/ReMotion/releases/latest/download/ReMotion.apk) and refreshes
+# release/ReMotion.apk, which the dashboard server offers under "Connect a phone".
+#
+# Signing: every published APK is signed with the team's release key (repo secrets
+# REMOTION_KEYSTORE_B64, REMOTION_KEYSTORE_PASSWORD, REMOTION_KEY_ALIAS), so a phone installs
+# each new release over the last one. Lose the key and phones must uninstall to update.
+name: Android app
+
+on:
+  push:
+    branches: [main]
+    paths: ["software/android/**", ".github/workflows/android.yml"]
+  pull_request:
+    paths: ["software/android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # create releases, commit release/ReMotion.apk
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    name: Build, test and release the APK
+    runs-on: ubuntu-latest
+    env:
+      REMOTION_KEYSTORE_PASSWORD: ${{ secrets.REMOTION_KEYSTORE_PASSWORD }}
+      REMOTION_KEY_ALIAS: ${{ secrets.REMOTION_KEY_ALIAS }}
+      PUBLISH: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Version (goes up every run, so phones take it as an update)
+        run: |
+          echo "APP_VERSION_CODE=$((GITHUB_RUN_NUMBER + 1))" >> "$GITHUB_ENV"
+          echo "APP_VERSION_NAME=0.1.$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+
+      - name: Release key
+        env:
+          KEYSTORE_B64: ${{ secrets.REMOTION_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
+            echo "REMOTION_KEYSTORE=$RUNNER_TEMP/release.p12" >> "$GITHUB_ENV"
+          elif [ "$PUBLISH" = true ]; then
+            echo "::error::No release key in the repo secrets (REMOTION_KEYSTORE_B64 ...); not publishing an APK phones couldn't update to."
+            exit 1
+          else
+            echo "::notice::No release key here: building with the debug key, not published."
+          fi
+
+      - name: Test and build
+        working-directory: software/android
+        run: ./gradlew --no-daemon testDebugUnitTest assembleRelease
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ReMotion-${{ env.APP_VERSION_NAME }}
+          path: software/android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Publish the release
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: software/android/app/build/outputs/apk/release
+        run: |
+          cp app-release.apk ReMotion.apk
+          gh release create "app-v$APP_VERSION_NAME" ReMotion.apk output-metadata.json \
+            --target "$GITHUB_SHA" --latest \
+            --title "ReMotion app $APP_VERSION_NAME" \
+            --notes "Android app built from ${GITHUB_SHA::7}. Install: download ReMotion.apk on the phone and open it (allow installs from your browser). Installs over the previous release and keeps the phone's history."
+
+      - name: Refresh release/ReMotion.apk for the dashboard's download
+        if: env.PUBLISH == 'true'
+        run: |
+          cp software/android/app/build/outputs/apk/release/{ReMotion.apk,output-metadata.json} release/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add release
+          git commit -m "Release: ReMotion app $APP_VERSION_NAME (built by CI)"
+          git pull --rebase
+          git push

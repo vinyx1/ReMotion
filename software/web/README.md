@@ -82,9 +82,9 @@ The owner account is made from `REMOTION_OWNER_EMAIL` / `REMOTION_OWNER_PASSWORD
 with an empty volume (never again, so changing them later does nothing: use `set-owner.ts` in a
 `railway ssh` shell). The image sets `TRUST_PROXY=1`, `REMOTION_STATE=/data/state`,
 `REMOTION_OWNER_DATA=/data/owner` and `REMOTION_APK=/app/release/ReMotion.apk`. The phone app's
-download comes from `release/ReMotion.apk` in the repo: after an app change, copy the new build there
-(`cp software/android/app/build/outputs/apk/release/{app-release.apk,output-metadata.json} release/`,
-renaming the APK to `ReMotion.apk`) and deploy again. Test the image locally with
+download comes from `release/ReMotion.apk` in the repo, which CI keeps current: every app change
+merged to main is built, published as a GitHub release and copied there (`.github/workflows/android.yml`),
+so the next deploy serves it. Test the image locally with
 `docker build -t remotion . && docker run -p 8080:8080 -v remotion-data:/data remotion`.
 
 ### Environment

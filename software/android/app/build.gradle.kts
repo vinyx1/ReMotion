@@ -14,8 +14,23 @@ android {
         applicationId = "ca.remotion.phone"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1"
+        // CI (.github/workflows/android.yml) passes a higher number every build, so phones accept it as an update
+        versionCode = providers.environmentVariable("APP_VERSION_CODE").orNull?.toInt() ?: 1
+        versionName = providers.environmentVariable("APP_VERSION_NAME").orNull ?: "0.1"
+    }
+
+    // The release key lives only in GitHub secrets (and a team backup), never in the repo.
+    // Every published APK must be signed with it, or phones refuse it as an update.
+    val keystore = providers.environmentVariable("REMOTION_KEYSTORE").orNull
+    signingConfigs {
+        if (keystore != null) {
+            create("release") {
+                storeFile = file(keystore)
+                storePassword = providers.environmentVariable("REMOTION_KEYSTORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("REMOTION_KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("REMOTION_KEYSTORE_PASSWORD").get()
+            }
+        }
     }
 
     buildFeatures {
@@ -24,13 +39,13 @@ android {
 
     buildTypes {
         // The build to put on a phone: Compose runs much faster optimised than in a debug build.
-        // Signed with the debug key so `./gradlew installRelease` works with no keystore set up
-        // (fine for the team's phones; a store release would need a real key).
+        // Signed with the release key in CI; on a laptop without it, with the debug key so
+        // `./gradlew installRelease` still works (but won't install over a downloaded release).
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 }
