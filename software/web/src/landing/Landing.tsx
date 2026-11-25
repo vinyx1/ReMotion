@@ -676,7 +676,7 @@ const PARTS: [string, string][] = [
   ['Sensors', '2 × MPU-6050 motion sensors, chest and wrist'],
   ['Sampling', '100 times a second'],
   ['Mat', '5 arcade buttons: HOME, green, blue, red, START'],
-  ['Feedback', 'Buzzer at 2400 Hz, green and red result lights'],
+  ['Feedback', 'Buzzer at 2400 Hz while leaning, in the training block'],
   ['Rule', `Trunk past ${LIMIT_DEG}° for 200 ms`],
   ['Cost', 'About $150 in parts'],
 ]
@@ -731,9 +731,17 @@ function Hardware() {
               {' '}<a href="/schematic.png" target="_blank" rel="noreferrer">Open full size<span className="sr-only"> (opens in a new tab)</span></a>
             </figcaption>
           </figure>
-          <div className="lp-slots">
-            <div className="lp-slot">Photo of the soldered build, coming from the bench</div>
-            <div className="lp-slot">Video of a clean reach and a leaned one</div>
+          <div className="lp-photos">
+            <figure>
+              <img src="/photos/build.webp" width={960} height={1280} loading="lazy" decoding="async"
+                alt="Inside the box: the Arduino UNO R4 Minima, two perfboards and the lit arcade buttons, wired up" />
+              <figcaption>Inside the box: the Arduino, the perfboards and the buttons.</figcaption>
+            </figure>
+            <figure>
+              <img src="/photos/team.webp" width={960} height={1280} loading="lazy" decoding="async"
+                alt="Three of the team wiring the device inside a cardboard box at a table" />
+              <figcaption>Group 19 putting it together.</figcaption>
+            </figure>
           </div>
         </div>
       </div>
